@@ -1,0 +1,10 @@
+//nodes:
+{
+  "event": "payload",
+  "type": "stateEvents",
+  "id": "mini",
+  "payload": {
+    "event": "listen",
+    "token": "mini.changestate"
+  }
+}

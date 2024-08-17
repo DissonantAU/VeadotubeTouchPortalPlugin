@@ -1,0 +1,11 @@
+//nodes:
+{
+  "event": "payload",
+  "type": "stateEvents",
+  "id": "mini",
+  "name": "avatar state",
+  "payload": {
+    "event": "peek",
+    "state": "EB"
+  }
+}

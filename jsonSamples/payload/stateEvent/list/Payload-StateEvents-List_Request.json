@@ -1,0 +1,9 @@
+//nodes:
+{
+  "event": "payload",
+  "type": "stateEvents",
+  "id": "mini",
+  "payload": {
+    "event": "list"
+  }
+}
