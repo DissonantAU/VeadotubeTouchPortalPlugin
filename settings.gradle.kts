@@ -14,11 +14,11 @@ plugins {
 rootProject.name = "VeadotubeTouchPortalPlugin"
 
 /* Library Substitution */
-val enableLibrarySubstitution = false
+val enableLibrarySubstitution = true
 
 if (enableLibrarySubstitution) {
     val useBleatkanLocal = true
-    val useTouchPortalSdkLocal = true
+    val useTouchPortalSdkLocal = false
 
     /* Get BleatKan Library from Local project - Should be in folder next to this Project */
     val inclBuildBleatkanDir = file("../bleatkan")
