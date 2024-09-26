@@ -96,7 +96,7 @@ dependencies {
 }
 
 kotlin {
-    jvmToolchain(8)
+    //jvmToolchain(8)
 
     compilerOptions {
         javaParameters = true // Needed for TP SDK to get annotated parameter names correctly
@@ -109,6 +109,22 @@ kotlin {
 java {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+
+val resourcesRelease: Directory = layout.projectDirectory.dir("src/release/resources")
+val resourcesDebug: Directory = layout.projectDirectory.dir("src/debug/resources")
+
+sourceSets {
+    main {
+        resources {
+            when (isRelease){
+                true -> srcDir(resourcesRelease)
+                false -> srcDir(resourcesDebug)
+            }
+
+        }
+    }
 }
 
 tasks.test {

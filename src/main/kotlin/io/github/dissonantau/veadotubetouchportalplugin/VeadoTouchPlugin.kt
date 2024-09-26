@@ -39,6 +39,8 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         private val LOGGER =
             KotlinLogging.logger { TouchPortalPlugin::class.java.name }
 
+        const val PLUGIN_VERSION = BuildConfig.VERSION_NAME
+
         /**
          * Avatar State String RegEx
          *
@@ -62,10 +64,22 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         fun main(args: Array<String>) {
             LOGGER.debug { "Veadotube Plugin Launched with ${args.size} args: ${args.toList()}" }
 
+            LOGGER.debug { "Kotlin Version            : ${KotlinVersion.CURRENT} " }
+            LOGGER.debug { "Java Version              : ${System.getProperty("java.version")} " }
+            LOGGER.debug { "Java VM Version           : ${System.getProperty("java.vm.version")} " }
+            LOGGER.debug { "Java VM Vendor            : ${System.getProperty("java.vm.vendor")}  " }
+            LOGGER.debug { "Java VM Name              : ${System.getProperty("java.vm.name")} " }
+            LOGGER.debug { "Java VM Spec Version      : ${System.getProperty("java.vm.specification.version")}" }
+            LOGGER.debug { "Java VM Spec Vendor       : ${System.getProperty("java.vm.specification.vendor")}" }
+            LOGGER.debug { "Java VM Spec Name         : ${System.getProperty("java.vm.specification.name")}" }
+            LOGGER.debug { "Java Runtime Spec Version : ${System.getProperty("java.specification.version")}" }
+            LOGGER.debug { "Java Runtime Spec Vendor  : ${System.getProperty("java.specification.vendor")}" }
+            LOGGER.debug { "Java Runtime Spec Name    : ${System.getProperty("java.specification.name")}" }
+
             if (args.size == 1) {
 
                 if (PluginHelper.COMMAND_START == args[0]) {
-                    LOGGER.info { "Veadotube Plugin Starting" }
+                    LOGGER.info { "Veadotube Plugin Starting - Plugin Version: $PLUGIN_VERSION - Java Version ${System.getProperty("java.version")}" }
 
                     veadotubePlugin = VeadoTouchPlugin(true)
 
