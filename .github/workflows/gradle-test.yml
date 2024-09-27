@@ -70,14 +70,14 @@ jobs:
     steps:
     - name: Check out Veadotube Touch Portal Plugin from repo
       uses: actions/checkout@v4
-      with:
-        path: ./VeadotubeTouchPortalPlugin
+      #with:
+      #  path: ./VeadotubeTouchPortalPlugin
 
-    - name: Check out bleatkan from repo
-      uses: actions/checkout@v4
-      with:
-        repository: DissonantAU/bleatkan
-        path: ./bleatkan
+    #- name: Check out bleatkan from repo
+    #  uses: actions/checkout@v4
+    #  with:
+    #    repository: DissonantAU/bleatkan
+    #    path: ./bleatkan
     
     - name: Set up JDK 17
       uses: actions/setup-java@v4
@@ -86,11 +86,11 @@ jobs:
         distribution: 'temurin'
 
     - name: Change wrapper permissions
-      run: chmod +x ./VeadotubeTouchPortalPlugin/gradlew
+      run: chmod +x ./gradlew
 
     # Generates and submits a dependency graph, enabling Dependabot Alerts for all project dependencies.
     # See: https://github.com/gradle/actions/blob/main/dependency-submission/README.md
     - name: Generate and submit dependency graph
       uses: gradle/actions/dependency-submission@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4.0.0
-      with:
-        build-root-directory: ./VeadotubeTouchPortalPlugin/VeadotubeTouchPortalPlugin
+   #   with:
+    #    build-root-directory: ./VeadotubeTouchPortalPlugin/
