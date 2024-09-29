@@ -13,6 +13,7 @@ plugins {
 }
 
 val pluginFullName: String = "Veadotube Touch Portal Plugin"
+val pluginShortName: String = "Veadotube Plugin"
 
 val mainClassSimpleName: String = "VeadoTouchPlugin"
 val mainClassPackage: String = "io.github.dissonantau.veadotubetouchportalplugin"
@@ -42,6 +43,7 @@ buildConfig {
     packageName.set(project.group.toString())
 
     buildConfigField("String", "NAME", "\"$pluginFullName\"")
+    buildConfigField("String", "NAME_SHORT", "\"$pluginShortName\"")
     buildConfigField("String", "VERSION_NAME", "\"$versionName\"")
     buildConfigField("long", "VERSION_CODE", "$versionCode")
 }

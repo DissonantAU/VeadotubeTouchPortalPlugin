@@ -27,7 +27,8 @@ import io.github.dissonantau.bleatkan.message.ResultPayload.ResultPayloadPng as 
 
 
 @Suppress("unused")
-@Plugin(version = BuildConfig.VERSION_CODE, colorDark = "#5c1c1c", colorLight = "#822727", name = "Veadotube Plugin")
+@Plugin(name = BuildConfig.NAME_SHORT, version = BuildConfig.VERSION_CODE,
+    colorDark = "#5c1c1c", colorLight = "#822727")
 class VeadoTouchPlugin(parallelizeActions: Boolean) :
     TouchPortalPlugin(parallelizeActions), TouchPortalPlugin.TouchPortalPluginListener,
     InstancesListener, ConnectionListener {
@@ -39,7 +40,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         private val LOGGER =
             KotlinLogging.logger { TouchPortalPlugin::class.java.name }
 
-        const val PLUGIN_VERSION = BuildConfig.VERSION_NAME
+        private const val PLUGIN_VERSION = BuildConfig.VERSION_NAME
 
         /**
          * Avatar State String RegEx
@@ -780,7 +781,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         LOGGER.info { "onNotificationOptionClicked received" }
     }
 
-    /* IInstancesReceiver Functions */
+    /* Instances Listener Functions */
     /**
      * Instance Manager - New Instance found
      */
@@ -947,7 +948,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
 
     }
 
-    /* ConnectionReceiver Functions */
+    /* Connection Listener Functions */
     override fun onConnectionError(connection: Connection, error: ConnectionError) {
         // Veadotube Connection Error
         LOGGER.trace { "onConnectionError: Connection ${connection.connUri}, Error ${error.name}" }
