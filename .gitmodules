@@ -1,0 +1,3 @@
+[submodule "bleatkan"]
+	path = bleatkan
+	url = https://github.com/DissonantAU/bleatkan.git

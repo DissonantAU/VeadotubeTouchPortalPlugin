@@ -21,7 +21,7 @@ if (enableLibrarySubstitution) {
     val useTouchPortalSdkLocal = false
 
     /* Get BleatKan Library from Local project - Should be in folder next to this Project */
-    val inclBuildBleatkanDir = file("../bleatkan")
+    val inclBuildBleatkanDir = file("bleatkan")
 
     if (useBleatkanLocal && isDirectory(inclBuildBleatkanDir)) {
         includeBuild(inclBuildBleatkanDir) {
