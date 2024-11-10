@@ -32,6 +32,9 @@ The easiest way to get help is to ask in the [Touch Portal Discord](https://disc
 - BleatKan Library: https://github.com/DissonantAU/bleatkan
 - Touch Portal Plugin SDK: https://github.com/ChristopheCVB/TouchPortalPluginSDK
 
+## License
+- This Plugin Licensed under GPL v3, and is Free to use in accordance with any Licenses and Agreements 
+
 
 ---
 
