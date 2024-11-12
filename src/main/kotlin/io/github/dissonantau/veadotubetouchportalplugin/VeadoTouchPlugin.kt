@@ -27,8 +27,10 @@ import io.github.dissonantau.bleatkan.message.ResultPayload.ResultPayloadPng as 
 
 
 @Suppress("unused")
-@Plugin(name = BuildConfig.NAME_SHORT, version = BuildConfig.VERSION_CODE,
-    colorDark = "#5c1c1c", colorLight = "#822727")
+@Plugin(
+    name = BuildConfig.NAME_SHORT, version = BuildConfig.VERSION_CODE,
+    colorDark = "#5c1c1c", colorLight = "#822727"
+)
 class VeadoTouchPlugin(parallelizeActions: Boolean) :
     TouchPortalPlugin(parallelizeActions), TouchPortalPlugin.TouchPortalPluginListener,
     InstancesListener, ConnectionListener {
@@ -80,7 +82,13 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
             if (args.size == 1) {
 
                 if (PluginHelper.COMMAND_START == args[0]) {
-                    LOGGER.info { "Veadotube Plugin Starting - Plugin Version: $PLUGIN_VERSION - Java Version ${System.getProperty("java.version")}" }
+                    LOGGER.info {
+                        "Veadotube Plugin Starting - Plugin Version: $PLUGIN_VERSION - Java Version ${
+                            System.getProperty(
+                                "java.version"
+                            )
+                        }"
+                    }
 
                     veadotubePlugin = VeadoTouchPlugin(true)
 
@@ -211,11 +219,6 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         categoryId = "PrimaryInstance",
         id = "currentAvatarState"
     )
-    //    @Event(
-    //        name = "On Avatar State Changed (List)",
-    //        valueChoices = ["Not Connected"],
-    //        format = "When Avatar State becomes \$val", id = "currentAvatarState"
-    //    )
     private var stateCurrentAvatarState: String = "Not Connected"
 
 
@@ -228,10 +231,6 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         categoryId = "PrimaryInstance",
         id = "currentAvatarStateId"
     )
-    //    // Can't use with API v6 - generic "When plugin state changes" can be used for now
-    //    @Event(name = "When Avatar State ID Changes (ID as Text)",
-    //        format = "When Avatar State ID becomes \$val", id = "currentAvatarStateId"
-    //    )
     private var stateCurrentAvatarStateId: String = "Not Connected"
 
 
@@ -377,8 +376,12 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
      *
      * In the format of "`name` (`id`)"
      *
+     * Note: Not needed 2.1 and later
+     *
      * @param state State to Generate String from
      */
+    @Suppress("DeprecatedCallableAddReplaceWith")
+    @Deprecated("2.1 removes separate ID")
     private fun avatarStateToString(state: VtState) =
         "${state.name} (${state.id})"
 
@@ -387,9 +390,13 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
      *
      * In the format of "`name` (`id`)"
      *
+     * Note: Not needed 2.1 and later
+     *
      * @param stateId ID to Generate String from
      * @param stateName Name to Generate String from
      */
+    @Suppress("DeprecatedCallableAddReplaceWith")
+    @Deprecated("2.1 removes separate ID")
     private fun avatarStateToString(stateId: String, stateName: String) =
         "$stateName ($stateId)"
 
@@ -398,6 +405,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
      *
      * @param connection Connection where List was updated
      */
+    @Suppress("DEPRECATION")
     private fun onUpdateAvatarStateList(connection: Connection) {
         val choices: ArrayList<String> = ArrayList()
         val choicesId: ArrayList<String> = ArrayList()
@@ -411,7 +419,15 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
 
         if (!collectionsStates.isNullOrEmpty()) {
             for (state in collectionsStates) {
-                val stateString = avatarStateToString(state)
+
+                val stateString = if (connection.compatibilityFlagVersion2) {
+                    // Generate String with Name and ID - pre 2.1
+                    avatarStateToString(state)
+                } else {
+                    // ID is just name
+                    state.id
+                }
+
                 LOGGER.trace { "updateAvatarState: Added Choice \"$stateString\"" }
                 choices.add(stateString)
                 choicesId.add(state.id)
@@ -455,7 +471,14 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
     private fun findAvatarFromStateString(connection: Connection, avatarStateString: String): VtState? {
         // Default Format is "<Name> (<ID>)" where ID is the State ID
 
-        val stateID = findAvatarIDFromStatusString(avatarStateString) ?: return null
+        // State ID is different pre 2.1 - from 2.1 it's just the name
+        val stateID = if (connection.compatibilityFlagVersion2) {
+            // Extract ID - pre 2.1
+            findAvatarIDFromStatusString(avatarStateString) ?: return null
+        } else {
+            // ID is just name
+            avatarStateString.trim()
+        }
 
         val matchedState = collConnectionData[connection]?.getStateByID(stateID)
 
@@ -979,6 +1002,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
     }
 
     override fun onConnectionChange(connection: Connection, active: Boolean) {
+        LOGGER.trace { "onConnectionChange: Connection ${connection.connUri}, Active $active" }
         // Veadotube Connection Activated/Up or Deactivated/Down
         if (active) {
             /* Connection Marked active */
@@ -1032,7 +1056,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
                 // This returns the entries - e.g. stateEvents - avatar state.
                 // These values are sent in other request types
                 // Mini just uses stateEvents, so currently we just assume id = mini and type = stateEvents
-                // instead of requesting them first but this might change with other versions (Full, etc)
+                // instead of requesting them first but this might change with other versions (Full, etc.)
 
                 LOGGER.debug { "onConnectionReceive: Message List -> Entry List (${message.entries.count()} Items)" }
 
@@ -1129,7 +1153,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
                 if (stateCurrent != null) {
                     //If we have the name, update to Touch Portal
 
-                    sendStateUpdateCurrentAvatarState(stateCurrent)
+                    sendStateUpdateCurrentAvatarState(connection, stateCurrent)
 
                     //Name value
                     if (stateCurrent.name.isNullOrEmpty()) {
@@ -1166,7 +1190,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
      *
      * e.g. State Names may have Changed, etc.
      *
-     * May be obsolete
+     * Probably obsolete
      */
     @Deprecated("Obsolete")
     private fun onCurrentStateNameUpdated(connection: Connection) {
@@ -1180,7 +1204,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
             if (currentState != null) {
                 //If not null, send
 
-                sendStateUpdateCurrentAvatarState(currentState)
+                sendStateUpdateCurrentAvatarState(connection, currentState)
 
                 sendStateUpdateCurrentAvatarStateName(currentState.name ?: "Unknown")
 
@@ -1232,12 +1256,21 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
      *
      * @see stateCurrentAvatarState
      */
+    @Suppress("DEPRECATION")
     private fun sendStateUpdateCurrentAvatarState(
+        connection: Connection,
         state: VtState,
         allowEmptyValue: Boolean = false,
         forceUpdate: Boolean = false
     ) {
-        val stateString = avatarStateToString(state.id, state.name ?: "Unknown")
+        // State ID is different pre 2.1 - from 2.1 it's just the name
+        val stateString = if (connection.compatibilityFlagVersion2) {
+            // Generate String with Name and ID - pre 2.1
+            avatarStateToString(state.id, state.name ?: "Unknown")
+        } else {
+            // ID is just name
+            state.id
+        }
         stateCurrentAvatarState = stateString
 
         // Update State - do this first in case Plugin State is used for checks
