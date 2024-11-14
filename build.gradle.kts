@@ -24,7 +24,7 @@ tpPlugin.mainClassSimpleName.set(mainClassSimpleName)
 /* Version */
 val versionMajor: Int = 0
 val versionMinor: Int = 6
-val versionPatch: Int = 0 //Is padded with 0 to left if needed
+val versionPatch: Int = 6 //Is padded with 0 to left if needed
 
 val isRelease = System.getenv("IS_RELEASE") == "YES"
 val versionSuffix: String = isRelease.ifFalse { "-DEV" }.orEmpty()
