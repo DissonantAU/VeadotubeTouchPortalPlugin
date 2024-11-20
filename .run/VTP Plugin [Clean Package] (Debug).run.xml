@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Clean, Build, &amp; Package Plugin (Debug)" type="GradleRunConfiguration" factoryName="Gradle">
+  <configuration default="false" name="VTP Plugin [Clean Package] (Debug)" type="GradleRunConfiguration" factoryName="Gradle">
     <ExternalSystemSettings>
       <option name="env">
         <map>
