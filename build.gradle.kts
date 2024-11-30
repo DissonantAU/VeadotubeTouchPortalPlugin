@@ -16,7 +16,7 @@ plugins {
 /* Version */
 val versionMajor: Int = 0
 val versionMinor: Int = 6
-val versionPatch: Int = 85 //Is padded with 0 to left if needed
+val versionPatch: Int = 88 //Is padded with 0 to left if needed
 
 
 val pluginFullName: String = "Veadotube Touch Portal Plugin"
