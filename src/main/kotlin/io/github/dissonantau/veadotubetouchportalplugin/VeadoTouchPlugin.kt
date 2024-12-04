@@ -372,6 +372,40 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
 
 
     /**
+     * Set Push To Talk/Mute input
+     *
+     * Enabling Push to Talk Mutes until the PTT Hotkey is pressed
+     *
+     * * Enable
+     * * Disable
+     * * Toggle
+     */
+    @Action(
+        name = "Push To Talk/Mute",
+        format = "{\$choices\$} Push To Talk/Mute input",
+        categoryId = "PrimaryInstance",
+        prefix = "Veadotube Mini",
+        id = "setPushToTalk"
+    )
+    private fun actionSetPushToTalk(@Data(valueChoices = ["Toggle", "Enable", "Disable"]) choices: Array<String>) {
+        LOGGER.debug { "actionSetPushToTalk: Set to '${choices[0]}'" }
+        val connection = primaryConnection
+        if (connection != null) {
+            try {
+                when (choices[0]) {
+                    "Toggle" -> sendRequestPushToTalk(connection, null)
+                    "Enable" -> sendRequestPushToTalk(connection, true)
+                    "Disable" -> sendRequestPushToTalk(connection, false)
+                }
+            } catch (ex: Exception) {
+                LOGGER.debug { "actionSetPushToTalk: Error sending message ${ex.message}" }
+            }
+
+        }
+    }
+
+
+    /**
      * Send Custom JSON Request
      *
      */
@@ -1240,32 +1274,24 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
                 LOGGER.trace { "Message -> Type: ${message.type}" }
                 LOGGER.trace { "Message -> Name: ${message.name}" }
 
-                when (message.payload) {
-
+                when (val payload = message.payload) {
                     is BleatkanStatePeek -> {
                         // Peek result - could be Peek Request, Listener, etc.
-                        val payload = message.payload as BleatkanStatePeek
                         LOGGER.debug { "onConnectionReceive: Message Payload -> Peek (${payload.state})" }
-
                         processReceivedPayloadPeek(connection, payload)
                     }
 
                     is BleatkanStateList -> {
                         // List of States - Received in order that they appear in Program
-                        val payload = message.payload as BleatkanStateList
                         LOGGER.debug { "onConnectionReceive: Message Payload -> State List (${payload.states.count()} Items)" }
-
                         processReceivedPayloadAvatarStateList(connection, payload)
                     }
 
                     is BleatkanStateThumbnail -> {
                         // Thumb result - thumbnail for an Avatar State
-                        val payload = message.payload as BleatkanStateThumbnail
                         LOGGER.debug { "onConnectionReceive: Message Payload -> Thumbnail" }
-
                         processReceivedPayloadThumbnail(connection, payload)
                     }
-
                 }
             }
 
@@ -1685,6 +1711,34 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
             )
         } catch (ex: Exception) {
             LOGGER.warn { "Failed to Request Current State for ${connection.connUri}: ${ex.message}" }
+        }
+    }
+
+    /**
+     * Send request for Push To Talk/Mute input
+     *
+     * Enabling Push to Talk Mutes until the PTT Hotkey is pressed
+     *
+     * @param setValue True = PPT enabled, False = disabled, null = toggle
+     */
+    private fun sendRequestPushToTalk(connection: Connection, setValue: Boolean? = null) {
+        try {
+            val pushToTalk =
+                """{
+  "event": "payload",
+  "type": "boolean",
+  "id": "mini",
+  "payload": {
+   ${if (setValue != null) (""" "event": "set", "value": $setValue """) else """ "event": "toggle" """}
+  }
+}"""
+            LOGGER.trace { "sendRequestPushToTalk: $pushToTalk" }
+            connection.send(
+                channel = channelNodes,
+                requestData = pushToTalk
+            )
+        } catch (ex: Exception) {
+            LOGGER.warn { "Failed to Set Push To Talk for ${connection.connUri}: ${ex.message}" }
         }
     }
 
