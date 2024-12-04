@@ -70,7 +70,7 @@ project.version = versionName
 var releaseTypeProvider: Provider<String> = provider { "DEV" }
 
 calcVersion()
-
+setMainResources(releaseTypeProvider)
 
 buildConfig {
     packageName.set(project.group.toString())
@@ -160,17 +160,7 @@ tasks {
         }
 
         doLast {
-            println("Setting Source Set Resources to ${releaseTypeProvider.get()}")
-            sourceSets.main {
-                resources {
-                    when (releaseTypeProvider.get()) {
-                        "RELEASE" -> srcDir(resourcesRelease)
-                        "TRACE" -> srcDir(resourcesTrace)
-                        else -> srcDir(resourcesDebug)
-                    }
-                }
-
-            }
+            setMainResources(releaseTypeProvider)
         }
     }
 
@@ -184,6 +174,10 @@ tasks {
     //    )
     //}
 
+
+    named<Copy>("processResources") {
+        duplicatesStrategy = DuplicatesStrategy.WARN
+    }
 
     /* Task to build the project, copy to PluginBuilds*/
 
@@ -276,6 +270,7 @@ fun calcVersion() {
         when {
             project.extra.has("BUILD_TYPE") -> "${project.extra["BUILD_TYPE"]}"
             envBuildType.isNotBlank() -> System.getenv("BUILD_TYPE")
+            releaseTypeProvider.isPresent -> releaseTypeProvider.get()
             else -> "DEV"
         }
 
@@ -284,6 +279,7 @@ fun calcVersion() {
     val buildSuffix: String = when (releaseType) {
         "RELEASE" -> ""
         "TRACE" -> "-DEV-TRACE"
+        "DEV" -> "-DEV"
         else -> "-DEV"
     }
 
@@ -296,4 +292,19 @@ fun calcVersion() {
 
     releaseTypeProvider = provider { releaseType }
 
+}
+
+
+fun setMainResources(release: Provider<String>) {
+    println("Setting Source Set Resources to ${release.get()}")
+    sourceSets.main {
+        resources {
+            when (release.get()) {
+                "RELEASE" -> srcDir(resourcesRelease)
+                "TRACE" -> srcDir(resourcesTrace)
+                "DEV" -> srcDir(resourcesDebug)
+                else -> srcDir(resourcesTrace)
+            }
+        }
+    }
 }
