@@ -1729,10 +1729,10 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
   "type": "boolean",
   "id": "mini",
   "payload": {
-   ${if (setValue != null) ("""" "event": "set", value": $setValue """) else """ "event": "toggle" """}
+   ${if (setValue != null) (""" "event": "set", "value": $setValue """) else """ "event": "toggle" """}
   }
 }"""
-            LOGGER.trace { "sendRequestPushToTalk: pushToTalk" }
+            LOGGER.trace { "sendRequestPushToTalk: $pushToTalk" }
             connection.send(
                 channel = channelNodes,
                 requestData = pushToTalk
