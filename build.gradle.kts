@@ -1,5 +1,7 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 plugins {
     alias(libs.plugins.kotlin.jvm)
@@ -13,10 +15,23 @@ plugins {
     alias(libs.plugins.touchportal.plugin.packager)
 }
 
+/* Versions follow Semantic Versioning (https://semver.org) for most things and a simple version number for inside Touch Portal
+* <version>-<pre-release>+<metadata>
+* Full = 1.1.2
+* Pre-release = alpha.<build date>-<build time> or beta.<build date>
+* Metadata = resources bundle (eg debug/trace)
+* eg. 1.0.4-alpha.20241103-1234+debug or 1.0.4-beta.20241205+debug
+*/
 /* Version */
 val versionMajor: Int = 0
 val versionMinor: Int = 6
-val versionPatch: Int = 88 //Is padded with 0 to left if needed
+val versionPatch: Int = 88
+
+
+// Chooses which resources bundle to include in IDE Testing - e.g. debug/trace and metadata extension for non-release builds
+// Mainly for choosing logging options - "DEBUG" by default, change to "TRACE" needed
+project.extra["resourcesBundle"] = "DEBUG"
+
 
 
 val pluginFullName: String = "Veadotube Touch Portal Plugin"
@@ -43,11 +58,10 @@ tasks.run<JavaExec> {
 val buildsDir: Directory = rootProject.layout.projectDirectory.dir("pluginBuilds")
 println("veadotube PluginBuilds Dir: $buildsDir")
 
+val resourcesMain: Directory = layout.projectDirectory.dir("src/main/resources")
 val resourcesRelease: Directory = layout.projectDirectory.dir("src/release/resources")
 val resourcesDebug: Directory = layout.projectDirectory.dir("src/debug/resources")
 val resourcesTrace: Directory = layout.projectDirectory.dir("src/trace/resources")
-
-
 
 
 project.extra["releaseName"] = mainClassSimpleName
@@ -58,19 +72,32 @@ val versionCode: Int = versionMajor * 1000 + versionMinor * 100 + versionPatch
 project.extra["versionCode"] = versionCode
 println("Version Code: $versionCode")
 
-// Version Base Name becomes 1.2.03
-val versionName =
-    "$versionMajor.$versionMinor.${versionPatch.toString().padStart(2, '0')}"
-project.extra["versionBaseName"] = versionName
-project.extra["versionName"] = versionName
-println("Version: $versionName")
-project.version = versionName
+// Version Base Name becomes 1.2.3, doesn't change
+val versionBaseName = "$versionMajor.$versionMinor.$versionPatch"
+project.extra["versionBaseName"] = versionBaseName
+project.version = versionBaseName
+
+// Version Semantic Name - becomes 1.2.3-alpha etc. - will be updated as needed
+project.extra["versionName"] = "$versionMajor.$versionMinor.$versionPatch-snapshot"
+val versionSemanticProvider: Provider<String> = provider { "${project.extra["versionName"]}" }
 
 
-var releaseTypeProvider: Provider<String> = provider { "DEV" }
+// Changed by tasks if needed
+project.extra["releaseBuild"] = false
+val releaseBuildProvider: Provider<Boolean> = provider { project.extra["releaseBuild"] as Boolean }
 
-calcVersion()
-setMainResources(releaseTypeProvider)
+
+// whether this is alpha/beta. Ignored during Build Release
+project.extra["preReleaseVersion"] = "snapshot"
+val preReleaseVersionProvider: Provider<String> = provider { "${project.extra["preReleaseVersion"]}" }
+
+val resourcesBundleProvider: Provider<String> = provider { "${project.extra["resourcesBundle"]}" }
+
+
+updateReleaseType()
+generateSemanticVersion(releaseBuildProvider, preReleaseVersionProvider, resourcesBundleProvider)
+setMainResources(resourcesBundleProvider)
+
 
 buildConfig {
     packageName.set(project.group.toString())
@@ -80,10 +107,7 @@ buildConfig {
     buildConfigField("String", "VERSION_BASE_NAME", "\"${project.extra["versionBaseName"]}\"")
     buildConfigField("String", "VERSION_NAME", provider { "\"${project.extra["versionName"]}\"" })
     buildConfigField("long", "VERSION_CODE", "${project.extra["versionCode"]}")
-
-    println(buildConfigFields)
 }
-
 
 
 repositories {
@@ -156,11 +180,12 @@ tasks {
     // Calculate Version/Build names, etc.
     register("calculatePluginVersion") {
         doFirst {
-            calcVersion()
+            updateReleaseType()
+            generateSemanticVersion(releaseBuildProvider, preReleaseVersionProvider, resourcesBundleProvider)
         }
 
         doLast {
-            setMainResources(releaseTypeProvider)
+            setMainResources(resourcesBundleProvider)
         }
     }
 
@@ -205,12 +230,14 @@ tasks {
 
     /* Meta Build Jobs */
 
-    register("buildCopyDevTraceToPluginBuilds") {
+    register("buildCopyBetaTraceToPluginBuilds") {
         group = "build"
 
         doFirst {
-            println("Set to Dev Trace Build")
-            project.ext["BUILD_TYPE"] = "TRACE"
+            println("Set to Beta Trace Build")
+            project.extra["releaseBuild"] = false
+            project.extra["resourcesBundle"] = "TRACE"
+            project.extra["preReleaseVersion"] = "beta"
         }
 
         finalizedBy(
@@ -219,12 +246,78 @@ tasks {
         )
     }
 
-    register("buildCopyDevToPluginBuilds") {
+    register("buildCopyAlphaTraceToPluginBuilds") {
         group = "build"
 
         doFirst {
-            println("Set to Dev Debug Build")
-            project.ext["BUILD_TYPE"] = "DEV"
+            println("Set to Alpha Trace Build")
+            project.extra["releaseBuild"] = false
+            project.extra["resourcesBundle"] = "TRACE"
+            project.extra["preReleaseVersion"] = "alpha"
+        }
+
+        finalizedBy(
+            named("calculatePluginVersion"),
+            named("copyToPluginBuilds"),
+        )
+    }
+
+    register("buildCopyBetaDebugToPluginBuilds") {
+        group = "build"
+
+        doFirst {
+            println("Set to Beta Debug Build")
+            project.extra["releaseBuild"] = false
+            project.extra["resourcesBundle"] = "DEBUG"
+            project.extra["preReleaseVersion"] = "beta"
+        }
+
+        finalizedBy(
+            named("calculatePluginVersion"),
+            named("copyToPluginBuilds"),
+        )
+    }
+
+    register("buildCopyAlphaDebugToPluginBuilds") {
+        group = "build"
+
+        doFirst {
+            println("Set to Alpha Debug Build")
+            project.extra["releaseBuild"] = false
+            project.extra["resourcesBundle"] = "DEBUG"
+            project.extra["preReleaseVersion"] = "alpha"
+        }
+
+        finalizedBy(
+            named("calculatePluginVersion"),
+            named("copyToPluginBuilds"),
+        )
+    }
+
+    register("buildCopyBetaInfoToPluginBuilds") {
+        group = "build"
+
+        doFirst {
+            println("Set to Beta Debug Build")
+            project.extra["releaseBuild"] = false
+            project.extra["resourcesBundle"] = "INFO"
+            project.extra["preReleaseVersion"] = "beta"
+        }
+
+        finalizedBy(
+            named("calculatePluginVersion"),
+            named("copyToPluginBuilds"),
+        )
+    }
+
+    register("buildCopyAlphaInfoToPluginBuilds") {
+        group = "build"
+
+        doFirst {
+            println("Set to Alpha Debug Build")
+            project.extra["releaseBuild"] = false
+            project.extra["resourcesBundle"] = "INFO"
+            project.extra["preReleaseVersion"] = "alpha"
         }
 
         finalizedBy(
@@ -238,7 +331,8 @@ tasks {
 
         doFirst {
             println("Set to Release Build")
-            project.ext["BUILD_TYPE"] = "RELEASE"
+            project.extra["releaseBuild"] = true
+            project.extra["resourcesBundle"] = "INFO"
         }
 
         finalizedBy(
@@ -255,54 +349,84 @@ tasks {
 
 
 
+fun updateReleaseType() {
 
-fun calcVersion() {
-    println("Release project: ${project.extra["releaseName"]}")
     // Get Environment Var if it exists
-    val envBuildType: String = try {
-        System.getenv("BUILD_TYPE")
-    } catch (_: Throwable) {
-        ""
-    }
+    try {
+        val envBuildType: String = System.getenv("BUILD_TYPE")
 
-    // Release Type - Variable from Build Tasks > Environment Var > Debug Default
-    val releaseType: String =
-        when {
-            project.extra.has("BUILD_TYPE") -> "${project.extra["BUILD_TYPE"]}"
-            envBuildType.isNotBlank() -> System.getenv("BUILD_TYPE")
-            releaseTypeProvider.isPresent -> releaseTypeProvider.get()
-            else -> "DEV"
+        // Release Type - Variable from Build Tasks > Environment Var > Debug Default
+        if (envBuildType.isNotBlank()) {
+            println("Release Type: $envBuildType")
+
+            when (envBuildType) {
+                "RELEASE" -> {
+                    project.extra["releaseBuild"] = true
+                    project.extra["resourcesBundle"] = "INFO"
+                }
+
+                "TRACE" -> {
+                    project.extra["releaseBuild"] = false
+                    project.extra["resourcesBundle"] = "TRACE"
+                }
+
+                else -> {
+                    project.extra["releaseBuild"] = false
+                    project.extra["resourcesBundle"] = "DEBUG"
+                }
+            }
         }
-
-    println("Release Type: $releaseType")
-
-    val buildSuffix: String = when (releaseType) {
-        "RELEASE" -> ""
-        "TRACE" -> "-DEV-TRACE"
-        "DEV" -> "-DEV"
-        else -> "-DEV"
+    } catch (_: Throwable) {
     }
-
-    // Version Name becomes 1.2.03 or 1.2.03-DEV etc.
-    val versionNameSuffix = "${project.extra["versionBaseName"]}$buildSuffix"
-
-    project.extra["versionName"] = versionNameSuffix
-    project.version = versionNameSuffix
-    println("Version Full Name: $versionNameSuffix")
-
-    releaseTypeProvider = provider { releaseType }
 
 }
 
 
+fun generateSemanticVersion(
+    releaseBuildProvider: Provider<Boolean>,
+    preReleaseVersionProvider: Provider<String>,
+    resourcesBundleProvider: Provider<String>
+) {
+    val genVersionSemantic =
+        if (releaseBuildProvider.get()) {
+            "${project.extra["versionBaseName"]}"
+        } else {
+            println("Base Version Name: ${project.extra["versionBaseName"]}")
+            val preReleaseVersion = preReleaseVersionProvider.get()
+            println("Pre-release Version: $preReleaseVersion")
+            val pattern = when (preReleaseVersion){
+                "beta" -> "yyyyMMdd"
+                else -> "yyyyMMdd-HHmm"
+            }
+            val timeOfBuild = DateTimeFormatter.ofPattern(pattern).format(LocalDateTime.now())
+            println("Time of Build: $timeOfBuild")
+
+            val metadata = if (resourcesBundleProvider.get().isNotBlank()) {
+                val recMetaData = resourcesBundleProvider.get()
+                if (recMetaData.isNotBlank()) println("Resources Metadata: $recMetaData")
+                "+${recMetaData}".lowercase()
+            } else {
+                ""
+            }
+
+            "$versionMajor.$versionMinor.$versionPatch-$preReleaseVersion.${timeOfBuild}$metadata"
+        }
+
+    project.extra["versionName"] = genVersionSemantic
+    project.version = genVersionSemantic
+    println("Version Updated Name: $genVersionSemantic")
+}
+
+
 fun setMainResources(release: Provider<String>) {
-    println("Setting Source Set Resources to ${release.get()}")
+    println("Assign Source Set Resources - currently ${release.get()}")
+    sourceSets.main.get().resources.setSrcDirs(listOf(resourcesMain))
     sourceSets.main {
         resources {
             when (release.get()) {
-                "RELEASE" -> srcDir(resourcesRelease)
+                "INFO" -> srcDir(resourcesRelease)
                 "TRACE" -> srcDir(resourcesTrace)
-                "DEV" -> srcDir(resourcesDebug)
+                "DEBUG" -> srcDir(resourcesDebug)
                 else -> srcDir(resourcesTrace)
             }
         }
