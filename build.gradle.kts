@@ -22,10 +22,9 @@ plugins {
 * Metadata = resources bundle (eg debug/trace)
 * eg. 1.0.4-alpha.20241103-1234+debug or 1.0.4-beta.20241205+debug
 */
-/* Version */
 val versionMajor: Int = 0
-val versionMinor: Int = 6
-val versionPatch: Int = 88
+val versionMinor: Int = 7
+val versionPatch: Int = 0
 
 
 // Chooses which resources bundle to include in IDE Testing - e.g. debug/trace and metadata extension for non-release builds
