@@ -16,10 +16,10 @@ _This Plugin is free, but you need to buy the Touch Portal Pro upgrade install a
 
 ## Releases
 
-The latest version is 0.6.0 and currently a beta release.
+The latest version is 0.7.0 and currently a beta release.
 
 - Stable enough for general use but hasn't been fully tested.
-- Only Tested with **Veadotube Mini v2.0**
+- Tested with **veadotube mini v2.0a** and **veadotube mini v2.1**
 
 
 ## Getting Help
@@ -31,6 +31,9 @@ The easiest way to get help is to ask in the [Touch Portal Discord](https://disc
 - Touch Portal: https://www.touch-portal.com
 - BleatKan Library: https://github.com/DissonantAU/bleatkan
 - Touch Portal Plugin SDK: https://github.com/ChristopheCVB/TouchPortalPluginSDK
+
+## License
+- This Plugin Licensed under GPL v3, and is Free to use in accordance with any Licenses and Agreements 
 
 
 ---
@@ -71,51 +74,55 @@ Enable has been entered for Request Thumbnail
 
 The example page and the examples below use one of the default avatars, O Gato by BELLA!  
 You can find it in Veadotube Mini by clicking _Avatar Settings > Load Default Avatar..._  
-![Screenshot of the Example Touch Portal Page on Android](readmeAndLicences/readmeImg/example_button_adv_3.png)
+![Screenshot of the Example Touch Portal Page on Android](readmeAndLicences/readmeImg/example_button_adv_2.png)
 
 #### Basic Button Setup
 The Plugin Actions can be found under **Veadotube - Primary Instance** 
 
 **Basic Avatar Change Trigger**
-1. Make sure you have the Avatar you want to use open, and add **Set Avatar State** to you button
+1. Make sure you have the Avatar you want to use open, and add **Set Avatar State from List** to your button
 
-2. Click the dropdown arrow to show all the current Avatars  
-![Screenshot of the Touch Portal showing 'Set Avatar State to' and a dropdown list with Avatar States and IDs](readmeAndLicences/readmeImg/example_button_1.png)
+2. Click the dropdown arrow to show all the current Avatars
+![Screenshot of the Touch Portal showing 'Set Avatar State to' and a dropdown list with Avatar States](readmeAndLicences/readmeImg/example_button_1.png)
+![example_button_adv_5.png](readmeAndLicences%2Fexample_button_adv_5.png)
+You will see the name, or number assigned by veadotube if you didn't set one.  
+Changing the name of a state in veadotube will break your Touch Portal buttons - you will need to come back and update the buttons of any you change.  
+- Select the avatar you want this button to set
+- Alternatively you can use **Set Avatar State by Name** if you'd prefer to use a text box or value to set the name  
+You can copy & paste from the state name filled in veadotube into the text box with this option
+![Screenshot of the Touch Portal showing 'Set Avatar to State with Name' and a text box with the name #3](readmeAndLicences/readmeImg/example_button_2.png)
 
-You will see the name (or number assigned by Veadotube if you didn't set one) and the Avatar ID in brackets.  
-This ID doesn't change and the Plugin uses it, so you can safely change avatar state names in Veadotube without your Touch Portal buttons breaking.  
-3. Select the avatar you want this button to set
 4. Set the Button Text, Background, etc.  
-![Closer Screenshot of the Touch Portal showing a button labeled "Change to #1" 'Set Avatar State to' with State #1 ID '3' selected](readmeAndLicences/readmeImg/example_button_2.png)
+![Closer Screenshot of the Touch Portal showing a button labeled "Change to #1" 'Set Avatar State to' with State #1 selected](readmeAndLicences/readmeImg/example_button_3.png)
 
-5. Repeat with other buttons  
-![Closer Screenshot of the Touch Portal showing a button labeled "Change to #2" 'Set Avatar State to' with State #2 ID 'D' selected](readmeAndLicences/readmeImg/example_button_3.png)
+5. Repeat with other buttons
 
-![Screenshot of Veadotube with State #1 Selected, and State #2 highlighted so the State Name is visible](readmeAndLicences/readmeImg/example_button_4.png)
-_2nd Avatar - no name, given Default of #2. The ID is 'D'_
+![Screenshot of Veadotube with State #2 selected and open so the State Name is visible](readmeAndLicences/readmeImg/example_button_4.png)
+_Opening the avatar state in veadotube shows the name box - you can copy this into Touch Portal text boxes_
 
 You can now press the buttons and change the active avatar!  
+Note: Here **When Plug-in state changes** has been used to make the buttons reactive - If you want buttons to change with the state, even when changed directly in veadotube, see under _Advanced Buttons_ below
 
-![Screenshot of the Example Touch Portal Page on Android with 3 Example Change Buttons. State #1 showing as an Icon](readmeAndLicences/readmeImg/example_button_5.png)
+![Screenshot of the Example Touch Portal Page on Android with 3 Example Change Buttons. State #3 showing as an Icon](readmeAndLicences/readmeImg/example_button_adv_4.png)
+_After Pressing Button #3_
+
+![Screenshot of the Example Touch Portal Page on Android with 3 Example Change Buttons. Now State #1 showing as an Icon](readmeAndLicences/readmeImg/example_button_adv_2.png)
 _After Pressing Button #1_
 
-![Screenshot of the Example Touch Portal Page on Android with 3 Example Change Buttons. Now State #2 showing as an Icon](readmeAndLicences/readmeImg/example_button_6.png)
-_After Pressing Button #2_
 
 
-##### Set Avatar State by ID (Text)
-You can also use a text field or Touch Portal Value to set the Avatar
-![Screenshot of the Touch Portal showing 'Set Avatar to State with ID' with 1F entered in the text box, and 'Set Avatar State to' with the dropdown list with Avatar States and IDs open](readmeAndLicences/readmeImg/example_button_7.png)
-_In this example you can see the state by Text set to 1F (#4). The Set State is shown here for comparison. It's also an easy way to find a State's ID_
-
+##### Custom JSON Requests
+You can send custom JSON Messages to the API, useful if you want to use an API feature that's not supported directly by this plugin
+![Screenshot of the Touch Portal showing 'Send Custom JSON Request' with 'nodes' in the channel text box and a JSON Message String to set the avatar state to '#2'](readmeAndLicences/readmeImg/example_button_5.png)
+_In this example you can see a Custom JSON Request to set the avatar state to '#2' to be sent to the 'nodes' channel_
 
 
 
 #### Refresh Buttons
 You can create buttons to Force a refresh as well
 ![Screenshot of the Touch Portal showing 'Refresh Avatar State List' and 'Refresh Current Avatar State' Actions under On Pressed Actions](readmeAndLicences/readmeImg/example_button_refresh_1.png)  
-You won't need these normally, but that can be useful if you're changing the order/images/names of Avatar States and want to refresh without restarting either Touch Portal of Veadotube.  
-The Plugin will refresh if it sees a new State ID, but will usually only fetch a list when it first connects
+You won't need these normally, but it can be useful if you're running veadotube mini 2.0a and changing the order/images/names of Avatar States and want to refresh without restarting either Touch Portal of Veadotube.  
+From mini 2.1 the Plugin will receive an update if there's a change to any States.
 
 
 #### Current Avatar as an Icon
@@ -140,15 +147,14 @@ You can set up the buttons to react to the Avatar State Changing - this also wor
 
 Add:
 1. _Event: When Plugin State Changes_  
-  Choose _Veadotube Plugin > Primary Instance > Current Avatar State - ID_  
-![Screenshot of the Touch Portal showing 'When the plugin State' event as Current State Avatar - ID changed to 3 and the Change Button Visuals action](readmeAndLicences/readmeImg/example_button_adv_1.png)
+  Choose _Veadotube Plugin > Primary Instance > Current Avatar State - Name_  
+![Screenshot of the Touch Portal showing 'When the plugin State' event as Current State Avatar - Name changed to #1 and the Change Button Visuals action set to change the background colour to Green and Gray. A Do not Change to #1 Event has the 'Restore Button visuals for' 'Background settings' inside](readmeAndLicences/readmeImg/example_button_adv_1.png)
 
-2. Set the 2nd box to changes to and the 3rd to the Avatar ID (Use the Set Avatar State action to find it if you don't know it already)
+2. Set the 2nd box to 'changes to' and the 3rd to the Avatar Name (you can copy and paste this from veadotube)  
 
 3. Add a _Change Button Visuals_ action inside the event and choose how you want the button to show the Avatar State is active  
 
-4. Copy the _When Plugin State Changes_ event but set the 2nd box to _does not change to_ and add a _Restore button visuals_ action  
-![Screenshot of the Touch Portal showing 'When the plugin State' event as Current State Avatar - ID changed to 3 and the Change Button Visuals action set to change the background colour to Green and Gray. A Do not Change to 3 Event has the 'Restore Button visuals for' 'Background settings' inside](readmeAndLicences/readmeImg/example_button_adv_2.png)
+4. Copy the _When Plugin State Changes_ event but set the 2nd box to _does not change to_ and add a _Restore button visuals_ action
 
 5. Repeat on your other buttons
 
@@ -157,8 +163,8 @@ Now you can see which avatar is active by the button that's highlighted
 ![Screenshot of the Example Touch Portal Page on Android with 3 Example Change Buttons. Change to #1 Button is Green-Gray and State #1 showing as an Icon](readmeAndLicences/readmeImg/example_button_adv_3.png)
 _Avatar State #1 is Active_  
 
-![Screenshot of the Example Touch Portal Page on Android with 3 Example Change Buttons. Change to #2 Button is Green-Gray and State #2 showing as an Icon](readmeAndLicences/readmeImg/example_button_adv_4.png)
-_Avatar State #2 is Active_  
+![Screenshot of the Example Touch Portal Page on Android with 3 Example Change Buttons. Change to #3 Button is Green-Gray and State #3 showing as an Icon](readmeAndLicences/readmeImg/example_button_adv_4.png)
+_Avatar State #3 is Active_  
 
 
 
@@ -169,14 +175,12 @@ You can set a 'button' to show the name of the currently active avatar
 Add:
 1. _Event: When Plugin State Changes_
 
-Choose _Veadotube Plugin > Primary Instance > Current Avatar State - Name_ or _Name & ID_
+Choose _Veadotube Plugin > Primary Instance > Current Avatar State - Name_
+![Screenshot of the Touch Portal showing 'When the plugin State' event as 'Current State Avatar - Name' does not change to blank and the Change Button Visuals action set to change Text. The Text Box is empty](readmeAndLicences/readmeImg/example_button_name_1.png)
 
-![Screenshot of the Touch Portal showing 'When the plugin State' event as 'Current State Avatar - Name & ID' does not change to blank and the Change Button Visuals action set to change Text. The Text Box is empty](readmeAndLicences/readmeImg/example_button_name_1.png)
-
-2. Add a _Change Button Visuals_ action inside the event and set it to use the Name or Name and ID to change the button text
-
-![Screenshot of the Touch Portal showing 'When the plugin State' event as 'Current State Avatar - Name & ID' does not change to blank and the Change Button Visuals action set to change Text. The Variable selector is open to Veadotube Plugin, Primary Instance, 'Current Avatar State - Name & ID'](readmeAndLicences/readmeImg/example_button_name_2.png)
+2. Add a _Change Button Visuals_ action inside the event and set it to use the Name to change the button text
+![Screenshot of the Touch Portal showing 'When the plugin State' event as 'Current State Avatar - Name' does not change to blank and the Change Button Visuals action set to change Text. The Variable selector is open to Veadotube Plugin, Primary Instance, 'Current Avatar State - Name'](readmeAndLicences/readmeImg/example_button_name_2.png)
 _You can add other Text to the change action as well_
 
-The Button should now show the current active Avatar Name and/or ID
+The Button should now show the current active Avatar Name
 

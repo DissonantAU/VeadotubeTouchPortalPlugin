@@ -10,7 +10,7 @@
             <PatternLayout
                     pattern="[%-7level] %logger{2} %replace{%msg}{\r?\n}{ >> }%n"/>
             <Filters>
-                <ThresholdFilter level="debug"/>
+                <ThresholdFilter level="trace"/>
             </Filters>
         </Console>
 
@@ -22,7 +22,7 @@
             <PatternLayout
                     pattern="%d{HH:mm:ss.SSS} [%t] %highlight{%level}{FATAL=bg_red, ERROR=red, WARN=yellow, INFO=green, DEBUG=blue} %logger{2} - %replace{%msg}{\r?\n}{ » }%n"/>
             <Filters>
-                <ThresholdFilter level="debug"/>
+                <ThresholdFilter level="trace"/>
             </Filters>
             <Policies>
                 <SizeBasedTriggeringPolicy size="10MB"/>
