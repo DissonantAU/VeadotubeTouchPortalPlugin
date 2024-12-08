@@ -376,29 +376,26 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
      *
      * Enabling Push to Talk Mutes until the PTT Hotkey is pressed
      *
-     * * Enable
-     * * Disable
-     * * Toggle
      */
     @Action(
-        name = "Push To Talk/Mute",
-        format = "{\$choices\$} Push To Talk/Mute input",
+        name = "Push-to-Talk Mic Input",
+        format = "{\$choices\$} veadotube Push-to-Talk Microphone Input",
         categoryId = "PrimaryInstance",
         prefix = "Veadotube Mini",
-        id = "setPushToTalk"
+        id = "setPushToTalkMicInput"
     )
-    private fun actionSetPushToTalk(@Data(valueChoices = ["Toggle", "Enable", "Disable"]) choices: Array<String>) {
-        LOGGER.debug { "actionSetPushToTalk: Set to '${choices[0]}'" }
+    private fun actionSetPushToTalkMicInput(@Data(valueChoices = ["Toggle", "Unmute", "Mute"]) choices: Array<String>) {
+        LOGGER.debug { "actionSetPushToTalkMicInput: Set to '${choices[0]}'" }
         val connection = primaryConnection
         if (connection != null) {
             try {
                 when (choices[0]) {
-                    "Toggle" -> sendRequestPushToTalk(connection, null)
-                    "Enable" -> sendRequestPushToTalk(connection, true)
-                    "Disable" -> sendRequestPushToTalk(connection, false)
+                    "Toggle" -> sendRequestPushToTalkMicInput(connection, null)
+                    "Unmute" -> sendRequestPushToTalkMicInput(connection, true) // Prev Enable
+                    "Mute" -> sendRequestPushToTalkMicInput(connection, false) // Prev Disable
                 }
             } catch (ex: Exception) {
-                LOGGER.debug { "actionSetPushToTalk: Error sending message ${ex.message}" }
+                LOGGER.debug { "actionSetPushToTalkMicInput: Error sending message ${ex.message}" }
             }
 
         }
@@ -1715,24 +1712,31 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
     }
 
     /**
-     * Send request for Push To Talk/Mute input
+     * Send request for Push-To-Talk Mic Input
      *
-     * Enabling Push to Talk Mutes until the PTT Hotkey is pressed
+     * Warning:
+     * * Enabling Push-to-Talk 'Mutes' the Microphone input
+     * until an API message to toggle/unmute is sent
+     * * If a hotkey is set, API won't work
      *
-     * @param setValue True = PPT enabled, False = disabled, null = toggle
+     *
+     * @param sendValue
+     * * true > PPT Node 'enabled' > Mic Unmuted
+     * * false > PPT Node 'disabled' > Mic Muted
+     * * null > Toggle
+     *
+     *
      */
-    private fun sendRequestPushToTalk(connection: Connection, setValue: Boolean? = null) {
+    private fun sendRequestPushToTalkMicInput(connection: Connection, sendValue: Boolean? = null) {
+        //TODO Create proper Bleatkan Request Message for PPT
         try {
             val pushToTalk =
-                """{
-  "event": "payload",
-  "type": "boolean",
-  "id": "mini",
-  "payload": {
-   ${if (setValue != null) (""" "event": "set", "value": $setValue """) else """ "event": "toggle" """}
-  }
-}"""
-            LOGGER.trace { "sendRequestPushToTalk: $pushToTalk" }
+                "{\"event\":\"payload\",\"type\":\"boolean\",\"id\":\"mini\",\"payload\": {${
+                    if (sendValue != null)
+                        "\"event\":\"set\",\"value\":$sendValue"
+                    else "\"event\":\"toggle\""
+                }}}"
+            LOGGER.trace { "sendRequestPushToTalkMicInput: $pushToTalk" }
             connection.send(
                 channel = channelNodes,
                 requestData = pushToTalk
