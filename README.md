@@ -50,6 +50,7 @@ The easiest way to get help is to ask in the [Touch Portal Discord](https://disc
   ![Screenshot of Touch Portal Plugin Warning](readmeAndLicences/readmeImg/plugin-import-2.png)
 
 
+
 ### Plugin Settings
 _These are optional, but you may want to enable **Auto Request Current State Thumbnail**_
 ![Screenshot of Veadotube Plugin Settings Panel in Touch Portal](readmeAndLicences/readmeImg/plugin-options.png)
@@ -69,12 +70,15 @@ Only one copy of Veadotube Mini is running, it has the default title.
 Enable has been entered for Request Thumbnail
 
 
+
 ### Setting up Buttons in Touch Portal
 **You can find an example Touch Portal Page you can download and import here**  
 
 The example page and the examples below use one of the default avatars, O Gato by BELLA!  
 You can find it in Veadotube Mini by clicking _Avatar Settings > Load Default Avatar..._  
 ![Screenshot of the Example Touch Portal Page on Android](readmeAndLicences/readmeImg/example_button_adv_2.png)
+
+
 
 #### Basic Button Setup
 The Plugin Actions can be found under **Veadotube - Primary Instance** 
@@ -111,38 +115,7 @@ _After Pressing Button #1_
 
 
 
-##### Custom JSON Requests
-You can send custom JSON Messages to the API, useful if you want to use an API feature that's not supported directly by this plugin
-![Screenshot of the Touch Portal showing 'Send Custom JSON Request' with 'nodes' in the channel text box and a JSON Message String to set the avatar state to '#2'](readmeAndLicences/readmeImg/example_button_5.png)
-_In this example you can see a Custom JSON Request to set the avatar state to '#2' to be sent to the 'nodes' channel_
-
-
-
-#### Refresh Buttons
-You can create buttons to Force a refresh as well
-![Screenshot of the Touch Portal showing 'Refresh Avatar State List' and 'Refresh Current Avatar State' Actions under On Pressed Actions](readmeAndLicences/readmeImg/example_button_refresh_1.png)  
-You won't need these normally, but it can be useful if you're running veadotube mini 2.0a and changing the order/images/names of Avatar States and want to refresh without restarting either Touch Portal of Veadotube.  
-From mini 2.1 the Plugin will receive an update if there's a change to any States.
-
-
-#### Current Avatar as an Icon
-If you've enabled _Auto Request Current State Thumbnail_ you can create a 'button' that shows the current Avatar
-
-You can create this by adding:
-1. Event: When Plugin State Changes  
-Choose _Veadotube Plugin > Primary Instance > Current Avatar State - Thumbnail_
-
-![Screenshot of the Touch Portal showing 'When the plugin State' event and the plugin state dropdown open to 'Veadotube Plugin', 'Veadotube Primary Instance' and 'Current Avatar State - Thumbnail' highlighted](readmeAndLicences/readmeImg/example_button_icon_1.png)  
-
-Set the 2nd box to _does not change to_, and leave the 3rd box blank
-![Screenshot of the Touch Portal showing 'When the plugin State' event, the plugin state 'Current Avatar State - Thumbnail' chosen, 'does not change to' chosen and a blank text box](readmeAndLicences/readmeImg/example_button_icon_2.png)
-
-2. Inside the Event, add _Change visuals by Plugin State_ and select _Icon_ and _Current Avatar State - Thumbnail_  
-![Screenshot of the Touch Portal showing 'When the plugin State' event with Change Visuals by plug-in state action. It is set to change the Icon with the value from "Current Avatar State - Thumbnail"](readmeAndLicences/readmeImg/example_button_icon_3.png)
-
-Now the Icon will change when the Avatar does - even if it's changed directly in the app!
-
-#### Advanced Buttons
+#### Reactive Buttons
 You can set up the buttons to react to the Avatar State Changing - this also works if you change it by clicking directly in Veadotube  
 
 Add:
@@ -168,6 +141,24 @@ _Avatar State #3 is Active_
 
 
 
+#### Current Avatar as an Icon
+If you've enabled _Auto Request Current State Thumbnail_ you can create a 'button' that shows the current Avatar
+
+You can create this by adding:
+1. Event: When Plugin State Changes  
+   Choose _Veadotube Plugin > Primary Instance > Current Avatar State - Thumbnail_
+
+![Screenshot of the Touch Portal showing 'When the plugin State' event and the plugin state dropdown open to 'Veadotube Plugin', 'Veadotube Primary Instance' and 'Current Avatar State - Thumbnail' highlighted](readmeAndLicences/readmeImg/example_button_icon_1.png)
+
+Set the 2nd box to _does not change to_, and leave the 3rd box blank
+![Screenshot of the Touch Portal showing 'When the plugin State' event, the plugin state 'Current Avatar State - Thumbnail' chosen, 'does not change to' chosen and a blank text box](readmeAndLicences/readmeImg/example_button_icon_2.png)
+
+2. Inside the Event, add _Change visuals by Plugin State_ and select _Icon_ and _Current Avatar State - Thumbnail_  
+   ![Screenshot of the Touch Portal showing 'When the plugin State' event with Change Visuals by plug-in state action. It is set to change the Icon with the value from "Current Avatar State - Thumbnail"](readmeAndLicences/readmeImg/example_button_icon_3.png)
+
+Now the Icon will change when the Avatar does - even if it's changed directly in the app!
+
+
 
 #### Show active Avatar State name
 You can set a 'button' to show the name of the currently active avatar
@@ -184,3 +175,17 @@ _You can add other Text to the change action as well_
 
 The Button should now show the current active Avatar Name
 
+
+
+#### Custom JSON Requests
+You can send custom JSON Messages to the API, useful if you want to use an API feature that's not supported directly by this plugin
+![Screenshot of the Touch Portal showing 'Send Custom JSON Request' with 'nodes' in the channel text box and a JSON Message String to set the avatar state to '#2'](readmeAndLicences/readmeImg/example_button_5.png)
+_In this example you can see a Custom JSON Request to set the avatar state to '#2' to be sent to the 'nodes' channel_
+
+
+
+#### Refresh Buttons
+You can create buttons to Force a refresh as well
+![Screenshot of the Touch Portal showing 'Refresh Avatar State List' and 'Refresh Current Avatar State' Actions under On Pressed Actions](readmeAndLicences/readmeImg/example_button_refresh_1.png)  
+You won't need these normally, but it can be useful if you're running veadotube mini 2.0a and changing the order/images/names of Avatar States and want to refresh without restarting either Touch Portal of Veadotube.  
+From mini 2.1 the Plugin will receive an update if there's a change to any States.
