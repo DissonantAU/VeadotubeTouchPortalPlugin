@@ -24,7 +24,7 @@ plugins {
 */
 val versionMajor: Int = 0
 val versionMinor: Int = 7
-val versionPatch: Int = 0
+val versionPatch: Int = 1
 
 
 // Chooses which resources bundle to include in IDE Testing - e.g. debug/trace and metadata extension for non-release builds
@@ -37,8 +37,8 @@ val pluginShortName: String = "Veadotube Plugin"
 
 val mainClassSimpleName: String = "VeadoTouchPlugin"
 val mainClassPackage: String = "io.github.dissonantau.veadotubetouchportalplugin"
-group = mainClassPackage
 
+group = mainClassPackage
 tpPlugin.mainClassSimpleName.set(mainClassSimpleName)
 
 
