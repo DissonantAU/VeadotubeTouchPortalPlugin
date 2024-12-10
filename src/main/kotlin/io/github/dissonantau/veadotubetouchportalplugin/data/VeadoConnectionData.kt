@@ -20,6 +20,7 @@ class VeadoConnectionData(connection: Connection) {
      *
      *  Backed by a [WeakReference] - returns null if Connection has been dereferenced elsewhere and cleaned
      */
+    @Suppress("MemberVisibilityCanBePrivate")
     val connection: Connection?
         get() {
             return _connection.get()
@@ -45,8 +46,49 @@ class VeadoConnectionData(connection: Connection) {
      */
     private val statesByID = HashMap<String, VtState>()
 
-    /** Get [VtState] from this connection by State ID*/
+    /**
+     * Get [VtState] from this connection by State ID
+     *
+     * ID = Name from Mini 2.1
+     */
     fun getStateByID(stateID: String): VtState? = statesByID[stateID]
+
+    /**
+     * Get [VtState] from this connection by State Name - Compatibility Version
+     *
+     * If Connection is pre 2.1, state names are searched and:
+     * - if an exact match is found, it is chosen
+     * - If no exact match is found, the first result that that contains the give name is returned
+     * - if none are found,
+     *
+     * If not pre 2.1, [getStateByID] should be used - the same result is returned but overhead is increased
+     *
+     */
+    fun getStateByNameCompat(stateName: String): VtState? {
+        connection?.let { connection ->
+            if (connection.compatibilityFlagMiniPre2dot1) {
+                val candidates: ArrayList<VtState> = ArrayList()
+
+                statesAll.forEach {
+                    it.name?.let { name ->
+                        if (name == stateName) return it
+                        if (name.contains(stateName)) candidates.add(it)
+                    }
+                }
+
+                if (candidates.size == 0) return null
+                else candidates.first()
+
+            } else {
+                statesByID[stateName]
+            }
+
+        }
+
+
+
+        return null
+    }
 
     /**
      * Pair with the current Avatar State with `ID` and `Name`
@@ -67,10 +109,10 @@ class VeadoConnectionData(connection: Connection) {
     private var currentStateThumbnail: VtThumbnail? = null
 
     /** Default Size of LRU Map - Hard References */
-    private val lruHardMapSize = 5
+    private val lruHardMapSize = 4
 
     /** Default Size of LRU Map - Soft References*/
-    private val lruSoftMapSize = lruHardMapSize + 5
+    private val lruSoftMapSize = lruHardMapSize + 6
 
     /**
      * Least Recently Used Map with Hard References
@@ -102,9 +144,11 @@ class VeadoConnectionData(connection: Connection) {
         val stateList = payload.states
         // New List, lazy initialised to create on unless needed
         val newAllList: ArrayList<VtState> = ArrayList(stateList.size)
-        // First ID where we started copying - < 0 means we didn't need to
-        var listReplace = false
 
+        // Track if list has changed - Count, Names, etc. - We want to regenerate the list and send to Touch Portal
+        var listReplace = false
+        // If Count is different, mark as changed
+        if (statesAll.count() != stateList.count()) listReplace = true
 
         for (i in stateList.indices) {
 
@@ -112,15 +156,28 @@ class VeadoConnectionData(connection: Connection) {
             val stateListOld = statesAll.getOrNull(i)
 
             val existingState: VtState =
-                if (stateListNew.id == stateListOld?.id) {
+                if (stateListOld != null && stateListNew.id == stateListOld.id) {
                     //Order Match, get state from array
                     stateListOld.also {
                         it.update(stateListNew)
                     }
+                    stateListOld
                 } else {
                     //Not the same, we need to check if it exists in HashMap and get, or create new one from new State
                     statesByID.getOrPut(stateListNew.id) { listReplace = true; VtState(stateListNew) }
                 }
+                    listReplace = true
+
+                    statesByID.getOrPut(stateListNew.id) {
+                        VtState(stateListNew)
+                    }
+                }
+
+            if (existingState.name != stateListNew.name) {
+                // Update Object if the doesn't match
+                existingState.update(stateListNew)
+                listReplace = true
+            }
 
             //Add to new List if we need to
             newAllList.add(existingState)
@@ -133,7 +190,7 @@ class VeadoConnectionData(connection: Connection) {
             // Replace Old List
             statesAll = newAllList
 
-            //Update Maps - converts statesAll to HashSet for performance
+            // Update Maps - converts statesAll to HashSet for performance
             val tempHashSet = statesAll.toCollection(HashSet())
             statesByID.values.retainAll(tempHashSet)
             thumbnailHardLRUMap.keys.retainAll(tempHashSet)
@@ -269,13 +326,12 @@ class VtState
     var name: String? = name
         internal set
 
-
     /**
      * Updates stored name from State if ID matches and name isn't blank
      * @return true if [name] was updated
      */
     internal fun update(state: State): Boolean {
-        if (state.id == id && state.name.isNotBlank()) {
+        if (state.id == id && name != state.name && state.name.isNotBlank()) {
             name = state.name
             return true
         }
@@ -283,7 +339,7 @@ class VtState
     }
 
     /**
-     * Updates stored PNG from State if ID matches and PNG isn't blank
+     * Updates stored PNG from State
      *
      * @return true if [thumbnail] was updated
      */
@@ -297,23 +353,20 @@ class VtState
     internal fun updateThumbnail(newThumbnail: BleatkanStateThumbnail): Boolean {
         if (newThumbnail.state != id) return false
 
-        if (newThumbnail.png.isNotBlank() &&
-            _thumbnail?.get()?.pngHash != newThumbnail.png.hashCode()
-        ) {
-            // Get Existing thumbnail obj, create new if null
-            when (val thumb = _thumbnail?.get()) {
-                null -> VtThumbnail(newThumbnail).also {
-                    //No Existing thumbnail
-                    this._thumbnail = WeakReference(it)
-                    return true
-                }
-
-                else -> return thumb.updateThumbnail(newThumbnail) // Update Existing Thumbnail
+        // Get Existing thumbnail obj, create new if null
+        when (val thumb = _thumbnail?.get()) {
+            null -> VtThumbnail(newThumbnail).also {
+                //No Existing thumbnail
+                this._thumbnail = WeakReference(it)
+                return true
             }
 
-
+            else -> {
+                // Update Existing Thumbnail
+                return thumb.updateThumbnail(newThumbnail)
+            }
         }
-        return false
+
     }
 
     /**
@@ -329,7 +382,6 @@ class VtState
         }
         return false
     }
-
 
     /**
      * State Thumbnail backing var
@@ -356,7 +408,7 @@ class VtState
 class VtThumbnail(thumbnail: BleatkanStateThumbnail) {
 
     /** State Thumbnail - as PNG */
-    lateinit var png: String
+    var png: String = ""
         private set
     var width: Int = -1
         private set
@@ -364,16 +416,41 @@ class VtThumbnail(thumbnail: BleatkanStateThumbnail) {
         private set
 
     /**
+     * Hash of Thumbnail from Veadotube
+     *
+     * Value introduced in 2.1, 2.0 doesn't provide this
+     *
+     * Blank if not set or not provided (pre 2.1)
+     */
+    var hash: String = ""
+        private set
+
+    /**
      * Hash of Thumbnail before any transformations (Resize, etc.)
      *
-     * Returns -1 if thumbnail is not set
+     * 1 if not set or Hash is provided by Veado (2.1 and later)
+     *
      */
     var pngHash: Int = -1
         private set
 
     init {
-        //Init Thumbnail incl png - will always set PNG
-        updateThumbnail(thumbnail)
+        val veadoHash = thumbnail.hash
+        if (veadoHash != null) {
+            hash = veadoHash
+
+            //Update PNG
+            this.width = thumbnail.width
+            this.height = thumbnail.height
+            this.png = thumbnail.png
+        } else {
+            pngHash = thumbnail.png.hashCode()
+
+            //Update PNG
+            this.width = thumbnail.width
+            this.height = thumbnail.height
+            this.png = thumbnail.png
+        }
     }
 
 
@@ -383,22 +460,34 @@ class VtThumbnail(thumbnail: BleatkanStateThumbnail) {
      * @return true if [png] was updated
      */
     internal fun updateThumbnail(thumbnail: BleatkanStateThumbnail): Boolean {
-        if (!this::png.isInitialized ||
-            thumbnail.png.isNotBlank() &&
-            pngHash != thumbnail.png.hashCode()
-        ) {
-            // May require processing to make square for Touch Portal, so store the original hash
-            pngHash = thumbnail.png.hashCode()
+        val veadoHash = thumbnail.hash
+        if (veadoHash != null) {
+            // 2.1 and later: compare Hash from Veado then update if different
+            if (hash != veadoHash) {
+                hash = veadoHash
 
-            //Update PNG
-            this.width = thumbnail.width
-            this.height = thumbnail.height
-            this.png = thumbnail.png
+                //Update PNG
+                this.width = thumbnail.width
+                this.height = thumbnail.height
+                this.png = thumbnail.png
 
-            return true
+                return true
+            }
+        } else {
+            // Pre-2.1 - Generate and use String HashCode then update if different
+            if (pngHash != thumbnail.png.hashCode()) {
+                pngHash = thumbnail.png.hashCode()
+
+                //Update PNG
+                this.width = thumbnail.width
+                this.height = thumbnail.height
+                this.png = thumbnail.png
+
+                return true
+            }
         }
+
         return false
     }
-
 
 }
