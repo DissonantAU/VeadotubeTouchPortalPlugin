@@ -3,6 +3,7 @@ package io.github.dissonantau.veadotubetouchportalplugin.data
 import org.apache.commons.collections4.map.LRUMap
 import io.github.dissonantau.bleatkan.connection.Connection
 import io.github.dissonantau.bleatkan.message.State
+import io.github.oshai.kotlinlogging.KotlinLogging
 import java.lang.ref.SoftReference
 import java.lang.ref.WeakReference
 
@@ -12,6 +13,10 @@ import io.github.dissonantau.bleatkan.message.ResultPayload.ResultPayloadPng as 
 
 @Suppress("unused")
 class VeadoConnectionData(connection: Connection) {
+
+    companion object {
+        private val LOGGER = KotlinLogging.logger {}
+    }
 
     /** Connection Weak Ref - used to prevent GC issues */
     private val _connection: WeakReference<Connection> = WeakReference(connection)
@@ -140,6 +145,7 @@ class VeadoConnectionData(connection: Connection) {
      *
      */
     fun updateStates(payload: BleatkanStateList) {
+        LOGGER.trace { "updateStates: Begin" }
 
         val stateList = payload.states
         // New List, lazy initialised to create on unless needed
@@ -155,21 +161,27 @@ class VeadoConnectionData(connection: Connection) {
             val stateListNew = stateList[i]
             val stateListOld = statesAll.getOrNull(i)
 
+            LOGGER.trace { "updateStates: stateList item ${i}; new ${stateListNew.id},${stateListNew.name}; old ${stateListOld?.id},${stateListOld?.name}" }
+
             val existingState: VtState =
                 if (stateListOld != null && stateListNew.id == stateListOld.id) {
                     //Order Match, get state from array
-                    stateListOld.also {
-                        it.update(stateListNew)
-                    }
+                    LOGGER.trace { "updateStates: stateList item ${i}; new ${stateListNew.id} == old ${stateListOld.id}" }
+
                     stateListOld
                 } else {
                     //Not the same, we need to check if it exists in HashMap and get, or create new one from new State
-                    statesByID.getOrPut(stateListNew.id) { listReplace = true; VtState(stateListNew) }
-                }
+                    LOGGER.trace { "updateStates: stateList item ${i}; new ${stateListNew.id} != old ${stateListOld?.id}" }
+                    LOGGER.trace { "updateStates: stateList item ${i}; statesByID[stateListNew.id] == old ${statesByID[stateListNew.id]?.id},${statesByID[stateListNew.id]?.name}}" }
                     listReplace = true
+                    LOGGER.trace { "updateStates: New VtState > listReplace = $listReplace" }
 
                     statesByID.getOrPut(stateListNew.id) {
-                        VtState(stateListNew)
+                        LOGGER.trace { "updateStates: create VtState for ${stateListNew.id}" }
+                        VtState(stateListNew).also {
+                            LOGGER.trace { "updateStates: stateList item ${i}; new item ${it.id},${it.name}" }
+                        }
+
                     }
                 }
 
@@ -177,13 +189,16 @@ class VeadoConnectionData(connection: Connection) {
                 // Update Object if the doesn't match
                 existingState.update(stateListNew)
                 listReplace = true
+                LOGGER.trace { "updateStates: Update Name > listReplace = $listReplace" }
             }
+
+            LOGGER.trace { "updateStates: stateList item ${i}; add to new list ${existingState.id},${existingState.name}" }
 
             //Add to new List if we need to
             newAllList.add(existingState)
 
         }
-
+        LOGGER.trace { "updateStates: Post Loop listReplace = $listReplace" }
 
         //If List changed (order, new items, etc.)
         if (listReplace) {
