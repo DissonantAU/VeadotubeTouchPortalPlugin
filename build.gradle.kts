@@ -32,7 +32,6 @@ val versionPatch: Int = 0
 project.extra["resourcesBundle"] = "DEBUG"
 
 
-
 val pluginFullName: String = "Veadotube Touch Portal Plugin"
 val pluginShortName: String = "Veadotube Plugin"
 
@@ -41,6 +40,17 @@ val mainClassPackage: String = "io.github.dissonantau.veadotubetouchportalplugin
 group = mainClassPackage
 
 tpPlugin.mainClassSimpleName.set(mainClassSimpleName)
+
+
+/* Build Dirs */
+val buildsDir: Directory = rootProject.layout.projectDirectory.dir("pluginBuilds")
+println("veadotube PluginBuilds Dir: $buildsDir")
+
+val resourcesMain: Directory = layout.projectDirectory.dir("src/main/resources")
+val resourcesRelease: Directory = layout.projectDirectory.dir("src/release/resources")
+val resourcesDebug: Directory = layout.projectDirectory.dir("src/debug/resources")
+val resourcesTrace: Directory = layout.projectDirectory.dir("src/trace/resources")
+
 
 /* Gradle defined run task */
 application.mainClass = "$mainClassPackage.$mainClassSimpleName"
@@ -52,15 +62,6 @@ tasks.run<JavaExec> {
     workingDir =
         project.layout.buildDirectory.get().dir("plugin").dir(mainClassSimpleName).asFile
 }
-
-
-val buildsDir: Directory = rootProject.layout.projectDirectory.dir("pluginBuilds")
-println("veadotube PluginBuilds Dir: $buildsDir")
-
-val resourcesMain: Directory = layout.projectDirectory.dir("src/main/resources")
-val resourcesRelease: Directory = layout.projectDirectory.dir("src/release/resources")
-val resourcesDebug: Directory = layout.projectDirectory.dir("src/debug/resources")
-val resourcesTrace: Directory = layout.projectDirectory.dir("src/trace/resources")
 
 
 project.extra["releaseName"] = mainClassSimpleName
@@ -203,8 +204,7 @@ tasks {
         duplicatesStrategy = DuplicatesStrategy.WARN
     }
 
-    /* Task to build the project, copy to PluginBuilds*/
-
+    /* Task to copy to PluginBuilds after build */
     register<Copy>("copyToPluginBuilds") {
         duplicatesStrategy = DuplicatesStrategy.WARN
 
@@ -216,7 +216,10 @@ tasks {
             println("Copy to '${buildsDir.dir("${project.extra["releaseName"]}_${project.extra["versionBaseName"]}")}'")
         }
 
-        dependsOn(packagePlugin)
+        dependsOn(
+            named("calculatePluginVersion"),
+            packagePlugin
+        )
         from(packagePlugin)
         into { buildsDir.dir("${project.extra["releaseName"]}_${project.extra["versionBaseName"]}") }
         rename { filename ->
@@ -240,7 +243,6 @@ tasks {
         }
 
         finalizedBy(
-            named("calculatePluginVersion"),
             named("copyToPluginBuilds"),
         )
     }
@@ -256,7 +258,6 @@ tasks {
         }
 
         finalizedBy(
-            named("calculatePluginVersion"),
             named("copyToPluginBuilds"),
         )
     }
@@ -272,7 +273,6 @@ tasks {
         }
 
         finalizedBy(
-            named("calculatePluginVersion"),
             named("copyToPluginBuilds"),
         )
     }
@@ -288,7 +288,6 @@ tasks {
         }
 
         finalizedBy(
-            named("calculatePluginVersion"),
             named("copyToPluginBuilds"),
         )
     }
@@ -304,7 +303,6 @@ tasks {
         }
 
         finalizedBy(
-            named("calculatePluginVersion"),
             named("copyToPluginBuilds"),
         )
     }
@@ -320,7 +318,6 @@ tasks {
         }
 
         finalizedBy(
-            named("calculatePluginVersion"),
             named("copyToPluginBuilds"),
         )
     }
@@ -335,7 +332,6 @@ tasks {
         }
 
         finalizedBy(
-            named("calculatePluginVersion"),
             named("copyToPluginBuilds"),
         )
     }
@@ -370,6 +366,7 @@ fun updateReleaseType() {
                 }
 
                 else -> {
+                    // DEBUG or TRACE
                     project.extra["releaseBuild"] = false
                     project.extra["resourcesBundle"] = "DEBUG"
                 }
@@ -387,26 +384,26 @@ fun generateSemanticVersion(
     resourcesBundleProvider: Provider<String>
 ) {
     val genVersionSemantic =
-        if (releaseBuildProvider.get()) {
-            "${project.extra["versionBaseName"]}"
-        } else {
+        if (releaseBuildProvider.get()) "${project.extra["versionBaseName"]}"
+        else {
             println("Base Version Name: ${project.extra["versionBaseName"]}")
+
             val preReleaseVersion = preReleaseVersionProvider.get()
             println("Pre-release Version: $preReleaseVersion")
-            val pattern = when (preReleaseVersion){
+            val pattern = when (preReleaseVersion) {
                 "beta" -> "yyyyMMdd"
                 else -> "yyyyMMdd-HHmm"
             }
+
             val timeOfBuild = DateTimeFormatter.ofPattern(pattern).format(LocalDateTime.now())
             println("Time of Build: $timeOfBuild")
 
-            val metadata = if (resourcesBundleProvider.get().isNotBlank()) {
-                val recMetaData = resourcesBundleProvider.get()
-                if (recMetaData.isNotBlank()) println("Resources Metadata: $recMetaData")
-                "+${recMetaData}".lowercase()
-            } else {
-                ""
-            }
+            val resourcesBundle = resourcesBundleProvider.get()
+            val metadata = if (resourcesBundle.isNotBlank()) {
+                if (resourcesBundle.isNotBlank()) println("Resources Metadata: $resourcesBundle")
+                "+${resourcesBundle.lowercase()}"
+            } else ""
+
 
             "$versionMajor.$versionMinor.$versionPatch-$preReleaseVersion.${timeOfBuild}$metadata"
         }
@@ -418,15 +415,18 @@ fun generateSemanticVersion(
 
 
 fun setMainResources(release: Provider<String>) {
-    println("Assign Source Set Resources - currently ${release.get()}")
+    val releaseType = release.get()
+    println("Assign Source Set Resources - currently $releaseType")
+
     sourceSets.main.get().resources.setSrcDirs(listOf(resourcesMain))
     sourceSets.main {
         resources {
-            when (release.get()) {
+            when (releaseType) {
                 "INFO" -> srcDir(resourcesRelease)
                 "TRACE" -> srcDir(resourcesTrace)
                 "DEBUG" -> srcDir(resourcesDebug)
-                else -> srcDir(resourcesTrace)
+                "SNAPSHOT" -> srcDir(resourcesDebug)
+                else -> throw IllegalArgumentException("Missing Resources Tag")
             }
         }
     }
