@@ -16,7 +16,7 @@ _This Plugin is free, but you need to buy the Touch Portal Pro upgrade install a
 
 ## Releases
 
-The latest version is 0.7.0 and currently a beta release.
+The latest version is 0.7.1 and currently a beta release.
 
 - Stable enough for general use but hasn't been fully tested.
 - Tested with **veadotube mini v2.0a** and **veadotube mini v2.1**
