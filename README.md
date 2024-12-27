@@ -27,6 +27,7 @@ The easiest way to get help is to ask in the [Touch Portal Discord](https://disc
 
 
 ## Links
+- Project Page: https://dissonantau.github.io/veadoTouchPortalPlugin/
 - Veadotube: https://veado.tube
 - Touch Portal: https://www.touch-portal.com
 - BleatKan Library: https://github.com/DissonantAU/bleatkan
@@ -88,7 +89,6 @@ The Plugin Actions can be found under **Veadotube - Primary Instance**
 
 2. Click the dropdown arrow to show all the current Avatars
 ![Screenshot of the Touch Portal showing 'Set Avatar State to' and a dropdown list with Avatar States](readmeAndLicences/readmeImg/example_button_1.png)
-![example_button_adv_5.png](readmeAndLicences%2Fexample_button_adv_5.png)
 You will see the name, or number assigned by veadotube if you didn't set one.  
 Changing the name of a state in veadotube will break your Touch Portal buttons - you will need to come back and update the buttons of any you change.  
 - Select the avatar you want this button to set
