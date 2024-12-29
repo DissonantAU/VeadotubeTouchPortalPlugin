@@ -1,6 +1,6 @@
 [versions]
 
-bleatkan = "0.6.+"
+bleatkan = "0.7.+"
 
 gmazzoBuildconfig = "5.+"
 
@@ -16,8 +16,8 @@ coroutines = "1.9.0"
 # "2.3.12" > 3.0.1
 ktor = "3.0.1"
 
-# 1.7.2
-serialization-json = "1.7.2"
+# 1.7.3
+serialization-json = "1.7.3"
 
 # 4.5.0-M2
 commons-collections4 = "4.5.0-M2"
