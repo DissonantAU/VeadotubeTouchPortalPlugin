@@ -88,7 +88,7 @@ val releaseBuildProvider: Provider<Boolean> = provider { project.extra["releaseB
 
 
 // whether this is alpha/beta. Ignored during Build Release
-project.extra["preReleaseVersion"] = "snapshot"
+project.extra["preReleaseVersion"] = "SNAPSHOT"
 val preReleaseVersionProvider: Provider<String> = provider { "${project.extra["preReleaseVersion"]}" }
 
 val resourcesBundleProvider: Provider<String> = provider { "${project.extra["resourcesBundle"]}" }
@@ -102,11 +102,29 @@ setMainResources(resourcesBundleProvider)
 buildConfig {
     packageName.set(project.group.toString())
 
+    // Full Name - Shows in some logs - e.g "Veadotube Touch Portal Plugin"
     buildConfigField("String", "NAME", "\"$pluginFullName\"")
+    // Short Name - What shows in Touch Portal - e.g. "Veadotube Plugin"
     buildConfigField("String", "NAME_SHORT", "\"$pluginShortName\"")
-    buildConfigField("String", "VERSION_BASE_NAME", "\"${project.extra["versionBaseName"]}\"")
-    buildConfigField("String", "VERSION_NAME", provider { "\"${project.extra["versionName"]}\"" })
+
+    // Version as Long - 1.7.11 > 1711
     buildConfigField("long", "VERSION_CODE", "${project.extra["versionCode"]}")
+    // Version Base Name - e.g. "1.7.11"
+    buildConfigField("String", "VERSION_NAME_BASE", "\"${project.extra["versionBaseName"]}\"")
+    // Version Full Name - including any extra types, etc. - e.g. "1.7.11-snapshot.20241228-2119+debug"
+    buildConfigField("String", "VERSION_NAME_FULL", provider { "\"${project.extra["versionName"]}\"" })
+
+    // Is Release Build - true/false
+    buildConfigField("boolean", "BUILD_IS_RELEASE", "${project.extra["releaseBuild"]}")
+
+    // Pre Release Version - "ALPHA", "BETA", "SNAPSHOT", or blank
+    buildConfigField("String", "BUILD_PRE_RELEASE_VERSION", provider { "\"${project.extra["preReleaseVersion"]}\"" })
+
+    // Build Resources Bundle Value - "INFO", "TRACE", "DEBUG"
+    buildConfigField("String", "BUILD_RESOURCES_BUNDLE", provider { "\"${project.extra["resourcesBundle"]}\"" })
+
+    // URL to the JSON file that lists versions of the Plugin
+    buildConfigField("String", "UPDATE_CHECK_RELEASES_URI", "\"https://dissonantau.github.io/veadoTouchPortalPlugin/releases.json\"")
 }
 
 
@@ -131,6 +149,19 @@ dependencies {
     //implementation(libs.kotlinx.coroutines.bom)
     //implementation(libs.kotlinx.coroutines.core)
     //runtimeOnly(libs.kotlinx.coroutines.slf4j)
+
+    // HTTP/Websocket Framework
+    implementation(platform(libs.ktor.client.bom))
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.websockets)
+    implementation(libs.ktor.client.logging)
+    // HTTP Engine
+    implementation(libs.ktor.client.cio) // No HTTP/2 Support, fine for Veadotube Websockets
+    // JSON - probably best to use Probably KotlinX for JSON
+    implementation(libs.ktor.serialization.json)
+    implementation(libs.ktor.serialization)
+    implementation(platform(libs.kotlinx.serialization.bom))
+    implementation(libs.kotlinx.serialization.json)
 
     // Log4J
     implementation(platform(libs.log4j.bom))
@@ -239,7 +270,7 @@ tasks {
             println("Set to Beta Trace Build")
             project.extra["releaseBuild"] = false
             project.extra["resourcesBundle"] = "TRACE"
-            project.extra["preReleaseVersion"] = "beta"
+            project.extra["preReleaseVersion"] = "BETA"
         }
 
         finalizedBy(
@@ -254,7 +285,7 @@ tasks {
             println("Set to Alpha Trace Build")
             project.extra["releaseBuild"] = false
             project.extra["resourcesBundle"] = "TRACE"
-            project.extra["preReleaseVersion"] = "alpha"
+            project.extra["preReleaseVersion"] = "ALPHA"
         }
 
         finalizedBy(
@@ -269,7 +300,7 @@ tasks {
             println("Set to Beta Debug Build")
             project.extra["releaseBuild"] = false
             project.extra["resourcesBundle"] = "DEBUG"
-            project.extra["preReleaseVersion"] = "beta"
+            project.extra["preReleaseVersion"] = "BETA"
         }
 
         finalizedBy(
@@ -284,7 +315,7 @@ tasks {
             println("Set to Alpha Debug Build")
             project.extra["releaseBuild"] = false
             project.extra["resourcesBundle"] = "DEBUG"
-            project.extra["preReleaseVersion"] = "alpha"
+            project.extra["preReleaseVersion"] = "ALPHA"
         }
 
         finalizedBy(
@@ -299,7 +330,7 @@ tasks {
             println("Set to Beta Debug Build")
             project.extra["releaseBuild"] = false
             project.extra["resourcesBundle"] = "INFO"
-            project.extra["preReleaseVersion"] = "beta"
+            project.extra["preReleaseVersion"] = "BETA"
         }
 
         finalizedBy(
@@ -314,7 +345,7 @@ tasks {
             println("Set to Alpha Debug Build")
             project.extra["releaseBuild"] = false
             project.extra["resourcesBundle"] = "INFO"
-            project.extra["preReleaseVersion"] = "alpha"
+            project.extra["preReleaseVersion"] = "ALPHA"
         }
 
         finalizedBy(
@@ -329,6 +360,7 @@ tasks {
             println("Set to Release Build")
             project.extra["releaseBuild"] = true
             project.extra["resourcesBundle"] = "INFO"
+            project.extra["preReleaseVersion"] = ""
         }
 
         finalizedBy(
@@ -391,7 +423,7 @@ fun generateSemanticVersion(
             val preReleaseVersion = preReleaseVersionProvider.get()
             println("Pre-release Version: $preReleaseVersion")
             val pattern = when (preReleaseVersion) {
-                "beta" -> "yyyyMMdd"
+                "BETA" -> "yyyyMMdd"
                 else -> "yyyyMMdd-HHmm"
             }
 
@@ -405,7 +437,7 @@ fun generateSemanticVersion(
             } else ""
 
 
-            "$versionMajor.$versionMinor.$versionPatch-$preReleaseVersion.${timeOfBuild}$metadata"
+            "$versionMajor.$versionMinor.$versionPatch-${preReleaseVersion.lowercase()}.${timeOfBuild}$metadata"
         }
 
     project.extra["versionName"] = genVersionSemantic
@@ -425,7 +457,6 @@ fun setMainResources(release: Provider<String>) {
                 "INFO" -> srcDir(resourcesRelease)
                 "TRACE" -> srcDir(resourcesTrace)
                 "DEBUG" -> srcDir(resourcesDebug)
-                "SNAPSHOT" -> srcDir(resourcesDebug)
                 else -> throw IllegalArgumentException("Missing Resources Tag")
             }
         }
