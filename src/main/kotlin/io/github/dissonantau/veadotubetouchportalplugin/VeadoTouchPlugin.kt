@@ -18,6 +18,9 @@ import io.github.dissonantau.bleatkan.connection.ConnectionListener
 import io.github.dissonantau.bleatkan.instance.*
 import io.github.dissonantau.bleatkan.message.VeadoRequest
 import io.github.dissonantau.bleatkan.message.ResultMessage
+import io.github.dissonantau.veadotubetouchportalplugin.updatechecker.PluginUpdateChecker
+import io.github.dissonantau.veadotubetouchportalplugin.updatechecker.UpdateCheckResult
+import io.github.dissonantau.veadotubetouchportalplugin.updatechecker.UpdateCheckResultListener
 import io.github.dissonantau.bleatkan.message.ResultPayload.ResultPayloadState as BleatkanStatePeek
 import io.github.dissonantau.bleatkan.message.ResultPayload.ResultPayloadStateList as BleatkanStateList
 import io.github.dissonantau.bleatkan.message.ResultPayload.ResultPayloadPng as BleatkanStateThumbnail
@@ -30,7 +33,7 @@ import io.github.dissonantau.bleatkan.message.ResultPayload.ResultPayloadPng as 
 )
 class VeadoTouchPlugin(parallelizeActions: Boolean) :
     TouchPortalPlugin(parallelizeActions), TouchPortalPlugin.TouchPortalPluginListener,
-    InstancesListener, ConnectionListener {
+    InstancesListener, ConnectionListener, UpdateCheckResultListener {
 
 
     companion object {
@@ -38,8 +41,6 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         @JvmStatic
         private val LOGGER =
             KotlinLogging.logger { TouchPortalPlugin::class.java.name }
-
-        private const val PLUGIN_VERSION = BuildConfig.VERSION_NAME
 
         /**
          * Avatar State String RegEx
@@ -76,7 +77,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
 
         @JvmStatic
         fun main(args: Array<String>) {
-            LOGGER.debug { "Veadotube Plugin Launched with ${args.size} args: ${args.toList()}" }
+            LOGGER.debug { "${BuildConfig.NAME} Launched with ${args.size} args: ${args.toList()}" }
 
             LOGGER.debug { "Kotlin Version            : ${KotlinVersion.CURRENT} " }
             LOGGER.debug { "Java Version              : ${System.getProperty("java.version")} " }
@@ -94,11 +95,9 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
 
                 if (PluginHelper.COMMAND_START == args[0]) {
                     LOGGER.info {
-                        "Veadotube Plugin Starting - Plugin Version: $PLUGIN_VERSION - Java Version ${
-                            System.getProperty(
-                                "java.version"
-                            )
-                        }"
+                        "${BuildConfig.NAME_SHORT} Starting - Plugin Version: ${
+                            BuildConfig.VERSION_NAME_FULL
+                        } - Java Version ${System.getProperty("java.version")}"
                     }
 
                     veadotubePlugin = VeadoTouchPlugin(true)
@@ -719,6 +718,26 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
 
         if (tpInfoMessage.status == "paired") {
 
+            LOGGER.debug { "Plugin ${BuildConfig.NAME_SHORT} - Started and Connected to Touch Portal" }
+
+            LOGGER.debug { "Plugin Version Full Name:      ${BuildConfig.VERSION_NAME_FULL}" }
+
+            LOGGER.debug { "Plugin Java VM Version:        ${System.getProperty("java.version")}" }
+
+            LOGGER.debug {
+                "Plugin Version Code / Base:    ${
+                    BuildConfig.VERSION_CODE.toString().padStart(4, '0')
+                } / ${BuildConfig.VERSION_NAME_BASE}"
+            }
+            LOGGER.debug { "Plugin is Build Release:       ${BuildConfig.BUILD_IS_RELEASE}" }
+            if (!BuildConfig.BUILD_IS_RELEASE)
+                LOGGER.debug { "Plugin Pre-release Version:    ${BuildConfig.BUILD_PRE_RELEASE_VERSION}" }
+
+            LOGGER.debug { "Plugin Build Resources Bundle: ${BuildConfig.BUILD_RESOURCES_BUNDLE}" }
+
+            LOGGER.debug { "Plugin Update/Releases URI:    ${BuildConfig.UPDATE_CHECK_RELEASES_URI}" }
+
+
             // Start Instance Manager - Watches Veadotube Instance Folder and sends events to the receiver
             LOGGER.trace { "Construct Instance Manager" }
             instanceManager = InstancesManager(this)
@@ -728,9 +747,72 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
             triggerAvatarUpdatedEvent()
 
             updateTPConnectionSettingInfo()
+
+            // Run Plugin Update Check
+            runUpdateCheck()
         }
     }
 
+    private var updateChecker: PluginUpdateChecker? = null
+
+    /**
+     * Check for newer Plugin Versions
+     */
+    private fun runUpdateCheck() {
+        updateChecker = PluginUpdateChecker(veadotubePlugin, BuildConfig.UPDATE_CHECK_RELEASES_URI)
+    }
+
+    /**
+     * Process Received Update Check Result
+     */
+    override fun onUpdateCheckResult(result: UpdateCheckResult) {
+        //TODO handle result
+
+        if (BuildConfig.BUILD_IS_RELEASE) {
+            // Running Main Release
+            val recommendedMainRelease = result.mainTrack.recommendedRelease ?: result.mainTrack.latestRelease
+
+            if (recommendedMainRelease != BuildConfig.VERSION_NAME_FULL) {
+                // Diff Version
+
+                // Check Version number is higher
+
+                // Send notification
+
+            }
+
+        } else {
+            // Running Dev Release
+            // Get Dev Track, then Main if it doesn't exist
+            val recommendedDevRelease = result.devTrack?.recommendedRelease ?: result.devTrack?.latestRelease
+            val recommendedMainRelease = result.mainTrack.recommendedRelease ?: result.mainTrack.latestRelease
+
+            if (recommendedDevRelease != BuildConfig.VERSION_NAME_FULL) {
+                // Diff Version
+
+
+                // Check Version number is higher
+
+                // Check if Main is higher than Dev Version
+
+                // Compare Current vs selected Dev/Main
+
+                // Send notification
+
+            }
+
+        }
+
+        // De-reference updateChecker
+        updateChecker = null
+    }
+
+    /**
+     * Process Received Update Check Error
+     */
+    override fun onUpdateCheckError(exception: Exception) {
+        //Error
+    }
 
     private fun updatePrimaryConnection(primaryNameOverwriteUpdated: Boolean = false) {
         if (instanceMap.isEmpty()) {
