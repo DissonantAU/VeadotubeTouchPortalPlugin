@@ -20,7 +20,7 @@ ktor = "3.0.1"
 serialization-json = "1.7.2"
 
 # 4.5.0-M2
-commons-collections4 = "4.5.0-M2"
+commons-collections4 = "4.5.0-M3"
 
 # 2.23.1
 log4j = "2.23.1"
