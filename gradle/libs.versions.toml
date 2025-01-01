@@ -1,26 +1,22 @@
 [versions]
 
 bleatkan = "0.7.+"
-
-gmazzoBuildconfig = "5.+"
-
 touchportalSDK = "8.3.+"
-
 
 # 2.0.20 > 2.0.21
 kotlin = "2.0.21"
-
 # 1.9.0
 coroutines = "1.9.0"
-
-# "2.3.12" > 3.0.1
+# 2.3.12 > 3.0.1
 ktor = "3.0.1"
-
 # 1.7.3
 serialization-json = "1.7.3"
 
+## Misc
+
 # 4.5.0-M2
 commons-collections4 = "4.5.0-M2"
+## Logging
 
 # 2.23.1
 log4j = "2.23.1"
@@ -29,11 +25,16 @@ slf4j = "2.0.16"
 # 7.0.0 - prev 5.1.4
 kotlinLogging = "7.0.0"
 
+## Testing
+
 # 5.11.0 - Prev 5.10.3
 jUnit = "5.11.0"
-
 # 1.13.12
 mockk = "1.13.12"
+
+## Build
+
+gmazzoBuildconfig = "5.+"
 
 
 [libraries]
@@ -73,9 +74,12 @@ ktor-serialization = { module = "io.ktor:ktor-serialization" }
 ktor-serialization-json = { module = "io.ktor:ktor-serialization-kotlinx-json" }
 ktor-client-mock = { module = "io.ktor:ktor-client-mock" }
 
+## Misc
+
 # https://mvnrepository.com/artifact/org.apache.commons/commons-collections4
 apache-commons-collections4 = { module = "org.apache.commons:commons-collections4", version.ref = "commons-collections4" }
 
+## Logging
 
 # https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-bom
 log4j-bom = { module = "org.apache.logging.log4j:log4j-bom", version.ref = "log4j" }
@@ -90,6 +94,8 @@ slf4j-api = { module = "org.slf4j:slf4j-api" }
 # https://mvnrepository.com/artifact/io.github.oshai/kotlin-logging-jvm
 logging-kotlin = { module = "io.github.oshai:kotlin-logging-jvm", version.ref = "kotlinLogging" }
 
+## Testing
+
 # https://mvnrepository.com/artifact/org.junit/junit-bom
 junit-bom = { module = "org.junit:junit-bom", version.ref = "jUnit" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
@@ -103,13 +109,11 @@ mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+
+## Build
 kotlin-gradle = { id = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 kotlin-serialization-gradle = { id = "org.jetbrains.kotlin.plugin.serialization:org.jetbrains.kotlin.plugin.serialization.gradle.plugin", version.ref = "kotlin" }
-
 gmazzo-buildconfig = { id = "com.github.gmazzo.buildconfig", version.ref = "gmazzoBuildconfig" }
 touchportal-plugin-packager = { id = "com.christophecvb.touchportal.plugin-packager", version.ref = "touchportalSDK" }
 
 [bundles]
-
-
-
