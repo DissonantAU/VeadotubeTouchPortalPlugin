@@ -146,9 +146,9 @@ dependencies {
     implementation(platform(libs.kotlin.gradle.plugins.bom))
 
     // Coroutines - concurrent library
-    //implementation(libs.kotlinx.coroutines.bom)
-    //implementation(libs.kotlinx.coroutines.core)
-    //runtimeOnly(libs.kotlinx.coroutines.slf4j)
+    implementation(libs.kotlinx.coroutines.bom)
+    implementation(libs.kotlinx.coroutines.core)
+    runtimeOnly(libs.kotlinx.coroutines.slf4j)
 
     // HTTP/Websocket Framework
     implementation(platform(libs.ktor.client.bom))
@@ -183,7 +183,7 @@ dependencies {
 
     /* Testing Dependencies */
     testImplementation(libs.kotlin.test)
-    //testImplementation(libs.kotlinx.coroutines.debug)
+    testImplementation(libs.kotlinx.coroutines.debug)
     testImplementation(libs.kotlin.test.junit5)
 
     testImplementation(platform(libs.junit.bom))
