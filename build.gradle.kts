@@ -168,6 +168,11 @@ dependencies {
     // https://mvnrepository.com/artifact/org.apache.commons/commons-collections4
     implementation(libs.apache.commons.collections4)
 
+    // SemVer - for comparing versions in Update Checker
+    // https://mvnrepository.com/artifact/net.swiftzer.semver/semver
+    implementation(libs.semver)
+
+
     /* Logging Dependencies */
     // Log4J
     implementation(platform(libs.log4j.bom))

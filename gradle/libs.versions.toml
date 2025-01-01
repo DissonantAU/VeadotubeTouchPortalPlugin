@@ -16,6 +16,9 @@ serialization-json = "1.7.3"
 
 # 4.5.0-M2
 commons-collections4 = "4.5.0-M2"
+# 2.0.0
+semver = "2.0.0"
+
 ## Logging
 
 # 2.23.1
@@ -78,6 +81,9 @@ ktor-client-mock = { module = "io.ktor:ktor-client-mock" }
 
 # https://mvnrepository.com/artifact/org.apache.commons/commons-collections4
 apache-commons-collections4 = { module = "org.apache.commons:commons-collections4", version.ref = "commons-collections4" }
+
+# https://mvnrepository.com/artifact/net.swiftzer.semver/semver
+semver = { module = "net.swiftzer.semver:semver", version.ref = "semver" }
 
 ## Logging
 
