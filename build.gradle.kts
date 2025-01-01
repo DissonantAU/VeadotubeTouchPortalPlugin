@@ -163,6 +163,12 @@ dependencies {
     implementation(platform(libs.kotlinx.serialization.bom))
     implementation(libs.kotlinx.serialization.json)
 
+
+    // Apache Commons Collections 4 - mainly for LRUMap
+    // https://mvnrepository.com/artifact/org.apache.commons/commons-collections4
+    implementation(libs.apache.commons.collections4)
+
+    /* Logging Dependencies */
     // Log4J
     implementation(platform(libs.log4j.bom))
     implementation(libs.log4j.core)
@@ -173,9 +179,6 @@ dependencies {
     implementation(libs.slf4j.api)
     implementation(libs.logging.kotlin) //Kotlin Wrapper for slf4j
 
-    // Apache Commons Collections 4 - mainly for LRUMap
-    // https://mvnrepository.com/artifact/org.apache.commons/commons-collections4
-    implementation(libs.apache.commons.collections4)
 
 
     /* Testing Dependencies */
