@@ -23,7 +23,7 @@ serialization-json = "1.7.2"
 commons-collections4 = "4.5.0-M2"
 
 # 2.23.1
-log4j = "2.23.1"
+log4j = "2.24.3"
 # 2.0.16
 slf4j = "2.0.16"
 # 7.0.0 - prev 5.1.4
