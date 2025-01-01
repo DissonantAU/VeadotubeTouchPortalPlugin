@@ -3,13 +3,14 @@
 bleatkan = "0.7.+"
 touchportalSDK = "8.3.+"
 
-# 2.0.20 > 2.0.21
-kotlin = "2.0.21"
-# 1.9.0
-coroutines = "1.9.0"
-# 2.3.12 > 3.0.1
-ktor = "3.0.1"
-# 1.7.3
+# 2.0.21 > 2.1.0
+kotlin = "2.1.0"
+# 1.9.0 > 1.10.1
+coroutines = "1.10.1"
+
+# 3.0.1 > 3.0.3
+ktor = "3.0.3"
+# 1.7.2 > 1.7.3
 serialization-json = "1.7.3"
 
 ## Misc
@@ -115,10 +116,9 @@ mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
-
-## Build
 kotlin-gradle = { id = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 kotlin-serialization-gradle = { id = "org.jetbrains.kotlin.plugin.serialization:org.jetbrains.kotlin.plugin.serialization.gradle.plugin", version.ref = "kotlin" }
+
 gmazzo-buildconfig = { id = "com.github.gmazzo.buildconfig", version.ref = "gmazzoBuildconfig" }
 touchportal-plugin-packager = { id = "com.christophecvb.touchportal.plugin-packager", version.ref = "touchportalSDK" }
 
