@@ -19,8 +19,11 @@ import io.github.dissonantau.bleatkan.instance.*
 import io.github.dissonantau.bleatkan.message.VeadoRequest
 import io.github.dissonantau.bleatkan.message.ResultMessage
 import io.github.dissonantau.veadotubetouchportalplugin.updatechecker.PluginUpdateChecker
+import io.github.dissonantau.veadotubetouchportalplugin.updatechecker.ReleaseData
 import io.github.dissonantau.veadotubetouchportalplugin.updatechecker.UpdateCheckResult
 import io.github.dissonantau.veadotubetouchportalplugin.updatechecker.UpdateCheckResultListener
+import kotlinx.serialization.json.Json
+import net.swiftzer.semver.SemVer
 import io.github.dissonantau.bleatkan.message.ResultPayload.ResultPayloadState as BleatkanStatePeek
 import io.github.dissonantau.bleatkan.message.ResultPayload.ResultPayloadStateList as BleatkanStateList
 import io.github.dissonantau.bleatkan.message.ResultPayload.ResultPayloadPng as BleatkanStateThumbnail
@@ -104,7 +107,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
 
                     setUpShutdownHook()
 
-                    // Initialize the Plugin (by lazy will execute when we interact with the val)
+                    // Initialize the Plugin
                     veadotubePlugin.initializePlugin()
 
                 }
@@ -123,6 +126,184 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
                 }
             })
 
+        }
+
+        /**
+         * JSON De/serializer
+         */
+        private val jsonDeserializer = Json {
+            ignoreUnknownKeys = true
+            useAlternativeNames = false
+        }
+
+        fun calculateNextUpdateRelease(
+            currentRelease: SemVer,
+            recommendedMainRelease: SemVer,
+            updateCheckResult: UpdateCheckResult
+        ): ReleaseData? {
+
+            val currentReleaseMajorVer = currentRelease.major
+            val currentRecommendedIsSameMajorVer =
+                currentReleaseMajorVer == recommendedMainRelease.major
+
+            // Scan Version list of Major Version for any Recommended Next Versions
+            val versionListMapString = updateCheckResult.mainTrack.releaseMapByVersionString
+            val versionListGroupMap = updateCheckResult.mainTrack.releaseListGroupMap
+
+            // Try and get current version from the Release List
+            versionListMapString[currentRelease.toString()]?.let { currentReleaseData ->
+                // Release Matching Current found > Find Recommended release
+
+                currentReleaseData.recommendedNextRelease?.let { recommendedNextString ->
+                    // Recommended version found, get release info
+                    versionListMapString[recommendedNextString]?.let { return it }
+                }
+            }
+            // Continues if Current Release doesn't have Recommended Next Release or version info not found
+
+
+            // Go through update list and look for next recommended updates
+            // the same major version track
+            versionListGroupMap[currentReleaseMajorVer]?.listIterator()?.let { listIterator ->
+                for (release in listIterator) {
+                    // Skip if less than current
+                    if (release.versionSemantic < currentRelease) continue
+                    // If Next Ver is Same Major Version, break if we pass it
+                    if (currentRecommendedIsSameMajorVer && release.versionSemantic > recommendedMainRelease) break
+
+                    // If Next Ver is Same Major Version, set it and return if we find it
+                    if (currentRecommendedIsSameMajorVer && release.versionSemantic == recommendedMainRelease) {
+                        return release
+                    }
+
+                    // Try and find recommendedNextRelease - continues if string is null, or string doesn't match a next version
+                    release.recommendedNextRelease?.let { recommendedNextString ->
+                        // Recommended version found, get release info
+                        versionListMapString[recommendedNextString]?.let { return it }
+                    }
+                }
+            }
+
+            // If updateRelease not set by now, fall back to recommendedMainRelease
+            // Returns Null if not found
+            return versionListMapString[currentRelease.toString()]
+        }
+
+
+        fun calculateNextUpdateDev(
+            currentRelease: SemVer,
+            recommendedMainRelease: SemVer?,
+            recommendedDevRelease: SemVer?,
+            updateCheckResult: UpdateCheckResult
+        ): ReleaseData? {
+            // If recommended releases are the same, return null (Main Ver check returns same)
+            if (recommendedMainRelease == recommendedDevRelease) return null
+
+            // If null, we can't find any recommended updates (Also smart casts to non-nullable
+            if (updateCheckResult.devTrack == null) return null
+
+            val currentReleaseMajorVer = currentRelease.major
+
+            val currentRecommendedDevSameMajorVer =
+                currentReleaseMajorVer == recommendedDevRelease?.major
+
+            // Try and get current version from the Release List
+            updateCheckResult.devTrack.releaseMapByVersionString[currentRelease.toString()]
+                ?.let { currentReleaseData ->
+                    // Release Matching Current found > Find Recommended release
+
+                    currentReleaseData.recommendedNextRelease?.let { recommendedNextString ->
+                        // Recommended version found, get release info
+                        return getMainOrPreReleaseByVersionString(
+                            recommendedNextString,
+                            updateCheckResult.mainTrack,
+                            updateCheckResult.devTrack
+                        )
+                    }
+                }
+            // Continues if Current Release doesn't have Recommended Next Release or version info not found
+
+
+            val versionListGroupMap = updateCheckResult.mainTrack.releaseListGroupMap
+            var recommendedVersionString: String? = null
+
+            // Go through update list and look for next recommended updates
+            // the same major version track
+            versionListGroupMap[currentReleaseMajorVer]?.listIterator()?.let { listIterator ->
+                for (release in listIterator) {
+                    // Skip if less than current
+                    if (release.versionSemantic < currentRelease) continue
+
+                    // If Next Ver is Same Major Version, break if we pass it
+                    if (currentRecommendedDevSameMajorVer &&
+                        (recommendedDevRelease != null && release.versionSemantic > recommendedDevRelease)
+                    ) break
+
+                    // If Next Ver is Same Major Version, set it and return if we find it
+                    if (currentRecommendedDevSameMajorVer && release.versionSemantic == recommendedDevRelease) {
+                        return release
+                    }
+
+                    // Try and find recommendedNextRelease
+                    if (release.recommendedNextRelease != null) {
+                        // Recommended version found, get release info
+                        recommendedVersionString = release.recommendedNextRelease
+                        break
+                    }
+                }
+            }
+
+
+            // Ver string - check if pre-release, then try and find the version and return
+            recommendedVersionString?.let { recommendedVerString ->
+                return getMainOrPreReleaseByVersionString(
+                    recommendedVerString,
+                    updateCheckResult.mainTrack,
+                    updateCheckResult.devTrack
+                )
+            }
+
+            // Returns Null if not found
+            return null
+        }
+
+        /**
+         * Checks semVerString:
+         * - If pre-release semVer, looks in devBranchData.releaseMapByVersionString for Release matching String.
+         * - If not pre-release semVer, looks in mainBranchData.releaseMapByVersionString for Release matching String.
+         *
+         * If no match found, returns null
+         */
+        fun getMainOrPreReleaseByVersionString(
+            semVerString: String,
+            mainBranchData: ReleaseBranchData,
+            devBranchData: ReleaseBranchData
+        ): ReleaseData? {
+            return if (semVerStringIsPreRelease(semVerString))
+                devBranchData.releaseMapByVersionString[semVerString]
+            else // Isn't Pre-release
+                mainBranchData.releaseMapByVersionString[semVerString]
+        }
+
+        /**
+         * Quick check for seeing if SemVer String is pre-release (has a dash before any +)
+         *
+         * e.g.
+         * - 1.2.3-beta -> IS Pre-Release
+         * - 1.2.3+abc-123 -> IS ***NOT*** Pre-Release
+         * - 1.2.3-beta+abc-123 -> IS Pre-Release
+         *
+         */
+        fun semVerStringIsPreRelease(semVerString: String): Boolean {
+            val dashPos = semVerString.indexOf('-')
+            if (dashPos > 0) {
+                // If String contains dash, could be a pre-release
+                val plusPos = semVerString.indexOf('+')
+
+                // Plus also exists, and isn't after first dash - definitely pre-release
+                return (plusPos < 0 || dashPos < plusPos)
+            }
+            return false
         }
 
     }
@@ -766,42 +947,182 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
      * Process Received Update Check Result
      */
     override fun onUpdateCheckResult(result: UpdateCheckResult) {
-        //TODO handle result
 
-        if (BuildConfig.BUILD_IS_RELEASE) {
-            // Running Main Release
-            val recommendedMainRelease = result.mainTrack.recommendedRelease ?: result.mainTrack.latestRelease
+        // Get Main Release Ver
+        val recommendedMainReleaseString = result.mainTrack.recommendedRelease ?: result.mainTrack.latestRelease
 
-            if (recommendedMainRelease != BuildConfig.VERSION_NAME_FULL) {
-                // Diff Version
+        val currentReleaseVersionString = BuildConfig.VERSION_NAME_FULL
+        LOGGER.trace { "onUpdateCheckResult - Current: $currentReleaseVersionString - Recommended: $recommendedMainReleaseString" }
 
-                // Check Version number is higher
+        var updateAvailable = false
+        var updateRelease: ReleaseData? = null
 
-                // Send notification
+
+        when {
+            BuildConfig.BUILD_IS_RELEASE -> {
+                // Running Main Release
+
+                if (recommendedMainReleaseString != currentReleaseVersionString) {
+                    // Version Strings don't match
+                    val currentReleaseSemVer = SemVer.parse(currentReleaseVersionString)
+                    val recommendedMainReleaseSemVer = SemVer.parse(recommendedMainReleaseString)
+
+                    // Check Version number is higher
+                    if (recommendedMainReleaseSemVer > currentReleaseSemVer) {
+                        // Recommended Main Release SemVer is newer then current
+                        updateAvailable = true
+
+                        // Scan Version list of Major Version for any Recommended Next Versions
+                        LOGGER.debug { "onUpdateCheckResult - Current Version ($currentReleaseVersionString) Is Older than Recommended ($recommendedMainReleaseString)" }
+
+                        val sortedMainReleaseList = result.mainTrack.releaseMapBySemVer
+
+                        // Try and get current version from the Main Release List
+                        val currentReleaseData = sortedMainReleaseList[currentReleaseSemVer]
+
+                        if (currentReleaseData == null) {
+                            // No Release Matching Current found > Get First version that is equal to or greater than
+                            // this the current one from the List of Versions in the same Major release
+                            updateRelease =
+                                result.mainTrack.releaseListGroupMap[currentReleaseSemVer.major]
+                                    ?.find { it.versionSemantic >= currentReleaseSemVer }
+                        } else {
+                            // Release Matching Current found > Find Recommended release
+                            updateRelease =
+                                currentReleaseData.recommendedNextRelease?.let { currentReleaseRecommendedNext ->
+                                    // Recommended version found, get release info
+                                    sortedMainReleaseList[SemVer.parse(currentReleaseRecommendedNext)]
+                                }
+                        }
+
+                        //If updateRelease not set by now, fall back to recommendedMainRelease
+                        if (updateRelease == null) {
+                            updateRelease = sortedMainReleaseList[recommendedMainReleaseSemVer]
+                        }
+
+                    }
+
+                }
 
             }
 
-        } else {
-            // Running Dev Release
-            // Get Dev Track, then Main if it doesn't exist
-            val recommendedDevRelease = result.devTrack?.recommendedRelease ?: result.devTrack?.latestRelease
-            val recommendedMainRelease = result.mainTrack.recommendedRelease ?: result.mainTrack.latestRelease
+            else -> {
+                // Running Dev Release
+                // Get Dev Track, then Main if it doesn't exist
+                val recommendedDevReleaseString = result.devTrack?.recommendedRelease ?: result.devTrack?.latestRelease
 
-            if (recommendedDevRelease != BuildConfig.VERSION_NAME_FULL) {
-                // Diff Version
+                var upgradeToMain = false
+
+                if (recommendedDevReleaseString != currentReleaseVersionString || recommendedMainReleaseString != currentReleaseVersionString) {
+                    // Diff Version String
+                    val currentReleaseSemVer = SemVer.parse(currentReleaseVersionString)
+                    val recommendedMainReleaseSemVer = SemVer.parse(recommendedMainReleaseString)
+                    val recommendedDevReleaseSemVer = recommendedDevReleaseString?.let { SemVer.parse(it) }
 
 
-                // Check Version number is higher
+                    if (recommendedDevReleaseSemVer != null) {
+                        // Dev Release Version Exists
+                        val latestDevVerNewerThanLatestMain = recommendedDevReleaseSemVer > recommendedMainReleaseSemVer
+                        val latestDevMajorNewerThanLatestMain =
+                            recommendedDevReleaseSemVer.major > recommendedMainReleaseSemVer.major
+                        val latestDevMajorSameAsLatestMain =
+                            recommendedDevReleaseSemVer.major == recommendedMainReleaseSemVer.major
 
-                // Check if Main is higher than Dev Version
+                        val latestMainVerNewerThanLatestDev = recommendedDevReleaseSemVer < recommendedMainReleaseSemVer
+                        val latestMainMajorNewerThanLatestDev =
+                            recommendedDevReleaseSemVer.major < recommendedMainReleaseSemVer.major
 
-                // Compare Current vs selected Dev/Main
+                        val latestMainMajorSameOrNewerThanCurrent =
+                            recommendedMainReleaseSemVer.major >= currentReleaseSemVer.major
 
-                // Send notification
+                        val latestDevMajorSameOrNewerThanCurrent =
+                            recommendedDevReleaseSemVer.major >= currentReleaseSemVer.major
 
+                        val latestDevMajorSameAsCurrent =
+                            recommendedDevReleaseSemVer.major == currentReleaseSemVer.major
+
+                        if (!latestDevMajorSameAsCurrent) upgradeToMain = true
+
+                        if (latestDevVerNewerThanLatestMain) {
+                            // Latest Dev Release is newer than Main
+
+                            if (latestMainMajorSameOrNewerThanCurrent) upgradeToMain = true
+
+                        } else {
+                            // Latest Dev Release is same or older than Main > Should upgrade to Main
+                            upgradeToMain = true
+                        }
+
+                        //TODO
+
+                    }
+
+
+                    if (recommendedMainReleaseString != currentReleaseVersionString) {
+                        // Version Strings don't match
+
+                        // Check Version number is higher
+                        if (recommendedMainReleaseSemVer > currentReleaseSemVer) {
+                            // Recommended Main Release SemVer is newer then current
+                            updateAvailable = true
+
+                            val sortedMainReleaseList = result.mainTrack.releaseMapBySemVer
+
+                            // Try and get current version from the Main Release List
+                            val currentReleaseData = sortedMainReleaseList[currentReleaseSemVer]
+
+                            if (currentReleaseData == null) {
+                                // No Release Matching Current found > Get First version that is equal to or greater than
+                                // this the current one from the List of Versions in the same Major release
+                                updateRelease =
+                                    result.mainTrack.releaseListGroupMap[currentReleaseSemVer.major]
+                                        ?.find { it.versionSemantic >= currentReleaseSemVer }
+                            } else {
+                                // Release Matching Current found > Find Recommended release
+                                updateRelease =
+                                    currentReleaseData.recommendedNextRelease?.let { currentReleaseRecommendedNext ->
+                                        // Recommended version found, get release info
+                                        sortedMainReleaseList[SemVer.parse(currentReleaseRecommendedNext)]
+                                    }
+                            }
+
+                            //If updateRelease not set by now, fall back to recommendedMainRelease
+                            if (updateRelease == null) {
+                                updateRelease = sortedMainReleaseList[recommendedMainReleaseSemVer]
+                            }
+
+                        }
+
+                    }
+
+
+                    // TODO handle result
+
+                    // Check Version number is higher
+
+
+                    // Check if Main is higher than Dev Version
+
+                    // Compare Current vs selected Dev/Main
+
+
+                }
+
+            }
+        }
+
+
+
+        if (updateAvailable) {
+            // TODO Send notification
+
+            if (updateRelease != null) {
+                // flagged as Manual (eg Breaking update)
+                //updateManualRequired = true
             }
 
         }
+
 
         // De-reference updateChecker
         updateChecker = null
