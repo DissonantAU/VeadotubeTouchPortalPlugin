@@ -172,6 +172,14 @@ class VeadoTouchPluginTest {
     }
 
 
+    @Disabled
+    @Test
+    fun onUpdateCheckResult() {
+        //Currently just copied from onUpdateCheckResult
+
+
+    }
+
 
     @Test
     fun printListCheckResult() {
