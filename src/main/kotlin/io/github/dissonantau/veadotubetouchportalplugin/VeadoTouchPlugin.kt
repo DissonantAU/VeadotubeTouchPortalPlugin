@@ -139,6 +139,73 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
             useAlternativeNames = false
         }
 
+
+        /**
+         * Calculate and return Update Values for Update Notification
+         */
+        fun calculateUpdates(resultData: UpdateCheckResult): UpdateReleaseData {
+            // Current Release SemVer String
+            val currentReleaseVersionString = BuildConfig.VERSION_NAME_FULL
+            val currentReleaseSemVer = SemVer.parse(currentReleaseVersionString)
+            // Get Main Release Ver
+            val recommendedMainReleaseString =
+                resultData.mainTrack.recommendedRelease ?: resultData.mainTrack.latestRelease
+            val recommendedMainReleaseSemVer = SemVer.parse(recommendedMainReleaseString)
+
+
+            LOGGER.trace { "onUpdateCheckResult - Current: $currentReleaseVersionString - Recommended: $recommendedMainReleaseString" }
+
+            val updateData = UpdateReleaseData()
+
+            // Mainline Release Version Update Check
+            if (recommendedMainReleaseString != currentReleaseVersionString) {
+                // Version Strings don't match
+
+                // Check Version number is higher
+                if (currentReleaseSemVer < recommendedMainReleaseSemVer) {
+                    // Recommended Main Release SemVer is newer then current
+                    LOGGER.debug { "onUpdateCheckResult - Current Version ($currentReleaseVersionString) Is Older than Recommended ($recommendedMainReleaseString)" }
+
+                    calculateNextUpdateRelease(
+                        updateData,
+                        currentReleaseSemVer,
+                        recommendedMainReleaseSemVer,
+                        resultData,
+                    )
+                }
+            }
+
+            // Dev/Pre-release Version Update Check
+            if (!BuildConfig.BUILD_IS_RELEASE && resultData.devTrack != null) {
+                // Running Dev Release
+                // Get Dev Recommended Release then Latest if it doesn't exist
+                val recommendedDevReleaseString =
+                    resultData.devTrack.recommendedRelease ?: resultData.devTrack.latestRelease
+
+                if (recommendedDevReleaseString != currentReleaseVersionString) {
+                    // Strings don't match
+                    val recommendedDevReleaseSemVer = SemVer.parse(recommendedDevReleaseString)
+
+                    // Check New Version is higher
+                    if (currentReleaseSemVer < recommendedDevReleaseSemVer) {
+                        // Recommended Main Release SemVer is newer then current
+                        LOGGER.debug { "onUpdateCheckResult - Current Dev Version ($currentReleaseVersionString) Is Older than Recommended Dev ($recommendedDevReleaseSemVer)" }
+
+                        calculateNextUpdateDev(
+                            updateData,
+                            currentReleaseSemVer,
+                            recommendedMainReleaseSemVer,
+                            recommendedDevReleaseSemVer,
+                            resultData,
+                        )
+                    }
+                }
+            }
+
+            return updateData
+        }
+
+
         fun calculateNextUpdateRelease(
             updateData: UpdateReleaseData,
             currentRelease: SemVer,
@@ -161,7 +228,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
                 currentReleaseData.recommendedNextRelease?.let { recommendedNextString ->
                     // Recommended version found, get release info
                     versionListMapString[recommendedNextString]?.let {
-                        updateData.mainBranchReleaseData = it;
+                        updateData.mainBranchReleaseData = it
                         updateData.mainBranchUpdateAvailable = true
                         updateData.mainBranchManualUpdateRequired = currentReleaseData.recommendedNextReleaseRequiresManualUpdate
                         return
@@ -182,7 +249,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
 
                     // If we find an exact match for recommended version while scanning, return it
                     if (currentRecommendedIsSameMajorVer && release.versionSemantic == recommendedBranchRelease) {
-                        updateData.mainBranchReleaseData = release;
+                        updateData.mainBranchReleaseData = release
                         updateData.mainBranchUpdateAvailable = true
                         return
                     }
@@ -190,7 +257,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
                     release.recommendedNextRelease?.let { recommendedNextString ->
                         // Recommended version found, get release info
                         versionListMapString[recommendedNextString]?.let {
-                            updateData.mainBranchReleaseData = it;
+                            updateData.mainBranchReleaseData = it
                             updateData.mainBranchUpdateAvailable = true
                             updateData.mainBranchManualUpdateRequired = release.recommendedNextReleaseRequiresManualUpdate
                             return
@@ -265,8 +332,8 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
                     if (release.versionSemantic < currentRelease) continue
 
                     // If Next Ver is Same Major Version, break if we pass it
-                    if (currentRecommendedDevSameMajorVer &&
-                        (recommendedDevBranchRelease != null && release.versionSemantic > recommendedDevBranchRelease)
+                    if (currentRecommendedDevSameMajorVer && recommendedDevBranchRelease != null &&
+                        release.versionSemantic > recommendedDevBranchRelease
                     ) break
 
                     // If we find an exact match for recommended version while scanning, return it
