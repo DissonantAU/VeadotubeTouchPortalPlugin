@@ -5,25 +5,29 @@ package io.github.dissonantau.veadotubetouchportalplugin.updatechecker
 
 import kotlinx.serialization.*
 import net.swiftzer.semver.SemVer
+import java.net.URL
 import java.util.*
 
 
 @Serializable
 data class UpdateCheckResult(
     /**
-     * URL to Release Download Page
+     * URL to Release Download Page as a String
      *
      * e.g. "https://github.com/Author/project/releases"
-     * */
+     * @see urlReleases
+     */
     @SerialName("releasesUrl")
     val releasesURL: String,
-    /** URL to Latest Release Download Page
+    /**
+     * URL to Latest Release Download Page as a String
      *
      * _Optional_
      *
      * e.g. "https://github.com/Author/project/releases/latest"
      *
      * If Null, use [releasesURL]
+     * @see urlReleasesLatest
      */
     @SerialName("releasesLatestUrl")
     val releasesLatestURL: String? = null,
@@ -33,7 +37,7 @@ data class UpdateCheckResult(
      *
      * Contains latest & recommended versions, as well as release info for the Main Release
      */
-    @SerialName("mainBranch") val mainTrack: ReleaseBranchData,
+    @SerialName("mainBranch") val mainBranch: ReleaseBranchData,
     /**
      * Dev Release Branch Data
      *
@@ -41,8 +45,30 @@ data class UpdateCheckResult(
      *
      * Contains latest & recommended versions, as well as release info for the Development Release
      */
-    @SerialName("devBranch") val devTrack: ReleaseBranchData? = null
-)
+    @SerialName("devBranch") val devBranch: ReleaseBranchData? = null
+) {
+
+    /**
+     * URL to Release Download Page as URL
+     *
+     * e.g. "https://github.com/Author/project/releases"
+     * @see releasesURL
+     */
+    val urlReleases: URL by lazy { URL(releasesURL) }
+
+    /**
+     *  URL to Latest Release Download Page
+     *
+     * _Optional_
+     *
+     * e.g. "https://github.com/Author/project/releases/latest"
+     *
+     * If Null, use [releasesURL]
+     * @see releasesLatestURL
+     */
+    val urlReleasesLatest: URL? by lazy { releasesLatestURL?.let { URL(it) } }
+
+}
 
 @Serializable
 data class ReleaseBranchData(
@@ -133,27 +159,30 @@ data class ReleaseData(
      */
     @SerialName("ver") val version: String,
     /**
-     * URL to download Page for this Version
+     * URL to download page for this Version as String
      *
      * e.g. "https://github.com/Author/project/releases/latest"
+     * @see urlDownloadPage
      */
-    @SerialName("url") val pageUrl: String,
+    @SerialName("url") val downloadUrlPage: String,
     /**
-     * Direct Download URL for the External Java Version of this release
+     * Direct Download URL for the External Java Version of this release as a String
      *
      * Version that runs using an installed copy of Java 8
      *
      * e.g. "https://github.com/Author/project/download/version/plugin-externalJava.tpp"
+     * @see urlDownloadExternal
      */
-    @SerialName("urlDlExternal") val downloadExternalUrl: String? = null,
+    @SerialName("urlDlExternal") val downloadUrlExternal: String? = null,
     /**
-     * Direct Download URL for the Embedded Java Version of this release
+     * Direct Download URL for the Bundled Java Version of this release as a String
      *
-     * Version that runs using the Embedded version of Java in Touch Portal
+     * Version that runs using the Bundled version of Java in Touch Portal
      *
-     * e.g. "https://github.com/Author/project/download/version/plugin-embeddedJava.tpp"
+     * e.g. "https://github.com/Author/project/download/version/plugin-BundledJava.tpp"
+     * @see urlDownloadBundled
      */
-    @SerialName("urlDlEmbedded") val downloadEmbeddedUrl: String? = null,
+    @SerialName("urlDlBundled") val downloadUrlBundled: String? = null,
     /**
      * Recommended Next Release
      *
@@ -182,6 +211,34 @@ data class ReleaseData(
      * Lazily created. [version] must be a valid [Semantic Version](https://semver.org/spec/v2.0.0.html) or an error will be thrown
      */
     val versionSemantic: SemVer by lazy { SemVer.parse(version) }
+
+    /**
+     * URL to download page for this Version as URL
+     *
+     * e.g. "https://github.com/Author/project/releases/latest"
+     * @see downloadUrlPage
+     */
+    val urlDownloadPage: URL by lazy { URL(downloadUrlPage) }
+
+    /**
+     * Direct Download URL for the External Java Version of this release as a URL
+     *
+     * Version that runs using an installed copy of Java 8
+     *
+     * e.g. "https://github.com/Author/project/download/version/plugin-externalJava.tpp"
+     * @see downloadUrlExternal
+     */
+    val urlDownloadExternal: URL? by lazy { downloadUrlExternal?.let { URL(it) } }
+
+    /**
+     * Direct Download URL for the Bundled Java Version of this release as a URL
+     *
+     * Version that runs using the Bundled version of Java in Touch Portal
+     *
+     * e.g. "https://github.com/Author/project/download/version/plugin-BundledJava.tpp"
+     * @see downloadUrlBundled
+     */
+    val urlDownloadBundled: URL? by lazy { downloadUrlBundled?.let { URL(it) } }
 
     /**
      * Compares this object with the specified object for order. Returns zero if this object is equal
