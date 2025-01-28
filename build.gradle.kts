@@ -41,6 +41,10 @@ val mainClassPackage: String = "io.github.dissonantau.veadotubetouchportalplugin
 group = mainClassPackage
 tpPlugin.mainClassSimpleName.set(mainClassSimpleName)
 
+// Java Version to Target - Java 8 is default
+// Newer versions of TP use JRE 17 if you're able to use the included JVM
+project.extra["javaVersionTarget"] = 8
+tpPlugin.targetJvmVersion.set(provider { project.extra["javaVersionTarget"] as Int })
 
 /* Build Dirs */
 val buildsDir: Directory = rootProject.layout.projectDirectory.dir("pluginBuilds")
@@ -123,8 +127,18 @@ buildConfig {
     // Build Resources Bundle Value - "INFO", "TRACE", "DEBUG"
     buildConfigField("String", "BUILD_RESOURCES_BUNDLE", provider { "\"${project.extra["resourcesBundle"]}\"" })
 
+    // Java Target Specification - Minimum Version Targeted by JAR
+    buildConfigField("integer", "TARGET_JRE_SPEC", provider { "${project.extra["javaVersionTarget"]}" })
+
+    // Java JDK Specification - Major Version of the JDK this is Building the JAR
+    buildConfigField("integer", "BUILD_JDK_SPEC", provider { JavaVersion.current().majorVersion })
+
     // URL to the JSON file that lists versions of the Plugin
-    buildConfigField("String", "UPDATE_CHECK_RELEASES_URI", "\"https://dissonantau.github.io/veadoTouchPortalPlugin/releases.json\"")
+    buildConfigField(
+        "String",
+        "UPDATE_CHECK_RELEASES_URI",
+        "\"https://dissonantau.github.io/veadoTouchPortalPlugin/releases.json\""
+    )
 }
 
 
@@ -142,7 +156,7 @@ dependencies {
     kapt(libs.touchportal.plugin.sdk.processor)
 
     // Kotlin BOM
-    runtimeOnly(libs.kotlin.bom)
+    implementation(platform(libs.kotlin.bom))
     implementation(platform(libs.kotlin.gradle.plugins.bom))
 
     // Coroutines - concurrent library
@@ -185,7 +199,6 @@ dependencies {
     implementation(libs.logging.kotlin) //Kotlin Wrapper for slf4j
 
 
-
     /* Testing Dependencies */
     testImplementation(libs.kotlin.test)
     testImplementation(libs.kotlinx.coroutines.debug)
@@ -203,15 +216,19 @@ kotlin {
 
     compilerOptions {
         javaParameters = true // Needed for TP SDK to get annotated parameter names correctly
-        jvmTarget.set(JvmTarget.JVM_1_8)
+        //jvmTarget.set(JvmTarget.JVM_1_8)
+        //jvmTarget.set(JvmTarget.JVM_17)
         apiVersion.set(KotlinVersion.KOTLIN_2_0)
         languageVersion.set(KotlinVersion.KOTLIN_2_0)
     }
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+    //sourceCompatibility = JavaVersion.VERSION_1_8
+    //targetCompatibility = JavaVersion.VERSION_1_8
+
+    //sourceCompatibility = JavaVersion.VERSION_17
+    //targetCompatibility = JavaVersion.VERSION_17
 }
 
 tasks {
@@ -376,6 +393,21 @@ tasks {
         )
     }
 
+    register("buildCopyReleaseToPluginBuildsJVM17") {
+        group = "build"
+
+        doFirst {
+            println("Set to Release Build,JVM17")
+            project.extra["releaseBuild"] = true
+            project.extra["resourcesBundle"] = "INFO"
+            project.extra["preReleaseVersion"] = ""
+            project.extra["javaVersionTarget"] = 17
+        }
+
+        finalizedBy(
+            named("copyToPluginBuilds"),
+        )
+    }
 
     test {
         useJUnitPlatform()
