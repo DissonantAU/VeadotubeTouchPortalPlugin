@@ -1038,68 +1038,6 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         }
     }
 
-    private var updateChecker: PluginUpdateChecker? = null
-
-    /**
-     * Check for newer Plugin Versions
-     */
-    private fun runUpdateCheck() {
-        updateChecker = PluginUpdateChecker(veadotubePlugin, BuildConfig.UPDATE_CHECK_RELEASES_URI)
-    }
-
-    /**
-     * Process Received Update Check Result
-     */
-    override fun onUpdateCheckResult(resultData: UpdateCheckResult) {
-
-        //Calculate Update Version(s)
-        val updateData = calculateUpdates(resultData)
-
-
-        if (updateData.updateAvailable) {
-            // TODO Send notification
-            // Check flagged as Manual (eg Breaking update) > updateManualRequired = true
-
-            when {
-                updateData.mainBranchReleaseData != null && updateData.devBranchReleaseData != null -> {
-                    // Both Exist (Dev Version has update, Main also has update
-
-                }
-
-                updateData.mainBranchReleaseData != null && updateData.devBranchReleaseData == null -> {
-                    // Both Exist (Dev Version has update, Main also has update
-
-                }
-
-                updateData.mainBranchReleaseData == null && updateData.devBranchReleaseData != null -> {
-                    // Both Exist (Dev Version has update, Main also has update
-
-                }
-
-                else -> {
-                    // Neither Exist - shouldn't reach this
-                    LOGGER.warn { "Update Check has no release data but updateAvailable is true" }
-                }
-
-            }
-
-
-        }
-
-        // De-reference updateChecker
-        updateChecker = null
-    }
-
-
-    /**
-     * Process Received Update Check Error
-     */
-    override fun onUpdateCheckError(exception: Exception) {
-        // Error
-        LOGGER.error { "Error Checking for Updates: ${exception.message}" }
-        LOGGER.debug { "onUpdateCheckError - ${exception.message} : ${exception.stackTraceToString()}" }
-        // TODO Add some logic to display notification if Check fails over several runs
-    }
 
     private fun updatePrimaryConnection(primaryNameOverwriteUpdated: Boolean = false) {
         if (instanceMap.isEmpty()) {
@@ -2150,6 +2088,74 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
             LOGGER.debug { "Failed to Request Listener Stop for ${connection.connUri}: ${ex.message}" }
         }
     }
+
+
+    /* Start of functions for Update Checks */
+
+    private var updateChecker: PluginUpdateChecker? = null
+
+    /**
+     * Check for newer Plugin Versions
+     */
+    private fun runUpdateCheck() {
+        updateChecker = PluginUpdateChecker(veadotubePlugin, BuildConfig.UPDATE_CHECK_RELEASES_URI)
+    }
+
+    /**
+     * Process Received Update Check Result
+     */
+    override fun onUpdateCheckResult(resultData: UpdateCheckResult) {
+
+        //Calculate Update Version(s)
+        val updateData = calculateUpdates(resultData)
+
+
+        if (updateData.updateAvailable) {
+            // TODO Send notification
+            // Check flagged as Manual (eg Breaking update) > updateManualRequired = true
+
+            when {
+                updateData.mainBranchReleaseData != null && updateData.devBranchReleaseData != null -> {
+                    // Both Exist (Dev Version has update, Main also has update
+
+                }
+
+                updateData.mainBranchReleaseData != null && updateData.devBranchReleaseData == null -> {
+                    // Both Exist (Dev Version has update, Main also has update
+
+                }
+
+                updateData.mainBranchReleaseData == null && updateData.devBranchReleaseData != null -> {
+                    // Both Exist (Dev Version has update, Main also has update
+
+                }
+
+                else -> {
+                    // Neither Exist - shouldn't reach this
+                    LOGGER.warn { "Update Check has no release data but updateAvailable is true" }
+                }
+
+            }
+
+
+        }
+
+        // De-reference updateChecker
+        updateChecker = null
+    }
+
+
+    /**
+     * Process Received Update Check Error
+     */
+    override fun onUpdateCheckError(exception: Exception) {
+        // Error
+        LOGGER.error { "Error Checking for Updates: ${exception.message}" }
+        LOGGER.debug { "onUpdateCheckError - ${exception.message} : ${exception.stackTraceToString()}" }
+        // TODO Add some logic to display notification if Check fails over several runs
+    }
+
+    /* End of functions for Update Checks */
 
 }
 
