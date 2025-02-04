@@ -182,7 +182,7 @@ class VeadoTouchPluginTest {
 
 
     @Test
-    fun printListCheckResult() {
+    fun printReleaseCheckResult() {
         //
 
 
@@ -245,6 +245,122 @@ class VeadoTouchPluginTest {
 
     }
 
+    //@Disabled
+    @Test
+    fun calculateUpdates() {
+        println("##############################")
+        println("calculateUpdates Start")
+
+        val testData = testUpdateCheckResult
+        val mainTrackData = testUpdateCheckResult.mainTrack
+        val devTrackData = testUpdateCheckResult.devTrack!! //Test Data has DevTrack, assert non-null
+
+        val latestRelease = "1.1.3"
+        val latestReleaseSemVer = SemVer.parse(latestRelease)
+
+        val recommendedRelease = "1.0.2"
+        val recommendedReleaseSemVer = SemVer.parse(recommendedRelease)
+
+        val latestDevRelease = "1.1.3-beta"
+        val latestDevReleaseSemVer = SemVer.parse(latestDevRelease)
+
+        val recommendedDevRelease = "0.7.2-beta"
+        val recommendedDevReleaseSemVer = SemVer.parse(recommendedDevRelease)
+
+        listOf(
+            CalcUpdateTest("0.6.0", "0.7.0"),
+            CalcUpdateTest("0.6.1", "0.7.1"), // 0.6.1 has no recommended, but 0.6.3 does
+            CalcUpdateTest("0.6.3", "0.7.1"), // Recommended is 0.7.1
+
+            // doesn't exist in list, should use 0.7.99 (next in same major ver)
+            CalcUpdateTest("0.6.4", "1.1.3", true),
+            CalcUpdateTest("0.6.5-beta", "1.1.3", true,"0.7.2-beta"),
+
+            CalcUpdateTest("0.7.0", "1.1.3", true), // 0.7.0 has no recommended, but 0.7.99 does
+            CalcUpdateTest("0.7.1", "1.1.3", true), // 0.7.1 has no recommended, but 0.7.99 does
+            CalcUpdateTest("0.7.2", "1.1.3", true), // doesn't exist in list, should use 0.7.99
+            CalcUpdateTest("0.7.99", "1.1.3", true),
+
+            // No recommended, should use branch recommendedRelease
+            CalcUpdateTest("1.0.1-beta", recommendedRelease),
+            CalcUpdateTest("1.0.1", recommendedRelease), // No recommended
+            CalcUpdateTest("1.0.2", null), // No recommended, is branch recommended
+
+            // TODO Review - Maybe should recommend latestRelease in SubVer if current is newer than recommendedRelease?
+            CalcUpdateTest("1.0.3", null), // No recommended, is newer than branch recommended
+
+            CalcUpdateTest("1.1.0", null), // No recommended, is newer than branch recommended
+            CalcUpdateTest("1.1.1", null), // No recommended, is newer than branch recommended
+            CalcUpdateTest("1.1.3", null), // No recommended, is newer than branch recommended
+
+            // Beta
+            // Main Ver "0.6.0" recommendedNextVer is "0.7.0" - Dev Ver "0.6.0-beta" recommendedNextVer is "0.7.1-beta"
+            CalcUpdateTest("0.6.0-beta", "0.7.0", false, "0.7.1-beta", true),
+            // Main Ver "0.6.3" recommendedNextVer is "0.7.1" - Dev recommendedRelease is "0.7.2-beta"
+            CalcUpdateTest("0.6.1-beta", "0.7.1", false, "0.7.2-beta"),
+
+            // Main Ver "0.7.99" recommendedNextVer is "1.1.3" & NextVerManual = true - Dev recommendedRelease is "0.7.2-beta"
+            CalcUpdateTest("0.7.0-alpha", "1.1.3", true, "0.7.2-beta"),
+            CalcUpdateTest("0.7.0-snapshot", "1.1.3", true, "0.7.2-beta"),
+            CalcUpdateTest("0.7.1-beta", "1.1.3", true, "0.7.2-beta"),
+
+            // TODO Review - Maybe should recommend latestRelease in SubVer if current is newer than recommendedRelease?
+            // Main recommendedRelease is "1.0.2" - Dev recommendedRelease is "0.7.1-beta"
+            CalcUpdateTest("1.0.0-beta",  "1.0.2", false, null),
+            CalcUpdateTest("1.0.5-beta", null, false, null),
+
+            CalcUpdateTest("1.1.3-beta", null, false, null),
+
+            ).forEach { testInfo ->
+            println("--------------------")
+            println("Test - Starting Ver: ${testInfo.startingVer}; Expected Next Main Ver: ${testInfo.expectedNextMainVer ?: "null"}; Expected Next Dev Ver: ${testInfo.expectedNextDevVer ?: "null"}")
+
+            val startVerIsRelease: Boolean = testInfo.startingSemVer.preRelease == null
+
+            val updateData = VeadoTouchPlugin.calculateUpdates(
+                resultData = testUpdateCheckResult,
+                currentReleaseVersionString = testInfo.startingSemVer.toString(),
+                buildIsRelease = startVerIsRelease,
+            )
+
+
+            if (updateData.updateAvailable) {
+                println("       Update Available: ${updateData.updateAvailable}")
+
+            }
+
+
+            val verMainData = updateData.mainBranchReleaseData
+            val verMainManInstall = updateData.mainBranchManualUpdateRequired
+
+            val equalVerMain = testInfo.expectedNextMainSemVer == verMainData?.versionSemantic
+            println("       Main - Next Version: ${verMainData?.version ?: "null"}; Expected: ${testInfo.expectedNextMainVer ?: "null"}; Equal: $equalVerMain")
+            assertTrue(equalVerMain)
+
+            val equalMain = testInfo.expectedNextMainVerManualInstall == verMainManInstall
+            println("       Main - Manual Update: ${verMainManInstall}; Expected: ${testInfo.expectedNextMainVerManualInstall}; Equal: $equalMain")
+            assertTrue(equalMain)
+
+
+            val verDevData = updateData.devBranchReleaseData
+            val verDevManInstall = updateData.devBranchManualUpdateRequired
+
+            val equalVerDev = testInfo.expectedNextDevSemVer == verDevData?.versionSemantic
+            println("       Dev  - Next Version: ${verDevData?.version ?: "null"}; Expected: ${testInfo.expectedNextDevVer ?: "null"}; Equal: $equalVerDev")
+            assertTrue(equalVerDev)
+
+            val equalDev = testInfo.expectedNextDevVerManualInstall == verDevManInstall
+            println("       Dev  - Manual Update: ${verDevManInstall}; Expected: ${testInfo.expectedNextDevVerManualInstall}; Equal: $equalDev")
+            assertTrue(equalDev)
+
+
+        }
+
+        println("--------------------")
+        println("calculateUpdates End")
+        println("##############################")
+    }
+
 
     @Test
     fun calculateNextUpdateRelease() {
@@ -287,7 +403,7 @@ class VeadoTouchPluginTest {
 
         ).forEach { testInfo ->
             println("--------------------")
-            println("Test - Starting Ver: ${testInfo.startingVer}; Expected Starting Ver: ${testInfo.expectedNextVer ?: "null"}")
+            println("Test - Starting Ver: ${testInfo.startingVer}; Expected Next Ver: ${testInfo.expectedNextVer ?: "null"}")
 
             val updateData = UpdateReleaseData()
             VeadoTouchPlugin.calculateNextUpdateRelease(
@@ -314,6 +430,7 @@ class VeadoTouchPluginTest {
         println("calculateNextUpdateRelease End")
         println("##############################")
     }
+
 
     @Test
     fun calculateNextUpdateDev() {
@@ -461,4 +578,17 @@ data class CalcNextUpdateTest(
 ) {
     val startingSemVer = SemVer.parse(startingVer)
     val expectedNextSemVer = expectedNextVer?.let { SemVer.parse(it) }
+}
+
+data class CalcUpdateTest(
+    val startingVer: String,
+    val expectedNextMainVer: String?,
+    val expectedNextMainVerManualInstall: Boolean = false,
+    val expectedNextDevVer: String? = null,
+    val expectedNextDevVerManualInstall: Boolean = false
+) {
+    val startingSemVer = SemVer.parse(startingVer)
+    val startingVerBuildIsRelease = (startingSemVer.preRelease == null)
+    val expectedNextMainSemVer = expectedNextMainVer?.let { SemVer.parse(it) }
+    val expectedNextDevSemVer = expectedNextDevVer?.let { SemVer.parse(it) }
 }

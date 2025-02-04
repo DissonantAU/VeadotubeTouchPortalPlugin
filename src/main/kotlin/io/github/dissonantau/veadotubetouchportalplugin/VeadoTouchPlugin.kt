@@ -132,29 +132,29 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         /* Start of functions for Update Checks */
 
         /**
-         * JSON De/serializer
-         */
-        private val jsonDeserializer = Json {
-            ignoreUnknownKeys = true
-            useAlternativeNames = false
-        }
-
-
-        /**
          * Calculate and return Update Values for Update Notification
          */
-        fun calculateUpdates(resultData: UpdateCheckResult): UpdateReleaseData {
-            // Current Release SemVer String
-            val currentReleaseVersionString = BuildConfig.VERSION_NAME_FULL
+        @JvmOverloads
+        fun calculateUpdates(
+            resultData: UpdateCheckResult,
+            // Current Release String (SemVer Format)
+            currentReleaseVersionString: String = BuildConfig.VERSION_NAME_FULL,
+            // Main Branch Recommended SemVer
+            recommendedMainReleaseString: String =
+                resultData.mainTrack.recommendedRelease ?: resultData.mainTrack.latestRelease,
+            // If Build is Main Branch Release
+            buildIsRelease: Boolean = BuildConfig.BUILD_IS_RELEASE,
+            // Dev Branch Recommended SemVer
+            recommendedDevRelease: String? = null
+        ): UpdateReleaseData {
+            // Current Release SemVer
             val currentReleaseSemVer = SemVer.parse(currentReleaseVersionString)
-            // Get Main Release Ver
-            val recommendedMainReleaseString =
-                resultData.mainTrack.recommendedRelease ?: resultData.mainTrack.latestRelease
+            // Get Main Release SemVer
             val recommendedMainReleaseSemVer = SemVer.parse(recommendedMainReleaseString)
-
 
             LOGGER.trace { "onUpdateCheckResult - Current: $currentReleaseVersionString - Recommended: $recommendedMainReleaseString" }
 
+            // Object to hold Calculated Update Release info
             val updateData = UpdateReleaseData()
 
             // Mainline Release Version Update Check
@@ -176,11 +176,11 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
             }
 
             // Dev/Pre-release Version Update Check
-            if (!BuildConfig.BUILD_IS_RELEASE && resultData.devTrack != null) {
+            if (!buildIsRelease && resultData.devTrack != null) {
                 // Running Dev Release
-                // Get Dev Recommended Release then Latest if it doesn't exist
-                val recommendedDevReleaseString =
-                    resultData.devTrack.recommendedRelease ?: resultData.devTrack.latestRelease
+                // If not provided by parameter, try getting Dev Branch Recommended Release, then Dev Branch Latest
+                val recommendedDevReleaseString: String =
+                    recommendedDevRelease ?: resultData.devTrack.recommendedRelease ?: resultData.devTrack.latestRelease
 
                 if (recommendedDevReleaseString != currentReleaseVersionString) {
                     // Strings don't match
@@ -230,7 +230,8 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
                     versionListMapString[recommendedNextString]?.let {
                         updateData.mainBranchReleaseData = it
                         updateData.mainBranchUpdateAvailable = true
-                        updateData.mainBranchManualUpdateRequired = currentReleaseData.recommendedNextReleaseRequiresManualUpdate
+                        updateData.mainBranchManualUpdateRequired =
+                            currentReleaseData.recommendedNextReleaseRequiresManualUpdate
                         return
                     }
                 }
@@ -259,7 +260,8 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
                         versionListMapString[recommendedNextString]?.let {
                             updateData.mainBranchReleaseData = it
                             updateData.mainBranchUpdateAvailable = true
-                            updateData.mainBranchManualUpdateRequired = release.recommendedNextReleaseRequiresManualUpdate
+                            updateData.mainBranchManualUpdateRequired =
+                                release.recommendedNextReleaseRequiresManualUpdate
                             return
                         }
                     }
