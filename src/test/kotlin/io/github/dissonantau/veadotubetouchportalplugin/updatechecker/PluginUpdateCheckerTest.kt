@@ -1,22 +1,25 @@
-package io.github.dissonantau.veadotubetouchportalplugin
+package io.github.dissonantau.veadotubetouchportalplugin.updatechecker
 
-import io.github.dissonantau.veadotubetouchportalplugin.updatechecker.UpdateCheckResult
-import io.github.dissonantau.veadotubetouchportalplugin.updatechecker.UpdateReleaseData
+
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.json.Json
 import net.swiftzer.semver.SemVer
-import org.junit.jupiter.api.*
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.Test
 
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Disabled
 
-class VeadoTouchPluginTest {
+
+class PluginUpdateCheckerTest {
 
     companion object {
 
         /** Class Logger */
         @JvmStatic
         private val LOGGER =
-            KotlinLogging.logger { VeadoTouchPluginTest::class.java.name }
+            KotlinLogging.logger { PluginUpdateCheckerTest::class.java.name }
 
         private lateinit var testUpdateCheckResult: UpdateCheckResult
 
@@ -245,6 +248,7 @@ class VeadoTouchPluginTest {
 
     }
 
+
     //@Disabled
     @Test
     fun calculateUpdates() {
@@ -274,7 +278,7 @@ class VeadoTouchPluginTest {
 
             // doesn't exist in list, should use 0.7.99 (next in same major ver)
             CalcUpdateTest("0.6.4", "1.1.3", true),
-            CalcUpdateTest("0.6.5-beta", "1.1.3", true,"0.7.2-beta"),
+            CalcUpdateTest("0.6.5-beta", "1.1.3", true, "0.7.2-beta"),
 
             CalcUpdateTest("0.7.0", "1.1.3", true), // 0.7.0 has no recommended, but 0.7.99 does
             CalcUpdateTest("0.7.1", "1.1.3", true), // 0.7.1 has no recommended, but 0.7.99 does
@@ -283,7 +287,7 @@ class VeadoTouchPluginTest {
 
             // No recommended, should use branch recommendedRelease
             CalcUpdateTest("1.0.1-beta", recommendedRelease),
-            CalcUpdateTest("1.0.1", recommendedRelease), // No recommended
+            CalcUpdateTest("1.0.1", recommendedRelease), // No recommended, older than branch recommended
             CalcUpdateTest("1.0.2", null), // No recommended, is branch recommended
 
             // TODO Review - Maybe should recommend latestRelease in SubVer if current is newer than recommendedRelease?
@@ -306,7 +310,7 @@ class VeadoTouchPluginTest {
 
             // TODO Review - Maybe should recommend latestRelease in SubVer if current is newer than recommendedRelease?
             // Main recommendedRelease is "1.0.2" - Dev recommendedRelease is "0.7.1-beta"
-            CalcUpdateTest("1.0.0-beta",  "1.0.2", false, null),
+            CalcUpdateTest("1.0.0-beta", "1.0.2", false, null),
             CalcUpdateTest("1.0.5-beta", null, false, null),
 
             CalcUpdateTest("1.1.3-beta", null, false, null),
@@ -317,7 +321,7 @@ class VeadoTouchPluginTest {
 
             val startVerIsRelease: Boolean = testInfo.startingSemVer.preRelease == null
 
-            val updateData = VeadoTouchPlugin.calculateUpdates(
+            val updateData = PluginUpdateChecker.calculateUpdates(
                 resultData = testUpdateCheckResult,
                 currentReleaseVersionString = testInfo.startingSemVer.toString(),
                 buildIsRelease = startVerIsRelease,
@@ -406,7 +410,7 @@ class VeadoTouchPluginTest {
             println("Test - Starting Ver: ${testInfo.startingVer}; Expected Next Ver: ${testInfo.expectedNextVer ?: "null"}")
 
             val updateData = UpdateReleaseData()
-            VeadoTouchPlugin.calculateNextUpdateRelease(
+            PluginUpdateChecker.calculateNextUpdateRelease(
                 updateData,
                 currentRelease = testInfo.startingSemVer,
                 recommendedBranchRelease = recommendedReleaseSemVer,
@@ -473,7 +477,7 @@ class VeadoTouchPluginTest {
             println("Test - Starting Ver: ${testInfo.startingVer}; Expected Starting Ver: ${testInfo.expectedNextVer ?: "null"}")
 
             val updateData = UpdateReleaseData()
-            VeadoTouchPlugin.calculateNextUpdateDev(
+            PluginUpdateChecker.calculateNextUpdateDev(
                 updateData,
                 currentRelease = testInfo.startingSemVer,
                 recommendedMainBranchRelease = recommendedReleaseSemVer,
@@ -504,20 +508,20 @@ class VeadoTouchPluginTest {
     fun semVerStringIsPreRelease() {
 
         val test1 = "1.2.3-beta" // IS Pre-Release
-        val result1 = VeadoTouchPlugin.semVerStringIsPreRelease(test1)
+        val result1 = PluginUpdateChecker.semVerStringIsPreRelease(test1)
         assertTrue(result1)
 
         val test2 = "1.2.3-beta+abc-123" // IS Pre-Release
-        val result2 = VeadoTouchPlugin.semVerStringIsPreRelease(test2)
+        val result2 = PluginUpdateChecker.semVerStringIsPreRelease(test2)
         assertTrue(result2)
 
 
         val test3 = "1.2.3+abc-123" // IS NOT Pre-Release
-        val result3 = VeadoTouchPlugin.semVerStringIsPreRelease(test3)
+        val result3 = PluginUpdateChecker.semVerStringIsPreRelease(test3)
         assertFalse(result3)
 
         val test4 = "1.2.3" // IS NOT Pre-Release
-        val result4 = VeadoTouchPlugin.semVerStringIsPreRelease(test4)
+        val result4 = PluginUpdateChecker.semVerStringIsPreRelease(test4)
         assertFalse(result4)
     }
 
@@ -536,14 +540,14 @@ class VeadoTouchPluginTest {
 
 
         // Exist
-        val result1MainExist = VeadoTouchPlugin.getMainOrPreReleaseByVersionString(
+        val result1MainExist = PluginUpdateChecker.getMainOrPreReleaseByVersionString(
             semVerString = test1MainExist,
             mainBranchData = mainTrackData,
             devBranchData = devTrackData
         )
         assertNotNull(result1MainExist)
 
-        val result2DevExist = VeadoTouchPlugin.getMainOrPreReleaseByVersionString(
+        val result2DevExist = PluginUpdateChecker.getMainOrPreReleaseByVersionString(
             semVerString = test2DevExist,
             mainBranchData = mainTrackData,
             devBranchData = devTrackData
@@ -552,14 +556,14 @@ class VeadoTouchPluginTest {
 
 
         // Don't Exist
-        val result3MainFake = VeadoTouchPlugin.getMainOrPreReleaseByVersionString(
+        val result3MainFake = PluginUpdateChecker.getMainOrPreReleaseByVersionString(
             semVerString = test3MainFake,
             mainBranchData = mainTrackData,
             devBranchData = devTrackData
         )
         assertNull(result3MainFake)
 
-        val result4DevFake = VeadoTouchPlugin.getMainOrPreReleaseByVersionString(
+        val result4DevFake = PluginUpdateChecker.getMainOrPreReleaseByVersionString(
             semVerString = test4DevFake,
             mainBranchData = mainTrackData,
             devBranchData = devTrackData
