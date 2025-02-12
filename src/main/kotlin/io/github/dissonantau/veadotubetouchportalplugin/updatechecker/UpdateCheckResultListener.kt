@@ -8,7 +8,7 @@ interface UpdateCheckResultListener {
     /**
      * Process Received Update Check Result
      */
-    fun onUpdateCheckResult(resultData: UpdateCheckResult)
+    fun onUpdateCheckResult(updateData: UpdateReleaseData)
 
     /**
      * Process Received Update Check Error
