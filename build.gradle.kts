@@ -35,6 +35,8 @@ project.extra["resourcesBundle"] = "DEBUG"
 val pluginFullName: String = "Veadotube Touch Portal Plugin"
 val pluginShortName: String = "Veadotube Plugin"
 
+val pluginDownloadPage:String = "https://github.com/DissonantAU/VeadotubeTouchPortalPlugin/releases/latest"
+
 val mainClassSimpleName: String = "VeadoTouchPlugin"
 val mainClassPackage: String = "io.github.dissonantau.veadotubetouchportalplugin"
 
@@ -91,6 +93,11 @@ project.extra["releaseBuild"] = false
 val releaseBuildProvider: Provider<Boolean> = provider { project.extra["releaseBuild"] as Boolean }
 
 
+// Changed by tasks if needed
+project.extra["tpUseBundledJre"] = false
+val tpUseInternalJreProvider: Provider<Boolean> = provider { project.extra["tpUseBundledJre"] as Boolean }
+
+
 // whether this is alpha/beta. Ignored during Build Release
 project.extra["preReleaseVersion"] = "SNAPSHOT"
 val preReleaseVersionProvider: Provider<String> = provider { "${project.extra["preReleaseVersion"]}" }
@@ -115,11 +122,14 @@ buildConfig {
     buildConfigField("long", "VERSION_CODE", "${project.extra["versionCode"]}")
     // Version Base Name - e.g. "1.7.11"
     buildConfigField("String", "VERSION_NAME_BASE", "\"${project.extra["versionBaseName"]}\"")
-    // Version Full Name - including any extra types, etc. - e.g. "1.7.11-snapshot.20241228-2119+debug"
+    // Version Full SemVer Name - including any extra types, etc. - e.g. "1.7.11-snapshot.20241228-2119+debug"
     buildConfigField("String", "VERSION_NAME_FULL", provider { "\"${project.extra["versionName"]}\"" })
 
     // Is Release Build - true/false
     buildConfigField("boolean", "BUILD_IS_RELEASE", "${project.extra["releaseBuild"]}")
+
+    // Use TP Bundled JRE - true/false
+    buildConfigField("boolean", "USES_TP_BUNDLED_JRE", "${project.extra["tpUseBundledJre"]}")
 
     // Pre Release Version - "ALPHA", "BETA", "SNAPSHOT", or blank
     buildConfigField("String", "BUILD_PRE_RELEASE_VERSION", provider { "\"${project.extra["preReleaseVersion"]}\"" })
@@ -133,10 +143,13 @@ buildConfig {
     // Java JDK Specification - Major Version of the JDK this is Building the JAR
     buildConfigField("integer", "BUILD_JDK_SPEC", provider { JavaVersion.current().majorVersion })
 
+    // URL to the Download Page
+    buildConfigField("String", "PLUGIN_RELEASES_DOWNLOAD_PAGE", "\"$pluginDownloadPage\"")
+
     // URL to the JSON file that lists versions of the Plugin
     buildConfigField(
         "String",
-        "UPDATE_CHECK_RELEASES_URI",
+        "PLUGIN_RELEASES_UPDATE_CHECK_URI",
         "\"https://dissonantau.github.io/veadoTouchPortalPlugin/releases.json\""
     )
 }
