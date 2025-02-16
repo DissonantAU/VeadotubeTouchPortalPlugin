@@ -16,6 +16,9 @@ import io.github.dissonantau.veadotubetouchportalplugin.data.VtState
 import io.github.dissonantau.veadotubetouchportalplugin.updatechecker.*
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.awt.Desktop
+import java.awt.Toolkit
+import java.awt.datatransfer.Clipboard
+import java.awt.datatransfer.StringSelection
 import java.net.URI
 import java.util.concurrent.atomic.AtomicBoolean
 import io.github.dissonantau.bleatkan.message.ResultPayload.ResultPayloadPng as BleatkanStateThumbnail
@@ -122,6 +125,55 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
 
         }
 
+        /**
+         * Opens URI (if supported by OS)
+         *
+         * @param openURI URI to Open
+         * @return `true` if Browse command is run, `false` if opening URIs are not supported.
+         *
+         * True is not a guarantee that the page opened, just that the command was reported as supported and there wasn't an exception.
+         *
+         * @see URI
+         * @see Desktop.getDesktop
+         * @see Desktop.browse
+         */
+        fun openUpdateLink(openURI: URI): Boolean {
+            if (Desktop.isDesktopSupported()) {
+                val desktop = Desktop.getDesktop()
+                if (desktop.isSupported(Desktop.Action.BROWSE)) {
+                    desktop.browse(openURI)
+                    return true
+                } else
+                    LOGGER.debug { "openUpdateLink: Desktop Browse Action is not supported" }
+            } else
+                LOGGER.debug { "openUpdateLink: Desktop is not supported" }
+
+            return false
+        }
+
+        /**
+         * Copy Text to System Clipboard
+         *
+         * @param text String to copy to Clipboard
+         * @see Toolkit.getDefaultToolkit
+         * @see Toolkit.getSystemClipboard
+         * @see Clipboard.setContents
+         */
+        fun copyTextToClipboard(text: String) {
+            val clipboard: Clipboard = Toolkit.getDefaultToolkit().systemClipboard
+            val strSelection = StringSelection(text)
+            clipboard.setContents(strSelection, strSelection)
+        }
+
+
+        private const val NOTIFICATION_BASE_ID = "${VeadoTouchPluginConstants.ID}.notification"
+        private const val NOTIFICATION_UPDATE_ID = "$NOTIFICATION_BASE_ID.update"
+
+        enum class NotificationUpdateIDs(val id: String) {
+            MAIN("$NOTIFICATION_UPDATE_ID.main"),
+            DEV("$NOTIFICATION_UPDATE_ID.dev"),
+            BOTH("$NOTIFICATION_UPDATE_ID.both");
+        }
 
     }
 
@@ -718,9 +770,14 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
 
             LOGGER.debug { "Plugin ${BuildConfig.NAME_SHORT} - Started and Connected to Touch Portal" }
 
-            LOGGER.debug { "Plugin Version Full Name:      ${BuildConfig.VERSION_NAME_FULL}" }
-
             LOGGER.debug { "Plugin Java VM Version:        ${System.getProperty("java.version")}" }
+
+            LOGGER.debug { "Plugin Java Version Target:    ${BuildConfig.TARGET_JRE_SPEC}" }
+            LOGGER.debug { "Plugin JDK Build Version:      ${BuildConfig.BUILD_JDK_SPEC}" }
+
+            LOGGER.debug { "Plugin uses Touch Portal JRE:  ${BuildConfig.USES_TP_BUNDLED_JRE}" }
+
+            LOGGER.debug { "Plugin Version Full Name:      ${BuildConfig.VERSION_NAME_FULL}" }
 
             LOGGER.debug {
                 "Plugin Version Code / Base:    ${
@@ -728,12 +785,15 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
                 } / ${BuildConfig.VERSION_NAME_BASE}"
             }
             LOGGER.debug { "Plugin is Build Release:       ${BuildConfig.BUILD_IS_RELEASE}" }
+
             if (!BuildConfig.BUILD_IS_RELEASE)
                 LOGGER.debug { "Plugin Pre-release Version:    ${BuildConfig.BUILD_PRE_RELEASE_VERSION}" }
 
+
             LOGGER.debug { "Plugin Build Resources Bundle: ${BuildConfig.BUILD_RESOURCES_BUNDLE}" }
 
-            LOGGER.debug { "Plugin Update/Releases URI:    ${BuildConfig.UPDATE_CHECK_RELEASES_URI}" }
+            LOGGER.debug { "Plugin Download Page URI:      ${BuildConfig.PLUGIN_RELEASES_DOWNLOAD_PAGE}" }
+            LOGGER.debug { "Plugin Update/Releases URI:    ${BuildConfig.PLUGIN_RELEASES_UPDATE_CHECK_URI}" }
 
 
             // Start Instance Manager - Watches Veadotube Instance Folder and sends events to the receiver
@@ -966,6 +1026,24 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
 
     override fun onNotificationOptionClicked(tpNotificationOptionClickedMessage: TPNotificationOptionClickedMessage) {
         LOGGER.info { "onNotificationOptionClicked received" }
+        //TODO setup notifications
+
+        if (tpNotificationOptionClickedMessage.notificationId.contains(NOTIFICATION_UPDATE_ID)) {
+            // Update Notification
+            when (tpNotificationOptionClickedMessage.notificationId) {
+                NotificationUpdateIDs.MAIN.id -> {
+                    when (tpNotificationOptionClickedMessage.optionId) {
+                    }
+                }
+
+                NotificationUpdateIDs.DEV.id -> {}
+                NotificationUpdateIDs.BOTH.id -> {}
+
+                else -> LOGGER.warn { "Unknown Notification Received" }
+            }
+
+
+        }
     }
 
 
@@ -1811,7 +1889,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
      * Check for newer Plugin Versions
      */
     private fun runUpdateCheck() {
-        updateChecker = PluginUpdateChecker(veadotubePlugin, BuildConfig.UPDATE_CHECK_RELEASES_URI)
+        updateChecker = PluginUpdateChecker(veadotubePlugin, BuildConfig.PLUGIN_RELEASES_UPDATE_CHECK_URI)
     }
 
     /**
@@ -1822,34 +1900,194 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
             // TODO Send notification
             // Check flagged as Manual (eg Breaking update) > updateManualRequired = true
 
-            when {
-                updateData.mainBranchReleaseData != null && updateData.devBranchReleaseData != null -> {
-                    // Both Exist (Dev Version has update, Main also has update
+            val updateMainBranchReleaseData = updateData.mainBranchReleaseData
 
+            if (BuildConfig.BUILD_IS_RELEASE) {
+                if (updateMainBranchReleaseData != null) {
+                    // Build is Main Release, and Main has update
+                    notifyReleaseUpdateMain(updateMainBranchReleaseData)
+
+                } else {
+                    LOGGER.warn { "Update Check: An Update is available but release information is missing. Please check ${BuildConfig.PLUGIN_RELEASES_UPDATE_CHECK_URI} for updates. Your Version: ${BuildConfig.VERSION_NAME_FULL}" }
                 }
 
-                updateData.mainBranchReleaseData != null && updateData.devBranchReleaseData == null -> {
-                    // Both Exist (Dev Version has update, Main also has update
+            } else {
+                val updateBranchReleaseDataDev = updateData.devBranchReleaseData
+                when {
+                    updateMainBranchReleaseData != null && updateBranchReleaseDataDev == null -> {
+                        // Main has update, Dev Version does not
+                        notifyReleaseUpdateMain(updateMainBranchReleaseData)
 
-                }
+                    }
 
-                updateData.mainBranchReleaseData == null && updateData.devBranchReleaseData != null -> {
-                    // Both Exist (Dev Version has update, Main also has update
+                    updateMainBranchReleaseData == null && updateBranchReleaseDataDev != null -> {
+                        // Dev Version has update, Main Version does not
 
-                }
 
-                else -> {
-                    // Neither Exist - shouldn't reach this
-                    LOGGER.warn { "Update Check has no release data but updateAvailable is true" }
+                    }
+
+                    updateMainBranchReleaseData != null && updateBranchReleaseDataDev != null -> {
+                        // Both Exist (Dev Version has update, Main also has update)
+
+
+                    }
+
+
+                    else -> {
+                        // Neither Exist - Shouldn't reach this
+                        LOGGER.warn { "Update Check: An Update is available but release information is missing. Please check ${BuildConfig.PLUGIN_RELEASES_UPDATE_CHECK_URI} for updates. Your Version: ${BuildConfig.VERSION_NAME_FULL}" }
+                    }
+
                 }
 
             }
 
 
+        } else {
+            LOGGER.info { "Update Check: No update available" }
         }
 
         // De-reference updateChecker
         updateChecker = null
+    }
+
+    /** Release Data for Main Track Update */
+    private var updateReleaseDataMain: ReleaseData? = null
+
+    /** Release Data for Dev Track Update */
+    private var updateReleaseDataDev: ReleaseData? = null
+
+
+    private fun notifyReleaseUpdateMain(mainBranchReleaseData: ReleaseData) {
+        val currVerName = BuildConfig.VERSION_NAME_BASE
+        val currIntegrated = BuildConfig.USES_TP_BUNDLED_JRE
+
+        val updtVerName = mainBranchReleaseData.version
+        val updtURL = mainBranchReleaseData.pageUrl
+
+        val title = BuildConfig.NAME_SHORT + ": Plugin Update available"
+        val message = "An update is available for the plugin - you are running $currVerName ${
+            if (currIntegrated) "(Bundled Java) " else ""
+        }and a newer recommended version ($updtVerName) is available at $updtURL.\n"
+
+
+        val notifMainDownloadInBrowser = "$NOTIFICATION_UPDATE_ID.option.mainDownloadInBrowser"
+        val notifMainDownloadCopyLink = "$NOTIFICATION_UPDATE_ID.option.mainDownloadCopyLink"
+        val notifMainPageInBrowser = "$NOTIFICATION_UPDATE_ID.option.mainPageInBrowser"
+        val notifMainPageCopyLink = "$NOTIFICATION_UPDATE_ID.option.mainPageCopyLink"
+
+        val option1a = TPNotificationOption(notifMainDownloadInBrowser, "Download in Browser")
+        val option1b = TPNotificationOption(notifMainDownloadCopyLink, "Copy Download Link")
+        val option2a = TPNotificationOption(notifMainPageInBrowser, "Open Download Page in Browser")
+        val option2b = TPNotificationOption(notifMainPageCopyLink, "Copy Download Page Link")
+
+        val options: Array<TPNotificationOption> =
+            arrayOf(option1a, option1b, option2a, option2b)
+
+        // Assign Release Data to outer variable
+        updateReleaseDataMain = mainBranchReleaseData
+
+        veadotubePlugin.sendShowNotification(NotificationUpdateIDs.MAIN.id, title, message, options)
+    }
+
+    private fun notifyReleaseUpdateDev(devBranchReleaseData: ReleaseData) {
+        val currVerName = BuildConfig.VERSION_NAME_BASE
+        val currIntegrated = BuildConfig.USES_TP_BUNDLED_JRE
+
+        val updtVerName = devBranchReleaseData.version
+        val updtURL = devBranchReleaseData.pageUrl
+
+        val title = BuildConfig.NAME_SHORT + ": Plugin Update available"
+        val message = "An update is available for the plugin - you are running $currVerName ${
+            if (currIntegrated) "(Bundled Java) " else ""
+        }and a newer recommended version ($updtVerName) is available at $updtURL.\n"
+
+        val notifDevDownloadInBrowser = "$NOTIFICATION_UPDATE_ID.option.devDownloadInBrowser"
+        val notifDevDownloadCopyLink = "$NOTIFICATION_UPDATE_ID.option.devDownloadCopyLink"
+        val notifDevPageInBrowser = "$NOTIFICATION_UPDATE_ID.option.devPageInBrowser"
+        val notifDevPageCopyLink = "$NOTIFICATION_UPDATE_ID.option.devPageCopyLink"
+
+        val option1a = TPNotificationOption(notifDevDownloadInBrowser, "Download in Browser")
+        val option1b = TPNotificationOption(notifDevDownloadCopyLink, "Copy Download Link")
+        val option2a = TPNotificationOption(notifDevPageInBrowser, "Open Download Page in Browser")
+        val option2b = TPNotificationOption(notifDevPageCopyLink, "Copy Download Page Link")
+
+        val options: Array<TPNotificationOption> =
+            arrayOf(option1a, option1b, option2a, option2b)
+
+
+        // Assign Release Data to outer variable
+        updateReleaseDataDev = devBranchReleaseData
+
+        veadotubePlugin.sendShowNotification(
+            NotificationUpdateIDs.DEV.id, title, message, options
+        )
+    }
+
+
+    private fun notifyReleaseUpdateBoth(mainBranchReleaseData: ReleaseData, devBranchReleaseData: ReleaseData) {
+        if (mainBranchReleaseData.versionSemantic > devBranchReleaseData.versionSemantic) {
+            // If Main is newer than Dev, run notifyReleaseUpdateMain and return
+            notifyReleaseUpdateMain(mainBranchReleaseData)
+            return
+        }
+
+        // Dev is newer than Main - Give both options
+        val currVerName = BuildConfig.VERSION_NAME_BASE
+        val currIntegrated = BuildConfig.USES_TP_BUNDLED_JRE
+
+        val updtVerName = mainBranchReleaseData.version
+        val updtURL = mainBranchReleaseData.pageUrl
+
+        val updtVerNameDev = devBranchReleaseData.version
+        val updtURLDev = devBranchReleaseData.pageUrl
+
+
+        val title = BuildConfig.NAME_SHORT + ": Plugin Update available"
+        val message = buildString {
+            append("Updates are available for the plugin - you are running ")
+            append(currVerName)
+            append(if (currIntegrated) " (Bundled Java)." else ".")
+            append("\nNewer Dev version ($updtVerNameDev) is available at $updtURLDev")
+            append("\nNewer Main version ($updtVerName) is available at $updtURL")
+        }
+
+        val notifMainDownloadInBrowser = "$NOTIFICATION_UPDATE_ID.option.mainDownloadInBrowser"
+        val notifMainDownloadCopyLink = "$NOTIFICATION_UPDATE_ID.option.mainDownloadCopyLink"
+        val notifMainPageInBrowser = "$NOTIFICATION_UPDATE_ID.option.mainPageInBrowser"
+        val notifMainPageCopyLink = "$NOTIFICATION_UPDATE_ID.option.mainPageCopyLink"
+
+        val notifDevDownloadInBrowser = "$NOTIFICATION_UPDATE_ID.option.devDownloadInBrowser"
+        val notifDevDownloadCopyLink = "$NOTIFICATION_UPDATE_ID.option.devDownloadCopyLink"
+        val notifDevPageInBrowser = "$NOTIFICATION_UPDATE_ID.option.devPageInBrowser"
+        val notifDevPageCopyLink = "$NOTIFICATION_UPDATE_ID.option.devPageCopyLink"
+
+        val optionMain1a = TPNotificationOption(notifMainDownloadInBrowser, "Download in Browser")
+        val optionMain1b = TPNotificationOption(notifMainDownloadCopyLink, "Copy Download Link")
+        val optionMain2a = TPNotificationOption(notifMainPageInBrowser, "Open Download Page in Browser")
+        val optionMain2b = TPNotificationOption(notifMainPageCopyLink, "Copy Download Page Link")
+
+
+        val optionDev1a = TPNotificationOption(notifDevDownloadInBrowser, "Download in Browser")
+        val optionDev1b = TPNotificationOption(notifDevDownloadCopyLink, "Copy Download Link")
+        val optionDev2a = TPNotificationOption(notifDevPageInBrowser, "Open Download Page in Browser")
+        val optionDev2b = TPNotificationOption(notifDevPageCopyLink, "Copy Download Page Link")
+
+        val options: Array<TPNotificationOption> =
+            arrayOf(
+                optionMain1a, optionMain1b, optionMain2a, optionMain2b,
+                optionDev1a, optionDev1b, optionDev2a, optionDev2b
+            )
+
+        // Assign Release Data to outer variable
+        updateReleaseDataMain = mainBranchReleaseData
+
+        // Assign Release Data to outer variable
+        updateReleaseDataDev = devBranchReleaseData
+
+        veadotubePlugin.sendShowNotification(
+            NotificationUpdateIDs.BOTH.id, title, message, options
+        )
     }
 
 
@@ -1863,24 +2101,20 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         // TODO Add some logic to display notification if Check fails over several runs
     }
 
-    /**
-     * Opens URI if supported by OS
-     *
-     *
-     * @param openURI URI to Open
-     * @see Desktop.browse for Exceptions that could be thrown
-     *
-     */
-    fun openUpdateLink(openURI: URI = URI("http://neverssl.com")) {
 
-        if (Desktop.isDesktopSupported()) {
-            val desktop = Desktop.getDesktop()
-
-            if (desktop.isSupported(Desktop.Action.BROWSE)) {
-                desktop.browse(openURI)
-            }
-        }
-
+    fun sendNotification() {
+        // Send notification
+        veadotubePlugin.sendShowNotification(
+            VeadoTouchPluginConstants.ID + ".notification.exampleNotification",
+            "Example notification",
+            "the message of the notification",
+            arrayOf<TPNotificationOption>(
+                TPNotificationOption(
+                    VeadoTouchPluginConstants.ID + ".notification.exampleNotification.options.exampleOption",
+                    "example option"
+                )
+            )
+        )
     }
 
     /* End of functions for Update Checks */
