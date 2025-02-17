@@ -33,7 +33,7 @@ data class UpdateCheckResult(
      *
      * Contains latest & recommended versions, as well as release info for the Main Release
      */
-    @SerialName("mainBranch") val mainTrack: ReleaseBranchData,
+    @SerialName("mainBranch") val mainBranch: ReleaseBranchData,
     /**
      * Dev Release Branch Data
      *
@@ -41,7 +41,7 @@ data class UpdateCheckResult(
      *
      * Contains latest & recommended versions, as well as release info for the Development Release
      */
-    @SerialName("devBranch") val devTrack: ReleaseBranchData? = null
+    @SerialName("devBranch") val devBranch: ReleaseBranchData? = null
 )
 
 @Serializable
@@ -147,13 +147,13 @@ data class ReleaseData(
      */
     @SerialName("urlDlExternal") val downloadExternalUrl: String? = null,
     /**
-     * Direct Download URL for the Embedded Java Version of this release
+     * Direct Download URL for the Bundled Java Version of this release
      *
-     * Version that runs using the Embedded version of Java in Touch Portal
+     * Version that runs using the Bundled version of Java in Touch Portal
      *
-     * e.g. "https://github.com/Author/project/download/version/plugin-embeddedJava.tpp"
+     * e.g. "https://github.com/Author/project/download/version/plugin-BundledJava.tpp"
      */
-    @SerialName("urlDlEmbedded") val downloadEmbeddedUrl: String? = null,
+    @SerialName("urlDlBundled") val downloadBundledUrl: String? = null,
     /**
      * Recommended Next Release
      *

@@ -193,7 +193,7 @@ class PluginUpdateCheckerTest {
         println("releasesLatestURL: ${testUpdateCheckResult.releasesLatestURL ?: "Not Found"}")
 
         println("mainTrack: ")
-        testUpdateCheckResult.mainTrack.let { track ->
+        testUpdateCheckResult.mainBranch.let { track ->
             println("  latestRelease:      ${track.latestRelease}")
             println("  recommendedRelease: ${track.recommendedRelease ?: "Not Found"}")
             val releases = track.releaseListSortedSet
@@ -207,7 +207,7 @@ class PluginUpdateCheckerTest {
                 println("    item $count - versionSemantic: ${rel.versionSemantic}")
                 println("    item $count - pageUrl:         ${rel.pageUrl}")
                 println("    item $count - downloadExternalUrl: ${rel.downloadExternalUrl ?: "Not Found"}")
-                println("    item $count - downloadEmbeddedUrl: ${rel.downloadEmbeddedUrl ?: "Not Found"}")
+                println("    item $count - downloadBundledUrl: ${rel.downloadBundledUrl ?: "Not Found"}")
                 println("    item $count - recommendedNextRelease:          ${rel.recommendedNextRelease ?: "Not Found"}")
                 println("    item $count - nextReleaseRequiresManualUpdate: ${rel.recommendedNextReleaseRequiresManualUpdate}")
             }
@@ -216,7 +216,7 @@ class PluginUpdateCheckerTest {
         }
 
 
-        val devTrack = testUpdateCheckResult.devTrack
+        val devTrack = testUpdateCheckResult.devBranch
         if (devTrack == null) {
             println("devTrack: Not Found")
         } else {
@@ -237,7 +237,7 @@ class PluginUpdateCheckerTest {
                 println("    item $count - versionSemantic: ${rel.versionSemantic}")
                 println("    item $count - pageUrl:         ${rel.pageUrl}")
                 println("    item $count - downloadExternalUrl: ${rel.downloadExternalUrl ?: "Not Found"}")
-                println("    item $count - downloadEmbeddedUrl: ${rel.downloadEmbeddedUrl ?: "Not Found"}")
+                println("    item $count - downloadBundledUrl: ${rel.downloadBundledUrl ?: "Not Found"}")
                 println("    item $count - recommendedNextRelease:          ${rel.recommendedNextRelease ?: "Not Found"}")
                 println("    item $count - nextReleaseRequiresManualUpdate: ${rel.recommendedNextReleaseRequiresManualUpdate}")
             }
@@ -256,8 +256,8 @@ class PluginUpdateCheckerTest {
         println("calculateUpdates Start")
 
         val testData = testUpdateCheckResult
-        val mainTrackData = testUpdateCheckResult.mainTrack
-        val devTrackData = testUpdateCheckResult.devTrack!! //Test Data has DevTrack, assert non-null
+        val mainTrackData = testUpdateCheckResult.mainBranch
+        val devTrackData = testUpdateCheckResult.devBranch!! //Test Data has DevTrack, assert non-null
 
         val latestRelease = "1.1.3"
         val latestReleaseSemVer = SemVer.parse(latestRelease)
@@ -372,8 +372,8 @@ class PluginUpdateCheckerTest {
         println("calculateNextUpdateRelease Start")
 
         val testData = testUpdateCheckResult
-        val mainTrackData = testUpdateCheckResult.mainTrack
-        val devTrackData = testUpdateCheckResult.devTrack!! //Test Data has DevTrack, assert non-null
+        val mainTrackData = testUpdateCheckResult.mainBranch
+        val devTrackData = testUpdateCheckResult.devBranch!! //Test Data has DevTrack, assert non-null
 
         val latestRelease = "1.1.3"
         val latestReleaseSemVer = SemVer.parse(latestRelease)
@@ -442,8 +442,8 @@ class PluginUpdateCheckerTest {
         println("##############################")
         println("calculateNextUpdateDev Start")
 
-        val mainTrackData = testUpdateCheckResult.mainTrack
-        val devTrackData = testUpdateCheckResult.devTrack!! //Test Data has DevTrack, assert non-null
+        val mainTrackData = testUpdateCheckResult.mainBranch
+        val devTrackData = testUpdateCheckResult.devBranch!! //Test Data has DevTrack, assert non-null
 
         val latestRelease = "1.1.3"
         val latestReleaseSemVer = SemVer.parse(latestRelease)
@@ -527,8 +527,8 @@ class PluginUpdateCheckerTest {
 
     @Test
     fun getMainOrPreReleaseByVersionString() {
-        val mainTrackData = testUpdateCheckResult.mainTrack
-        val devTrackData = testUpdateCheckResult.devTrack!! //Test Data has DevTrack, assert non-null
+        val mainTrackData = testUpdateCheckResult.mainBranch
+        val devTrackData = testUpdateCheckResult.devBranch!! //Test Data has DevTrack, assert non-null
 
         // Exist
         val test1MainExist = "1.1.3"

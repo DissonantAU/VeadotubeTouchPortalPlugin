@@ -172,7 +172,19 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         enum class NotificationUpdateIDs(val id: String) {
             MAIN("$NOTIFICATION_UPDATE_ID.main"),
             DEV("$NOTIFICATION_UPDATE_ID.dev"),
-            BOTH("$NOTIFICATION_UPDATE_ID.both");
+            BOTH("$NOTIFICATION_UPDATE_ID.both")
+        }
+
+        enum class NotificationUpdateOptionsIDs(val id: String) {
+            MAIN_DOWNLOAD_BROWSER("$NOTIFICATION_UPDATE_ID.option.mainDownloadInBrowser"),
+            MAIN_DOWNLOAD_COPY_LINK("$NOTIFICATION_UPDATE_ID.option.mainDownloadCopyLink"),
+            MAIN_PAGE_BROWSER("$NOTIFICATION_UPDATE_ID.option.mainPageInBrowser"),
+            MAIN_PAGE_COPY_LINK("$NOTIFICATION_UPDATE_ID.option.mainPageCopyLink"),
+
+            DEV_DOWNLOAD_BROWSER("$NOTIFICATION_UPDATE_ID.option.devDownloadInBrowser"),
+            DEV_DOWNLOAD_COPY_LINK("$NOTIFICATION_UPDATE_ID.option.devDownloadCopyLink"),
+            DEV_PAGE_BROWSER("$NOTIFICATION_UPDATE_ID.option.devPageInBrowser"),
+            DEV_PAGE_COPY_LINK("$NOTIFICATION_UPDATE_ID.option.devPageCopyLink")
         }
 
     }
@@ -1032,12 +1044,44 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
             // Update Notification
             when (tpNotificationOptionClickedMessage.notificationId) {
                 NotificationUpdateIDs.MAIN.id -> {
+                    // Main Update Notification
                     when (tpNotificationOptionClickedMessage.optionId) {
+                        NotificationUpdateOptionsIDs.MAIN_DOWNLOAD_BROWSER.id->{}
+                        NotificationUpdateOptionsIDs.MAIN_DOWNLOAD_COPY_LINK.id->{}
+                        NotificationUpdateOptionsIDs.MAIN_PAGE_BROWSER.id->{}
+                        NotificationUpdateOptionsIDs.MAIN_PAGE_COPY_LINK.id->{}
+
+                        else -> LOGGER.warn { "Unknown Notification Option ID Received" }
                     }
                 }
 
-                NotificationUpdateIDs.DEV.id -> {}
-                NotificationUpdateIDs.BOTH.id -> {}
+                NotificationUpdateIDs.DEV.id -> {
+                    // Dev Update Notification
+                    when (tpNotificationOptionClickedMessage.optionId) {
+                        NotificationUpdateOptionsIDs.DEV_DOWNLOAD_BROWSER.id->{}
+                        NotificationUpdateOptionsIDs.DEV_DOWNLOAD_COPY_LINK.id->{}
+                        NotificationUpdateOptionsIDs.DEV_PAGE_BROWSER.id->{}
+                        NotificationUpdateOptionsIDs.DEV_PAGE_COPY_LINK.id->{}
+
+                        else -> LOGGER.warn { "Unknown Notification Option ID Received" }
+                    }}
+
+                NotificationUpdateIDs.BOTH.id -> {
+                    when (tpNotificationOptionClickedMessage.optionId) {
+                        NotificationUpdateOptionsIDs.MAIN_DOWNLOAD_BROWSER.id->{}
+                        NotificationUpdateOptionsIDs.MAIN_DOWNLOAD_COPY_LINK.id->{}
+                        NotificationUpdateOptionsIDs.MAIN_PAGE_BROWSER.id->{}
+                        NotificationUpdateOptionsIDs.MAIN_PAGE_COPY_LINK.id->{}
+
+                        NotificationUpdateOptionsIDs.DEV_DOWNLOAD_BROWSER.id->{}
+                        NotificationUpdateOptionsIDs.DEV_DOWNLOAD_COPY_LINK.id->{}
+                        NotificationUpdateOptionsIDs.DEV_PAGE_BROWSER.id->{}
+                        NotificationUpdateOptionsIDs.DEV_PAGE_COPY_LINK.id->{}
+
+                        else -> LOGGER.warn { "Unknown Notification Option ID Received" }
+                    }
+
+                }
 
                 else -> LOGGER.warn { "Unknown Notification Received" }
             }
@@ -1970,11 +2014,10 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
             if (currIntegrated) "(Bundled Java) " else ""
         }and a newer recommended version ($updtVerName) is available at $updtURL.\n"
 
-
-        val notifMainDownloadInBrowser = "$NOTIFICATION_UPDATE_ID.option.mainDownloadInBrowser"
-        val notifMainDownloadCopyLink = "$NOTIFICATION_UPDATE_ID.option.mainDownloadCopyLink"
-        val notifMainPageInBrowser = "$NOTIFICATION_UPDATE_ID.option.mainPageInBrowser"
-        val notifMainPageCopyLink = "$NOTIFICATION_UPDATE_ID.option.mainPageCopyLink"
+        val notifMainDownloadInBrowser = NotificationUpdateOptionsIDs.MAIN_DOWNLOAD_BROWSER.id
+        val notifMainDownloadCopyLink = NotificationUpdateOptionsIDs.MAIN_DOWNLOAD_COPY_LINK.id
+        val notifMainPageInBrowser = NotificationUpdateOptionsIDs.MAIN_PAGE_BROWSER.id
+        val notifMainPageCopyLink = NotificationUpdateOptionsIDs.MAIN_PAGE_COPY_LINK.id
 
         val option1a = TPNotificationOption(notifMainDownloadInBrowser, "Download in Browser")
         val option1b = TPNotificationOption(notifMainDownloadCopyLink, "Copy Download Link")
@@ -2002,10 +2045,10 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
             if (currIntegrated) "(Bundled Java) " else ""
         }and a newer recommended version ($updtVerName) is available at $updtURL.\n"
 
-        val notifDevDownloadInBrowser = "$NOTIFICATION_UPDATE_ID.option.devDownloadInBrowser"
-        val notifDevDownloadCopyLink = "$NOTIFICATION_UPDATE_ID.option.devDownloadCopyLink"
-        val notifDevPageInBrowser = "$NOTIFICATION_UPDATE_ID.option.devPageInBrowser"
-        val notifDevPageCopyLink = "$NOTIFICATION_UPDATE_ID.option.devPageCopyLink"
+        val notifDevDownloadInBrowser = NotificationUpdateOptionsIDs.DEV_DOWNLOAD_BROWSER.id
+        val notifDevDownloadCopyLink = NotificationUpdateOptionsIDs.DEV_DOWNLOAD_COPY_LINK.id
+        val notifDevPageInBrowser = NotificationUpdateOptionsIDs.DEV_PAGE_BROWSER.id
+        val notifDevPageCopyLink = NotificationUpdateOptionsIDs.DEV_PAGE_COPY_LINK.id
 
         val option1a = TPNotificationOption(notifDevDownloadInBrowser, "Download in Browser")
         val option1b = TPNotificationOption(notifDevDownloadCopyLink, "Copy Download Link")
@@ -2014,7 +2057,6 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
 
         val options: Array<TPNotificationOption> =
             arrayOf(option1a, option1b, option2a, option2b)
-
 
         // Assign Release Data to outer variable
         updateReleaseDataDev = devBranchReleaseData
@@ -2052,26 +2094,25 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
             append("\nNewer Main version ($updtVerName) is available at $updtURL")
         }
 
-        val notifMainDownloadInBrowser = "$NOTIFICATION_UPDATE_ID.option.mainDownloadInBrowser"
-        val notifMainDownloadCopyLink = "$NOTIFICATION_UPDATE_ID.option.mainDownloadCopyLink"
-        val notifMainPageInBrowser = "$NOTIFICATION_UPDATE_ID.option.mainPageInBrowser"
-        val notifMainPageCopyLink = "$NOTIFICATION_UPDATE_ID.option.mainPageCopyLink"
+        val notifMainDownloadInBrowser = NotificationUpdateOptionsIDs.MAIN_DOWNLOAD_BROWSER.id
+        val notifMainDownloadCopyLink = NotificationUpdateOptionsIDs.MAIN_DOWNLOAD_COPY_LINK.id
+        val notifMainPageInBrowser = NotificationUpdateOptionsIDs.MAIN_PAGE_BROWSER.id
+        val notifMainPageCopyLink = NotificationUpdateOptionsIDs.MAIN_PAGE_COPY_LINK.id
 
-        val notifDevDownloadInBrowser = "$NOTIFICATION_UPDATE_ID.option.devDownloadInBrowser"
-        val notifDevDownloadCopyLink = "$NOTIFICATION_UPDATE_ID.option.devDownloadCopyLink"
-        val notifDevPageInBrowser = "$NOTIFICATION_UPDATE_ID.option.devPageInBrowser"
-        val notifDevPageCopyLink = "$NOTIFICATION_UPDATE_ID.option.devPageCopyLink"
+        val notifDevDownloadInBrowser = NotificationUpdateOptionsIDs.DEV_DOWNLOAD_BROWSER.id
+        val notifDevDownloadCopyLink = NotificationUpdateOptionsIDs.DEV_DOWNLOAD_COPY_LINK.id
+        val notifDevPageInBrowser = NotificationUpdateOptionsIDs.DEV_PAGE_BROWSER.id
+        val notifDevPageCopyLink = NotificationUpdateOptionsIDs.DEV_PAGE_COPY_LINK.id
 
-        val optionMain1a = TPNotificationOption(notifMainDownloadInBrowser, "Download in Browser")
-        val optionMain1b = TPNotificationOption(notifMainDownloadCopyLink, "Copy Download Link")
-        val optionMain2a = TPNotificationOption(notifMainPageInBrowser, "Open Download Page in Browser")
-        val optionMain2b = TPNotificationOption(notifMainPageCopyLink, "Copy Download Page Link")
+        val optionMain1a = TPNotificationOption(notifMainDownloadInBrowser, "Download Main Version")
+        val optionMain1b = TPNotificationOption(notifMainDownloadCopyLink, "Copy Main Download Link")
+        val optionMain2a = TPNotificationOption(notifMainPageInBrowser, "Open Main Download Page")
+        val optionMain2b = TPNotificationOption(notifMainPageCopyLink, "Copy Main Page Link")
 
-
-        val optionDev1a = TPNotificationOption(notifDevDownloadInBrowser, "Download in Browser")
-        val optionDev1b = TPNotificationOption(notifDevDownloadCopyLink, "Copy Download Link")
-        val optionDev2a = TPNotificationOption(notifDevPageInBrowser, "Open Download Page in Browser")
-        val optionDev2b = TPNotificationOption(notifDevPageCopyLink, "Copy Download Page Link")
+        val optionDev1a = TPNotificationOption(notifDevDownloadInBrowser, "Download Dev Version")
+        val optionDev1b = TPNotificationOption(notifDevDownloadCopyLink, "Copy Dev Download Link")
+        val optionDev2a = TPNotificationOption(notifDevPageInBrowser, "Open Dev Download Page")
+        val optionDev2b = TPNotificationOption(notifDevPageCopyLink, "Copy Dev Page Link")
 
         val options: Array<TPNotificationOption> =
             arrayOf(
