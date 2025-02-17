@@ -35,7 +35,7 @@ class PluginUpdateChecker(private val listener: UpdateCheckResultListener, priva
             currentReleaseVersionString: String = BuildConfig.VERSION_NAME_FULL,
             // Main Branch Recommended SemVer
             recommendedMainReleaseString: String =
-                resultData.mainTrack.recommendedRelease ?: resultData.mainTrack.latestRelease,
+                resultData.mainBranch.recommendedRelease ?: resultData.mainBranch.latestRelease,
             // If Build is Main Branch Release
             buildIsRelease: Boolean = BuildConfig.BUILD_IS_RELEASE,
             // Dev Branch Recommended SemVer
@@ -70,11 +70,11 @@ class PluginUpdateChecker(private val listener: UpdateCheckResultListener, priva
             }
 
             // Dev/Pre-release Version Update Check
-            if (!buildIsRelease && resultData.devTrack != null) {
+            if (!buildIsRelease && resultData.devBranch != null) {
                 // Running Dev Release
                 // If not provided by parameter, try getting Dev Branch Recommended Release, then Dev Branch Latest
                 val recommendedDevReleaseString: String =
-                    recommendedDevRelease ?: resultData.devTrack.recommendedRelease ?: resultData.devTrack.latestRelease
+                    recommendedDevRelease ?: resultData.devBranch.recommendedRelease ?: resultData.devBranch.latestRelease
 
                 if (recommendedDevReleaseString != currentReleaseVersionString) {
                     // Strings don't match
@@ -112,8 +112,8 @@ class PluginUpdateChecker(private val listener: UpdateCheckResultListener, priva
                 currentReleaseMajorVer == recommendedBranchRelease.major
 
             // Scan Version list of Major Version for any Recommended Next Versions
-            val versionListMapString = updateCheckResult.mainTrack.releaseMapByVersionString
-            val versionListGroupMap = updateCheckResult.mainTrack.releaseListGroupMap
+            val versionListMapString = updateCheckResult.mainBranch.releaseMapByVersionString
+            val versionListGroupMap = updateCheckResult.mainBranch.releaseListGroupMap
 
             // Try and get current version from the Release List
             versionListMapString[currentRelease.toString()]?.let { currentReleaseData ->
@@ -184,7 +184,7 @@ class PluginUpdateChecker(private val listener: UpdateCheckResultListener, priva
             }
 
             // If null, we can't find any recommended updates (Also smart casts to non-nullable
-            if (updateCheckResult.devTrack == null) {
+            if (updateCheckResult.devBranch == null) {
                 //updateData.devBranchReleaseData = null
                 return
             }
@@ -195,7 +195,7 @@ class PluginUpdateChecker(private val listener: UpdateCheckResultListener, priva
                 currentReleaseMajorVer == recommendedDevBranchRelease?.major
 
             // Try and get current version from the Release List
-            updateCheckResult.devTrack.releaseMapByVersionString[currentRelease.toString()]
+            updateCheckResult.devBranch.releaseMapByVersionString[currentRelease.toString()]
                 ?.let { currentReleaseData ->
                     // Release Matching Current found > Find Recommended release
 
@@ -204,8 +204,8 @@ class PluginUpdateChecker(private val listener: UpdateCheckResultListener, priva
                         updateData.devBranchReleaseData =
                             getMainOrPreReleaseByVersionString(
                                 recommendedNextString,
-                                updateCheckResult.mainTrack,
-                                updateCheckResult.devTrack
+                                updateCheckResult.mainBranch,
+                                updateCheckResult.devBranch
                             )
                         updateData.devBranchUpdateAvailable = true
                         updateData.devBranchManualUpdateRequired =
@@ -216,7 +216,7 @@ class PluginUpdateChecker(private val listener: UpdateCheckResultListener, priva
             // Continues if Current Release doesn't have Recommended Next Release or version info not found
 
 
-            val versionListGroupMap = updateCheckResult.devTrack.releaseListGroupMap
+            val versionListGroupMap = updateCheckResult.devBranch.releaseListGroupMap
             var recommendedVersionString: String? = null
             var recommendedVersionStringRequiresManualUpdate = false
 
@@ -255,8 +255,8 @@ class PluginUpdateChecker(private val listener: UpdateCheckResultListener, priva
                 updateData.devBranchReleaseData =
                     getMainOrPreReleaseByVersionString(
                         recommendedVerString,
-                        updateCheckResult.mainTrack,
-                        updateCheckResult.devTrack
+                        updateCheckResult.mainBranch,
+                        updateCheckResult.devBranch
                     )
                 updateData.devBranchUpdateAvailable = true
                 updateData.devBranchManualUpdateRequired = recommendedVersionStringRequiresManualUpdate
