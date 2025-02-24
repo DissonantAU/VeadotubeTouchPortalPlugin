@@ -2007,7 +2007,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         val currIntegrated = BuildConfig.USES_TP_BUNDLED_JRE
 
         val updtVerName = mainBranchReleaseData.version
-        val updtURL = mainBranchReleaseData.pageUrl
+        val updtURL = mainBranchReleaseData.downloadUrlPage
 
         val title = BuildConfig.NAME_SHORT + ": Plugin Update available"
         val message = "An update is available for the plugin - you are running $currVerName ${
@@ -2038,7 +2038,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         val currIntegrated = BuildConfig.USES_TP_BUNDLED_JRE
 
         val updtVerName = devBranchReleaseData.version
-        val updtURL = devBranchReleaseData.pageUrl
+        val updtURL = devBranchReleaseData.downloadUrlPage
 
         val title = BuildConfig.NAME_SHORT + ": Plugin Update available"
         val message = "An update is available for the plugin - you are running $currVerName ${
@@ -2079,10 +2079,10 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         val currIntegrated = BuildConfig.USES_TP_BUNDLED_JRE
 
         val updtVerName = mainBranchReleaseData.version
-        val updtURL = mainBranchReleaseData.pageUrl
+        val updtURL = mainBranchReleaseData.downloadUrlPage
 
         val updtVerNameDev = devBranchReleaseData.version
-        val updtURLDev = devBranchReleaseData.pageUrl
+        val updtURLDev = devBranchReleaseData.downloadUrlPage
 
 
         val title = BuildConfig.NAME_SHORT + ": Plugin Update available"
