@@ -133,7 +133,9 @@ class PluginUpdateCheckerTest {
               },
               {
                 "ver": "0.7.1-beta",
-                "url": "https://github.com/DissonantAU/VeadotubeTouchPortalPlugin/releases/tag/0.7.1-beta"
+                "url": "https://github.com/DissonantAU/VeadotubeTouchPortalPlugin/releases/tag/0.7.1-beta",
+                "urlDlExternal": "https://github.com/DissonantAU/VeadotubeTouchPortalPlugin/releases/download/0.7.1-beta/VeadoTouchPlugin_0.7.1-beta.20241210+debug.tpp",
+                "urlDlBundled": "https://github.com/DissonantAU/VeadotubeTouchPortalPlugin/releases/download/0.7.1-beta/VeadoTouchPlugin_0.7.1-beta.20241210+internalJava-debug.tpp"
               },
               {
                 "ver": "0.7.2-beta",
@@ -500,6 +502,64 @@ class PluginUpdateCheckerTest {
         println("##############################")
     }
 
+    @Test
+    fun checkURLs() {
+        val expectedReleasesUrl = "https://github.com/DissonantAU/VeadotubeTouchPortalPlugin/releases"
+        val expectedReleasesLatestUrl = "https://github.com/DissonantAU/VeadotubeTouchPortalPlugin/releases/latest"
+
+        // Strings
+        val releasesURL = testUpdateCheckResult.releasesURL
+        val releasesLatestURL = testUpdateCheckResult.releasesLatestURL
+
+        assertEquals(releasesURL, expectedReleasesUrl)
+        assertEquals(releasesLatestURL, expectedReleasesLatestUrl)
+
+        // URLs
+        val urlReleases = testUpdateCheckResult.urlReleases
+        val urlReleasesLatest = testUpdateCheckResult.urlReleasesLatest
+
+        assertEquals(urlReleases.toString(), expectedReleasesUrl)
+        assertNotNull(urlReleasesLatest)
+        assertEquals(urlReleasesLatest?.toString(), expectedReleasesLatestUrl)
+
+        // Release Data
+        val verWithURLs = "0.7.1-beta"
+
+        val expectedUrl = "https://github.com/DissonantAU/VeadotubeTouchPortalPlugin/releases/tag/0.7.1-beta"
+        val expectedUrlDlExternal =
+            "https://github.com/DissonantAU/VeadotubeTouchPortalPlugin/releases/download/0.7.1-beta/VeadoTouchPlugin_0.7.1-beta.20241210+debug.tpp"
+        val expectedUrlDlBundled =
+            "https://github.com/DissonantAU/VeadotubeTouchPortalPlugin/releases/download/0.7.1-beta/VeadoTouchPlugin_0.7.1-beta.20241210+internalJava-debug.tpp"
+
+        val devTrackData = testUpdateCheckResult.devBranch!! //Test Data has DevTrack, assert non-null
+
+        val verToCheck = devTrackData.releaseMapByVersionString[verWithURLs]
+
+        assertNotNull(verToCheck)
+
+        if (verToCheck != null) {
+            // Strings
+            val downloadUrlPage = verToCheck.downloadUrlPage
+            val downloadUrlExternal = verToCheck.downloadUrlExternal
+            val downloadUrlBundled = verToCheck.downloadUrlBundled
+
+            assertEquals(downloadUrlPage, expectedUrl)
+            assertEquals(downloadUrlExternal, expectedUrlDlExternal)
+            assertEquals(downloadUrlBundled, expectedUrlDlBundled)
+
+            // URLs
+            val urlDownloadPage = verToCheck.urlDownloadPage
+            val downloadExternalUrl = verToCheck.urlDownloadExternal
+            val downloadBundledUrl = verToCheck.urlDownloadBundled
+
+            assertEquals(urlDownloadPage.toString(), expectedUrl)
+            assertNotNull(downloadExternalUrl)
+            assertEquals(downloadExternalUrl?.toString(), expectedUrlDlExternal)
+            assertNotNull(downloadBundledUrl)
+            assertEquals(downloadBundledUrl?.toString(), expectedUrlDlBundled)
+        }
+
+    }
 
     @Test
     fun semVerStringIsPreRelease() {
