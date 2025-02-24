@@ -145,7 +145,7 @@ data class ReleaseData(
      *
      * e.g. "https://github.com/Author/project/download/version/plugin-externalJava.tpp"
      */
-    @SerialName("urlDlExternal") val downloadExternalUrl: String? = null,
+    @SerialName("urlDlExternal") val downloadUrlExternal: String? = null,
     /**
      * Direct Download URL for the Bundled Java Version of this release
      *
@@ -153,7 +153,7 @@ data class ReleaseData(
      *
      * e.g. "https://github.com/Author/project/download/version/plugin-BundledJava.tpp"
      */
-    @SerialName("urlDlBundled") val downloadBundledUrl: String? = null,
+    @SerialName("urlDlBundled") val downloadUrlBundled: String? = null,
     /**
      * Recommended Next Release
      *

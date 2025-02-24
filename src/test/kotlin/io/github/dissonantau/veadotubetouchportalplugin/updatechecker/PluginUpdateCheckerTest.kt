@@ -186,9 +186,6 @@ class PluginUpdateCheckerTest {
 
     @Test
     fun printReleaseCheckResult() {
-        //
-
-
         println("releasesURL: ${testUpdateCheckResult.releasesURL}")
         println("releasesLatestURL: ${testUpdateCheckResult.releasesLatestURL ?: "Not Found"}")
 
@@ -206,8 +203,8 @@ class PluginUpdateCheckerTest {
                 println("    item $count - version:         ${rel.version}")
                 println("    item $count - versionSemantic: ${rel.versionSemantic}")
                 println("    item $count - pageUrl:         ${rel.pageUrl}")
-                println("    item $count - downloadExternalUrl: ${rel.downloadExternalUrl ?: "Not Found"}")
-                println("    item $count - downloadBundledUrl: ${rel.downloadBundledUrl ?: "Not Found"}")
+                println("    item $count - downloadExternalUrl: ${rel.downloadUrlExternal ?: "Not Found"}")
+                println("    item $count - downloadBundledUrl: ${rel.downloadUrlBundled ?: "Not Found"}")
                 println("    item $count - recommendedNextRelease:          ${rel.recommendedNextRelease ?: "Not Found"}")
                 println("    item $count - nextReleaseRequiresManualUpdate: ${rel.recommendedNextReleaseRequiresManualUpdate}")
             }
@@ -236,8 +233,8 @@ class PluginUpdateCheckerTest {
                 println("    item $count - version:         ${rel.version}")
                 println("    item $count - versionSemantic: ${rel.versionSemantic}")
                 println("    item $count - pageUrl:         ${rel.pageUrl}")
-                println("    item $count - downloadExternalUrl: ${rel.downloadExternalUrl ?: "Not Found"}")
-                println("    item $count - downloadBundledUrl: ${rel.downloadBundledUrl ?: "Not Found"}")
+                println("    item $count - downloadExternalUrl: ${rel.downloadUrlExternal ?: "Not Found"}")
+                println("    item $count - downloadBundledUrl: ${rel.downloadUrlBundled ?: "Not Found"}")
                 println("    item $count - recommendedNextRelease:          ${rel.recommendedNextRelease ?: "Not Found"}")
                 println("    item $count - nextReleaseRequiresManualUpdate: ${rel.recommendedNextReleaseRequiresManualUpdate}")
             }
