@@ -10,9 +10,10 @@ class UpdateReleaseData {
     var mainBranchUpdateAvailable = false
     var mainBranchReleaseData: ReleaseData? = null
     var mainBranchManualUpdateRequired = false
+    var mainBranchData: ReleaseBranchData? = null
 
     var devBranchUpdateAvailable = false
     var devBranchReleaseData: ReleaseData? = null
     var devBranchManualUpdateRequired = false
-
+    var devBranchData: ReleaseBranchData? = null
 }
