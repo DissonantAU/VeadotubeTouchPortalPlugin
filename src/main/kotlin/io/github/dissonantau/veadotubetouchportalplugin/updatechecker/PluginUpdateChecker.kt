@@ -74,7 +74,8 @@ class PluginUpdateChecker(private val listener: UpdateCheckResultListener, priva
                 // Running Dev Release
                 // If not provided by parameter, try getting Dev Branch Recommended Release, then Dev Branch Latest
                 val recommendedDevReleaseString: String =
-                    recommendedDevRelease ?: resultData.devBranch.recommendedRelease ?: resultData.devBranch.latestRelease
+                    recommendedDevRelease ?: resultData.devBranch.recommendedRelease
+                    ?: resultData.devBranch.latestRelease
 
                 if (recommendedDevReleaseString != currentReleaseVersionString) {
                     // Strings don't match
@@ -126,6 +127,7 @@ class PluginUpdateChecker(private val listener: UpdateCheckResultListener, priva
                         updateData.mainBranchUpdateAvailable = true
                         updateData.mainBranchManualUpdateRequired =
                             currentReleaseData.recommendedNextReleaseRequiresManualUpdate
+                        updateData.mainBranchData = updateCheckResult.mainBranch
                         return
                     }
                 }
@@ -146,6 +148,7 @@ class PluginUpdateChecker(private val listener: UpdateCheckResultListener, priva
                     if (currentRecommendedIsSameMajorVer && release.versionSemantic == recommendedBranchRelease) {
                         updateData.mainBranchReleaseData = release
                         updateData.mainBranchUpdateAvailable = true
+                        updateData.mainBranchData = updateCheckResult.mainBranch
                         return
                     }
                     // Try and find recommendedNextRelease - continues if string is null, or string doesn't match a next version
@@ -156,6 +159,7 @@ class PluginUpdateChecker(private val listener: UpdateCheckResultListener, priva
                             updateData.mainBranchUpdateAvailable = true
                             updateData.mainBranchManualUpdateRequired =
                                 release.recommendedNextReleaseRequiresManualUpdate
+                            updateData.mainBranchData = updateCheckResult.mainBranch
                             return
                         }
                     }
@@ -166,6 +170,7 @@ class PluginUpdateChecker(private val listener: UpdateCheckResultListener, priva
             versionListMapString[recommendedBranchRelease.toString()]?.let {
                 updateData.mainBranchReleaseData = it
                 updateData.mainBranchUpdateAvailable = true
+                updateData.mainBranchData = updateCheckResult.mainBranch
             }
         }
 
@@ -178,16 +183,12 @@ class PluginUpdateChecker(private val listener: UpdateCheckResultListener, priva
             updateCheckResult: UpdateCheckResult
         ) {
             // If recommended releases are the same, return null (Main Ver check returns same)
-            if (recommendedMainBranchRelease == recommendedDevBranchRelease) {
-                //updateData.devBranchReleaseData = null
-                return
-            }
+            if (recommendedMainBranchRelease == recommendedDevBranchRelease) return
 
-            // If null, we can't find any recommended updates (Also smart casts to non-nullable
-            if (updateCheckResult.devBranch == null) {
-                //updateData.devBranchReleaseData = null
-                return
-            }
+
+            // If null, we can't find any recommended updates (Also smart casts to non-nullable)
+            if (updateCheckResult.devBranch == null) return
+
 
             val currentReleaseMajorVer = currentRelease.major
 
@@ -210,6 +211,7 @@ class PluginUpdateChecker(private val listener: UpdateCheckResultListener, priva
                         updateData.devBranchUpdateAvailable = true
                         updateData.devBranchManualUpdateRequired =
                             currentReleaseData.recommendedNextReleaseRequiresManualUpdate
+                        updateData.devBranchData = updateCheckResult.devBranch
                         return
                     }
                 }
@@ -227,15 +229,18 @@ class PluginUpdateChecker(private val listener: UpdateCheckResultListener, priva
                     // Skip if less than current
                     if (release.versionSemantic < currentRelease) continue
 
-                    // If Next Ver is Same Major Version, break if we pass it
-                    if (currentRecommendedDevSameMajorVer && recommendedDevBranchRelease != null &&
-                        release.versionSemantic > recommendedDevBranchRelease
-                    ) break
+                    if (currentRecommendedDevSameMajorVer) {
+                        // If Next Ver is Same Major Version, break if we pass it
+                        if (recommendedDevBranchRelease != null &&
+                            release.versionSemantic > recommendedDevBranchRelease
+                        ) break
 
-                    // If we find an exact match for recommended version while scanning, return it
-                    if (currentRecommendedDevSameMajorVer && release.versionSemantic == recommendedDevBranchRelease) {
-                        updateData.devBranchReleaseData = release
-                        return
+                        // If we find an exact match for recommended version while scanning, return it
+                        if (release.versionSemantic == recommendedDevBranchRelease) {
+                            updateData.devBranchReleaseData = release
+                            updateData.devBranchData = updateCheckResult.devBranch
+                            return
+                        }
                     }
 
                     // Try and find recommendedNextRelease
@@ -260,6 +265,7 @@ class PluginUpdateChecker(private val listener: UpdateCheckResultListener, priva
                     )
                 updateData.devBranchUpdateAvailable = true
                 updateData.devBranchManualUpdateRequired = recommendedVersionStringRequiresManualUpdate
+                updateData.devBranchData = updateCheckResult.devBranch
                 return
             }
 
