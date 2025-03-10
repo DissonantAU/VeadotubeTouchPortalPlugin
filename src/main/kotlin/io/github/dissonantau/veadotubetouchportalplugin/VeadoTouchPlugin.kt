@@ -1037,19 +1037,115 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
 
 
     override fun onNotificationOptionClicked(tpNotificationOptionClickedMessage: TPNotificationOptionClickedMessage) {
-        LOGGER.info { "onNotificationOptionClicked received" }
+        LOGGER.debug { "onNotificationOptionClicked - Received Notification: ID = ${tpNotificationOptionClickedMessage.notificationId} - Option ID = ${tpNotificationOptionClickedMessage.optionId}" }
         //TODO setup notifications
 
-        if (tpNotificationOptionClickedMessage.notificationId.contains(NOTIFICATION_UPDATE_ID)) {
+        if (tpNotificationOptionClickedMessage.notificationId.startsWith(NOTIFICATION_UPDATE_ID)) {
             // Update Notification
-            when (tpNotificationOptionClickedMessage.notificationId) {
+            LOGGER.debug { "onNotificationOptionClicked - received matches plugin Notification ID" }
+
+            val relData = updateReleaseData
+
+            if (relData == null) {
+                LOGGER.debug { "onNotificationOptionClicked - Received NOTIFICATION_UPDATE_ID but updateReleaseData is null" }
+                LOGGER.warn { "The update notification clicked is out of date or last check failed" }
+                return
+            }
+
+
+            val mainURL = updateReleaseDataMain
+            val devURL = updateReleaseDataDev
+
+            //val notificationID = "${NotificationUpdateIDs.BOTH.id}:${updtVerName}:${updtVerNameDev}"
+
+            // Split - NotificationUpdateIDs ; Version ID (Main or Dev) ; Version ID Dev, if Notif ID Both
+            val notificationIdBreakdown = tpNotificationOptionClickedMessage.notificationId.split(':')
+
+            val notificationId = notificationIdBreakdown[0].ifBlank { return }
+
+            when (notificationId) {
                 NotificationUpdateIDs.MAIN.id -> {
                     // Main Update Notification
+                    val version = notificationIdBreakdown[1]
+                    LOGGER.debug { "onNotificationOptionClicked - Notification ID: Main - Version: $version" }
+
+                    val updateReleaseDataMain = updateReleaseDataMain
+
+                    if (updateReleaseDataMain == null) {
+                        LOGGER.debug { "onNotificationOptionClicked - Received $version but updateReleaseDataMain is null" }
+                        LOGGER.warn { "The update notification clicked is out of date or last check failed" }
+                        return
+                    }
+
+                    val versionInfo: ReleaseData =
+                        if (version != updateReleaseDataMain.version) {
+                            LOGGER.debug { "onNotificationOptionClicked - Received $version but updateReleaseDataMain is ${updateReleaseDataMain.version}" }
+                            LOGGER.warn { "The update notification clicked may be out of date and a newer version is available" }
+
+                            // Get selected version from map, etc
+                            val newVerRelInfo: ReleaseData? =
+                                updateReleaseData?.mainBranchData?.releaseMapByVersionString?.get(version)
+
+                            // Check Again for new version fetched
+                            if (newVerRelInfo == null) {
+                                LOGGER.debug { "onNotificationOptionClicked - Received $version but unable to find version in Main Release list" }
+                                LOGGER.warn { "The update notification clicked is out of date or last check failed" }
+                                return
+                            }
+
+                            newVerRelInfo
+                        } else
+                            updateReleaseDataMain
+
+
+                    // Process Notification
                     when (tpNotificationOptionClickedMessage.optionId) {
-                        NotificationUpdateOptionsIDs.MAIN_DOWNLOAD_BROWSER.id->{}
-                        NotificationUpdateOptionsIDs.MAIN_DOWNLOAD_COPY_LINK.id->{}
-                        NotificationUpdateOptionsIDs.MAIN_PAGE_BROWSER.id->{}
-                        NotificationUpdateOptionsIDs.MAIN_PAGE_COPY_LINK.id->{}
+                        NotificationUpdateOptionsIDs.MAIN_DOWNLOAD_BROWSER.id -> {
+                            val dlUrl = when {
+                                BuildConfig.USES_TP_BUNDLED_JRE && versionInfo.downloadUrlBundled != null ->
+                                    versionInfo.urlDownloadBundled
+
+                                else ->
+                                    versionInfo.urlDownloadExternal
+                            }
+
+                            if (dlUrl == null) {
+                                LOGGER.debug { "onNotificationOptionClicked - Open Download Button Pressed, but Download URL is missing. Opening Download Page URL instead" }
+                                openUpdateLink(versionInfo.urlDownloadPage.toURI())
+                            } else {
+                                LOGGER.debug { "onNotificationOptionClicked - Open Download Button Pressed, opening '${dlUrl}'" }
+                                openUpdateLink(dlUrl.toURI())
+                            }
+
+                        }
+
+                        NotificationUpdateOptionsIDs.MAIN_DOWNLOAD_COPY_LINK.id -> {
+                            val dlUrl = when {
+                                BuildConfig.USES_TP_BUNDLED_JRE && versionInfo.downloadUrlBundled != null ->
+                                    versionInfo.urlDownloadBundled
+
+                                else ->
+                                    versionInfo.urlDownloadExternal
+                            }
+
+                            if (dlUrl == null) {
+                                LOGGER.debug { "onNotificationOptionClicked - Copy Download Button Pressed, but Download URL is missing. copying Download Page URL instead" }
+                                copyTextToClipboard(versionInfo.urlDownloadPage.toString())
+                            } else {
+                                LOGGER.debug { "onNotificationOptionClicked - Copy Download Button Pressed, copying to clipboard: '${dlUrl}'" }
+                                copyTextToClipboard(dlUrl.toString())
+                            }
+                        }
+
+                        NotificationUpdateOptionsIDs.MAIN_PAGE_BROWSER.id -> {
+                            LOGGER.debug { "onNotificationOptionClicked - Open Page Button Pressed, opening page: '${versionInfo.urlDownloadPage}'" }
+                            copyTextToClipboard(versionInfo.urlDownloadPage.toString())
+                        }
+
+                        NotificationUpdateOptionsIDs.MAIN_PAGE_COPY_LINK.id -> {
+                            LOGGER.debug { "onNotificationOptionClicked - Copy Page Button Pressed, copying to clipboard: '${versionInfo.urlDownloadPage}'" }
+                            copyTextToClipboard(versionInfo.urlDownloadPage.toString())
+                        }
 
                         else -> LOGGER.warn { "Unknown Notification Option ID Received" }
                     }
@@ -1057,26 +1153,251 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
 
                 NotificationUpdateIDs.DEV.id -> {
                     // Dev Update Notification
+                    val version = notificationIdBreakdown[1]
+                    LOGGER.debug { "onNotificationOptionClicked - Notification ID: Dev - Version: $version" }
+
+                    val updateReleaseDataDev = updateReleaseDataDev
+
+                    if (updateReleaseDataDev == null) {
+                        LOGGER.debug { "onNotificationOptionClicked - Received $version but updateReleaseDataDev is null" }
+                        LOGGER.warn { "The update notification clicked is out of date or last check failed" }
+                        return
+                    }
+
+                    val versionInfo: ReleaseData =
+                        if (version != updateReleaseDataDev.version) {
+                            LOGGER.debug { "onNotificationOptionClicked - Received $version but updateReleaseDataDev is ${updateReleaseDataDev.version}" }
+                            LOGGER.warn { "The update notification clicked may be out of date and a newer version is available" }
+
+                            // Get selected version from map, etc
+                            val newVerRelInfo: ReleaseData? =
+                                updateReleaseData?.devBranchData?.releaseMapByVersionString?.get(version)
+
+                            // Check Again for new version fetched
+                            if (newVerRelInfo == null) {
+                                LOGGER.debug { "onNotificationOptionClicked - Received $version but unable to find version in Dev Release list" }
+                                LOGGER.warn { "The update notification clicked is out of date or last check failed" }
+                                return
+                            }
+
+                            newVerRelInfo
+                        } else
+                            updateReleaseDataDev
+
+
+                    // Process Notification
                     when (tpNotificationOptionClickedMessage.optionId) {
-                        NotificationUpdateOptionsIDs.DEV_DOWNLOAD_BROWSER.id->{}
-                        NotificationUpdateOptionsIDs.DEV_DOWNLOAD_COPY_LINK.id->{}
-                        NotificationUpdateOptionsIDs.DEV_PAGE_BROWSER.id->{}
-                        NotificationUpdateOptionsIDs.DEV_PAGE_COPY_LINK.id->{}
+                        NotificationUpdateOptionsIDs.DEV_DOWNLOAD_BROWSER.id -> {
+                            val dlUrl = when {
+                                BuildConfig.USES_TP_BUNDLED_JRE && versionInfo.downloadUrlBundled != null ->
+                                    versionInfo.urlDownloadBundled
+
+                                else ->
+                                    versionInfo.urlDownloadExternal
+                            }
+
+                            if (dlUrl == null) {
+                                LOGGER.debug { "onNotificationOptionClicked - Open Download Button Pressed, but Download URL is missing. Opening Download Page URL instead" }
+                                openUpdateLink(versionInfo.urlDownloadPage.toURI())
+                            } else {
+                                LOGGER.debug { "onNotificationOptionClicked - Open Download Button Pressed, opening '${dlUrl}'" }
+                                openUpdateLink(dlUrl.toURI())
+                            }
+                        }
+
+                        NotificationUpdateOptionsIDs.DEV_DOWNLOAD_COPY_LINK.id -> {
+                            val dlUrl = when {
+                                BuildConfig.USES_TP_BUNDLED_JRE && versionInfo.downloadUrlBundled != null ->
+                                    versionInfo.urlDownloadBundled
+
+                                else ->
+                                    versionInfo.urlDownloadExternal
+                            }
+
+                            if (dlUrl == null) {
+                                LOGGER.debug { "onNotificationOptionClicked - Copy Download Button Pressed, but Download URL is missing. copying Download Page URL instead" }
+                                copyTextToClipboard(versionInfo.urlDownloadPage.toString())
+                            } else {
+                                LOGGER.debug { "onNotificationOptionClicked - Copy Download Button Pressed, copying to clipboard: '${dlUrl}'" }
+                                copyTextToClipboard(dlUrl.toString())
+                            }
+
+                        }
+
+                        NotificationUpdateOptionsIDs.DEV_PAGE_BROWSER.id -> {
+                            LOGGER.debug { "onNotificationOptionClicked - Open Page Button Pressed, opening page: '${versionInfo.urlDownloadPage}'" }
+                            copyTextToClipboard(versionInfo.urlDownloadPage.toString())
+                        }
+
+                        NotificationUpdateOptionsIDs.DEV_PAGE_COPY_LINK.id -> {
+                            LOGGER.debug { "onNotificationOptionClicked - Copy Page Button Pressed, copying to clipboard: '${versionInfo.urlDownloadPage}'" }
+                            copyTextToClipboard(versionInfo.urlDownloadPage.toString())
+                        }
 
                         else -> LOGGER.warn { "Unknown Notification Option ID Received" }
-                    }}
+                    }
+                }
 
                 NotificationUpdateIDs.BOTH.id -> {
-                    when (tpNotificationOptionClickedMessage.optionId) {
-                        NotificationUpdateOptionsIDs.MAIN_DOWNLOAD_BROWSER.id->{}
-                        NotificationUpdateOptionsIDs.MAIN_DOWNLOAD_COPY_LINK.id->{}
-                        NotificationUpdateOptionsIDs.MAIN_PAGE_BROWSER.id->{}
-                        NotificationUpdateOptionsIDs.MAIN_PAGE_COPY_LINK.id->{}
+                    // Main and Dev Update Notification
+                    val versionMain = notificationIdBreakdown[1]
+                    val versionDev = notificationIdBreakdown[2]
+                    LOGGER.debug { "onNotificationOptionClicked - Notification ID: Both - Main Version: $versionMain - Dev Version: $versionDev" }
 
-                        NotificationUpdateOptionsIDs.DEV_DOWNLOAD_BROWSER.id->{}
-                        NotificationUpdateOptionsIDs.DEV_DOWNLOAD_COPY_LINK.id->{}
-                        NotificationUpdateOptionsIDs.DEV_PAGE_BROWSER.id->{}
-                        NotificationUpdateOptionsIDs.DEV_PAGE_COPY_LINK.id->{}
+
+                    val updateReleaseDataMain = updateReleaseDataMain
+
+                    if (updateReleaseDataMain == null) {
+                        LOGGER.debug { "onNotificationOptionClicked - Received $versionMain but updateReleaseDataMain is null" }
+                        LOGGER.warn { "The update notification clicked is out of date or last check failed" }
+                        return
+                    }
+
+                    val versionInfoMain: ReleaseData =
+                        if (versionMain != updateReleaseDataMain.version) {
+                            LOGGER.debug { "onNotificationOptionClicked - Received $versionMain but updateReleaseDataMain is ${updateReleaseDataMain.version}" }
+                            LOGGER.warn { "The update notification clicked may be out of date and a newer version is available" }
+
+                            // Get selected version from map, etc
+                            val newVerRelInfo: ReleaseData? =
+                                updateReleaseData?.mainBranchData?.releaseMapByVersionString?.get(versionMain)
+
+                            // Check Again for new version fetched
+                            if (newVerRelInfo == null) {
+                                LOGGER.debug { "onNotificationOptionClicked - Received $versionMain but unable to find version in Main Release list" }
+                                LOGGER.warn { "The update notification clicked is out of date or last check failed" }
+                                return
+                            }
+
+                            newVerRelInfo
+                        } else
+                            updateReleaseDataMain
+
+
+                    val updateReleaseDataDev = updateReleaseDataDev
+
+                    if (updateReleaseDataDev == null) {
+                        LOGGER.debug { "onNotificationOptionClicked - Received $versionDev but updateReleaseDataDev is null" }
+                        LOGGER.warn { "The update notification clicked is out of date or last check failed" }
+                        return
+                    }
+
+                    val versionInfo: ReleaseData =
+                        if (versionDev != updateReleaseDataDev.version) {
+                            LOGGER.debug { "onNotificationOptionClicked - Received $versionDev but updateReleaseDataDev is ${updateReleaseDataDev.version}" }
+                            LOGGER.warn { "The update notification clicked may be out of date and a newer version is available" }
+
+                            // Get selected version from map, etc
+                            val newVerRelInfo: ReleaseData? =
+                                updateReleaseData?.devBranchData?.releaseMapByVersionString?.get(versionDev)
+
+                            // Check Again for new version fetched
+                            if (newVerRelInfo == null) {
+                                LOGGER.debug { "onNotificationOptionClicked - Received $versionDev but unable to find version in Dev Release list" }
+                                LOGGER.warn { "The update notification clicked is out of date or last check failed" }
+                                return
+                            }
+
+                            newVerRelInfo
+                        } else
+                            updateReleaseDataDev
+
+
+                    // Process Notification
+                    when (tpNotificationOptionClickedMessage.optionId) {
+                        NotificationUpdateOptionsIDs.MAIN_DOWNLOAD_BROWSER.id
+                        -> {
+                            val dlUrl = when {
+                                BuildConfig.USES_TP_BUNDLED_JRE && versionInfoMain.downloadUrlBundled != null ->
+                                    versionInfoMain.urlDownloadBundled
+
+                                else ->
+                                    versionInfoMain.urlDownloadExternal
+                            }
+
+                            if (dlUrl == null) {
+                                LOGGER.debug { "onNotificationOptionClicked - Open Download Button Pressed, but Download URL is missing. Opening Download Page URL instead" }
+                                openUpdateLink(versionInfoMain.urlDownloadPage.toURI())
+                            } else {
+                                LOGGER.debug { "onNotificationOptionClicked - Open Download Button Pressed, opening '${dlUrl}'" }
+                                openUpdateLink(dlUrl.toURI())
+                            }
+
+                        }
+
+                        NotificationUpdateOptionsIDs.MAIN_DOWNLOAD_COPY_LINK.id -> {
+                            val dlUrl = when {
+                                BuildConfig.USES_TP_BUNDLED_JRE && versionInfoMain.downloadUrlBundled != null ->
+                                    versionInfoMain.urlDownloadBundled
+
+                                else ->
+                                    versionInfoMain.urlDownloadExternal
+                            }
+
+                            if (dlUrl == null) {
+                                LOGGER.debug { "onNotificationOptionClicked - Copy Download Button Pressed, but Download URL is missing. copying Download Page URL instead" }
+                                copyTextToClipboard(versionInfoMain.urlDownloadPage.toString())
+                            } else {
+                                LOGGER.debug { "onNotificationOptionClicked - Copy Download Button Pressed, copying to clipboard: '${dlUrl}'" }
+                                copyTextToClipboard(dlUrl.toString())
+                            }
+                        }
+
+                        NotificationUpdateOptionsIDs.MAIN_PAGE_BROWSER.id -> {
+                            LOGGER.debug { "onNotificationOptionClicked - Open Page Button Pressed, opening page: '${versionInfoMain.urlDownloadPage}'" }
+                            copyTextToClipboard(versionInfoMain.urlDownloadPage.toString())
+                        }
+
+                        NotificationUpdateOptionsIDs.MAIN_PAGE_COPY_LINK.id -> {
+                            LOGGER.debug { "onNotificationOptionClicked - Copy Page Button Pressed, copying to clipboard: '${versionInfoMain.urlDownloadPage}'" }
+                            copyTextToClipboard(versionInfoMain.urlDownloadPage.toString())
+                        }
+
+                        NotificationUpdateOptionsIDs.DEV_DOWNLOAD_BROWSER.id -> {
+                            val dlUrl = when {
+                                BuildConfig.USES_TP_BUNDLED_JRE && versionInfo.downloadUrlBundled != null ->
+                                    versionInfo.urlDownloadBundled
+
+                                else ->
+                                    versionInfo.urlDownloadExternal
+                            }
+
+                            if (dlUrl == null) {
+                                LOGGER.debug { "onNotificationOptionClicked - Open Download Button Pressed, but Download URL is missing. Opening Download Page URL instead" }
+                                openUpdateLink(versionInfo.urlDownloadPage.toURI())
+                            } else {
+                                LOGGER.debug { "onNotificationOptionClicked - Open Download Button Pressed, opening '${dlUrl}'" }
+                                openUpdateLink(dlUrl.toURI())
+                            }
+                        }
+
+                        NotificationUpdateOptionsIDs.DEV_DOWNLOAD_COPY_LINK.id -> {
+                            val dlUrl = when {
+                                BuildConfig.USES_TP_BUNDLED_JRE && versionInfo.downloadUrlBundled != null ->
+                                    versionInfo.urlDownloadBundled
+
+                                else ->
+                                    versionInfo.urlDownloadExternal
+                            }
+
+                            if (dlUrl == null) {
+                                LOGGER.debug { "onNotificationOptionClicked - Copy Download Button Pressed, but Download URL is missing. copying Download Page URL instead" }
+                                copyTextToClipboard(versionInfo.urlDownloadPage.toString())
+                            } else {
+                                LOGGER.debug { "onNotificationOptionClicked - Copy Download Button Pressed, copying to clipboard: '${dlUrl}'" }
+                                copyTextToClipboard(dlUrl.toString())
+                            }
+                        }
+
+                        NotificationUpdateOptionsIDs.DEV_PAGE_BROWSER.id -> {
+                            LOGGER.debug { "onNotificationOptionClicked - Open Page Button Pressed, opening page: '${versionInfo.urlDownloadPage}'" }
+                            copyTextToClipboard(versionInfo.urlDownloadPage.toString())
+                        }
+
+                        NotificationUpdateOptionsIDs.DEV_PAGE_COPY_LINK.id -> {
+                            LOGGER.debug { "onNotificationOptionClicked - Copy Page Button Pressed, copying to clipboard: '${versionInfo.urlDownloadPage}'" }
+                            copyTextToClipboard(versionInfo.urlDownloadPage.toString())
+                        }
 
                         else -> LOGGER.warn { "Unknown Notification Option ID Received" }
                     }
@@ -1936,10 +2257,22 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         updateChecker = PluginUpdateChecker(veadotubePlugin, BuildConfig.PLUGIN_RELEASES_UPDATE_CHECK_URI)
     }
 
+    /** Update Data */
+    private var updateReleaseData: UpdateReleaseData? = null
+
+    /** Release Data for Main Track Update */
+    private var updateReleaseDataMain: ReleaseData? = null
+
+    /** Release Data for Dev Track Update */
+    private var updateReleaseDataDev: ReleaseData? = null
+
     /**
      * Process Received Update Check Result
      */
     override fun onUpdateCheckResult(updateData: UpdateReleaseData) {
+        // Assign for use with notifications
+        updateReleaseData = updateData
+
         if (updateData.updateAvailable) {
             // TODO Send notification
             // Check flagged as Manual (eg Breaking update) > updateManualRequired = true
@@ -1995,12 +2328,6 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         updateChecker = null
     }
 
-    /** Release Data for Main Track Update */
-    private var updateReleaseDataMain: ReleaseData? = null
-
-    /** Release Data for Dev Track Update */
-    private var updateReleaseDataDev: ReleaseData? = null
-
 
     private fun notifyReleaseUpdateMain(mainBranchReleaseData: ReleaseData) {
         val currVerName = BuildConfig.VERSION_NAME_BASE
@@ -2012,25 +2339,31 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         val title = BuildConfig.NAME_SHORT + ": Plugin Update available"
         val message = "An update is available for the plugin - you are running $currVerName ${
             if (currIntegrated) "(Bundled Java) " else ""
-        }and a newer recommended version ($updtVerName) is available at $updtURL.\n"
+        }and a newer recommended version ($updtVerName) is available at\n$updtURL"
 
         val notifMainDownloadInBrowser = NotificationUpdateOptionsIDs.MAIN_DOWNLOAD_BROWSER.id
         val notifMainDownloadCopyLink = NotificationUpdateOptionsIDs.MAIN_DOWNLOAD_COPY_LINK.id
         val notifMainPageInBrowser = NotificationUpdateOptionsIDs.MAIN_PAGE_BROWSER.id
         val notifMainPageCopyLink = NotificationUpdateOptionsIDs.MAIN_PAGE_COPY_LINK.id
 
-        val option1a = TPNotificationOption(notifMainDownloadInBrowser, "Download in Browser")
-        val option1b = TPNotificationOption(notifMainDownloadCopyLink, "Copy Download Link")
-        val option2a = TPNotificationOption(notifMainPageInBrowser, "Open Download Page in Browser")
-        val option2b = TPNotificationOption(notifMainPageCopyLink, "Copy Download Page Link")
-
         val options: Array<TPNotificationOption> =
-            arrayOf(option1a, option1b, option2a, option2b)
+            arrayOf(
+                TPNotificationOption(notifMainDownloadInBrowser, "Download in Browser"),
+                TPNotificationOption(notifMainDownloadCopyLink, "Copy Download Link"),
+                TPNotificationOption(notifMainPageInBrowser, "Open Download Page in Browser"),
+                TPNotificationOption(notifMainPageCopyLink, "Copy Download Page Link")
+            )
 
         // Assign Release Data to outer variable
         updateReleaseDataMain = mainBranchReleaseData
 
-        veadotubePlugin.sendShowNotification(NotificationUpdateIDs.MAIN.id, title, message, options)
+        // ID is <baseMainId>:<mainVer>
+        val notificationID = "${NotificationUpdateIDs.MAIN.id}:${updtVerName}"
+
+        // Send Notification
+        veadotubePlugin.sendShowNotification(
+            notificationID, title, message, options
+        )
     }
 
     private fun notifyReleaseUpdateDev(devBranchReleaseData: ReleaseData) {
@@ -2043,26 +2376,30 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         val title = BuildConfig.NAME_SHORT + ": Plugin Update available"
         val message = "An update is available for the plugin - you are running $currVerName ${
             if (currIntegrated) "(Bundled Java) " else ""
-        }and a newer recommended version ($updtVerName) is available at $updtURL.\n"
+        }and a newer recommended version ($updtVerName) is available at\n$updtURL"
 
         val notifDevDownloadInBrowser = NotificationUpdateOptionsIDs.DEV_DOWNLOAD_BROWSER.id
         val notifDevDownloadCopyLink = NotificationUpdateOptionsIDs.DEV_DOWNLOAD_COPY_LINK.id
         val notifDevPageInBrowser = NotificationUpdateOptionsIDs.DEV_PAGE_BROWSER.id
         val notifDevPageCopyLink = NotificationUpdateOptionsIDs.DEV_PAGE_COPY_LINK.id
 
-        val option1a = TPNotificationOption(notifDevDownloadInBrowser, "Download in Browser")
-        val option1b = TPNotificationOption(notifDevDownloadCopyLink, "Copy Download Link")
-        val option2a = TPNotificationOption(notifDevPageInBrowser, "Open Download Page in Browser")
-        val option2b = TPNotificationOption(notifDevPageCopyLink, "Copy Download Page Link")
-
         val options: Array<TPNotificationOption> =
-            arrayOf(option1a, option1b, option2a, option2b)
+            arrayOf(
+                TPNotificationOption(notifDevDownloadInBrowser, "Download in Browser"),
+                TPNotificationOption(notifDevDownloadCopyLink, "Copy Download Link"),
+                TPNotificationOption(notifDevPageInBrowser, "Open Download Page in Browser"),
+                TPNotificationOption(notifDevPageCopyLink, "Copy Download Page Link")
+            )
 
         // Assign Release Data to outer variable
         updateReleaseDataDev = devBranchReleaseData
 
+        // ID is <baseDevId>:<devVer>
+        val notificationID = "${NotificationUpdateIDs.DEV.id}:${updtVerName}"
+
+        // Send Notification
         veadotubePlugin.sendShowNotification(
-            NotificationUpdateIDs.DEV.id, title, message, options
+            notificationID, title, message, options
         )
     }
 
@@ -2085,13 +2422,13 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         val updtURLDev = devBranchReleaseData.downloadUrlPage
 
 
-        val title = BuildConfig.NAME_SHORT + ": Plugin Update available"
+        val title = BuildConfig.NAME_SHORT + ": Plugin Updates available"
         val message = buildString {
             append("Updates are available for the plugin - you are running ")
             append(currVerName)
             append(if (currIntegrated) " (Bundled Java)." else ".")
-            append("\nNewer Dev version ($updtVerNameDev) is available at $updtURLDev")
-            append("\nNewer Main version ($updtVerName) is available at $updtURL")
+            append("\nNewer Dev version ($updtVerNameDev) is available at\n$updtURLDev")
+            append("\nNewer Main version ($updtVerName) is available at\n$updtURL")
         }
 
         val notifMainDownloadInBrowser = NotificationUpdateOptionsIDs.MAIN_DOWNLOAD_BROWSER.id
@@ -2104,20 +2441,17 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         val notifDevPageInBrowser = NotificationUpdateOptionsIDs.DEV_PAGE_BROWSER.id
         val notifDevPageCopyLink = NotificationUpdateOptionsIDs.DEV_PAGE_COPY_LINK.id
 
-        val optionMain1a = TPNotificationOption(notifMainDownloadInBrowser, "Download Main Version")
-        val optionMain1b = TPNotificationOption(notifMainDownloadCopyLink, "Copy Main Download Link")
-        val optionMain2a = TPNotificationOption(notifMainPageInBrowser, "Open Main Download Page")
-        val optionMain2b = TPNotificationOption(notifMainPageCopyLink, "Copy Main Page Link")
-
-        val optionDev1a = TPNotificationOption(notifDevDownloadInBrowser, "Download Dev Version")
-        val optionDev1b = TPNotificationOption(notifDevDownloadCopyLink, "Copy Dev Download Link")
-        val optionDev2a = TPNotificationOption(notifDevPageInBrowser, "Open Dev Download Page")
-        val optionDev2b = TPNotificationOption(notifDevPageCopyLink, "Copy Dev Page Link")
-
         val options: Array<TPNotificationOption> =
             arrayOf(
-                optionMain1a, optionMain1b, optionMain2a, optionMain2b,
-                optionDev1a, optionDev1b, optionDev2a, optionDev2b
+                TPNotificationOption(notifMainDownloadInBrowser, "Download Main Version"),
+                //TPNotificationOption(notifMainDownloadCopyLink, "Copy Main Download Link"),
+                TPNotificationOption(notifMainPageInBrowser, "Open Main Download Page"),
+                TPNotificationOption(notifMainPageCopyLink, "Copy Main Page Link"),
+
+                TPNotificationOption(notifDevDownloadInBrowser, "Download Dev Version"),
+                //TPNotificationOption(notifDevDownloadCopyLink, "Copy Dev Download Link"),
+                TPNotificationOption(notifDevPageInBrowser, "Open Dev Download Page"),
+                TPNotificationOption(notifDevPageCopyLink, "Copy Dev Page Link")
             )
 
         // Assign Release Data to outer variable
@@ -2126,8 +2460,12 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         // Assign Release Data to outer variable
         updateReleaseDataDev = devBranchReleaseData
 
+        // ID is <baseBothId>:<mainVer>:<devVer>
+        val notificationID = "${NotificationUpdateIDs.BOTH.id}:${updtVerName}:${updtVerNameDev}"
+
+        // Send Notification
         veadotubePlugin.sendShowNotification(
-            NotificationUpdateIDs.BOTH.id, title, message, options
+            notificationID, title, message, options
         )
     }
 
