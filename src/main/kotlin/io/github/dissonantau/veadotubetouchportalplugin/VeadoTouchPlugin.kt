@@ -4,6 +4,7 @@ import com.christophecvb.touchportal.TouchPortalPlugin
 import com.christophecvb.touchportal.annotations.*
 import com.christophecvb.touchportal.helpers.PluginHelper
 import com.christophecvb.touchportal.model.*
+import org.apache.commons.lang3.SystemUtils
 import com.google.gson.JsonObject
 import io.github.dissonantau.bleatkan.connection.Connection
 import io.github.dissonantau.bleatkan.connection.ConnectionError
@@ -79,17 +80,21 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         fun main(args: Array<String>) {
             LOGGER.debug { "${BuildConfig.NAME} Launched with ${args.size} args: ${args.toList()}" }
 
+            LOGGER.debug { "OS Name    : ${SystemUtils.OS_NAME ?: "Unable to get"}" }
+            LOGGER.debug { "OS Version : ${SystemUtils.OS_VERSION ?: "Unable to get"}" }
+            LOGGER.debug { "OS Arch    : ${SystemUtils.OS_ARCH ?: "Unable to get"}" }
+
             LOGGER.debug { "Kotlin Version            : ${KotlinVersion.CURRENT} " }
-            LOGGER.debug { "Java Version              : ${System.getProperty("java.version")} " }
-            LOGGER.debug { "Java VM Version           : ${System.getProperty("java.vm.version")} " }
-            LOGGER.debug { "Java VM Vendor            : ${System.getProperty("java.vm.vendor")}  " }
-            LOGGER.debug { "Java VM Name              : ${System.getProperty("java.vm.name")} " }
-            LOGGER.debug { "Java VM Spec Version      : ${System.getProperty("java.vm.specification.version")}" }
-            LOGGER.debug { "Java VM Spec Vendor       : ${System.getProperty("java.vm.specification.vendor")}" }
-            LOGGER.debug { "Java VM Spec Name         : ${System.getProperty("java.vm.specification.name")}" }
-            LOGGER.debug { "Java Runtime Spec Version : ${System.getProperty("java.specification.version")}" }
-            LOGGER.debug { "Java Runtime Spec Vendor  : ${System.getProperty("java.specification.vendor")}" }
-            LOGGER.debug { "Java Runtime Spec Name    : ${System.getProperty("java.specification.name")}" }
+            LOGGER.debug { "Java Version              : ${SystemUtils.JAVA_VERSION} " }
+            LOGGER.debug { "Java VM Version           : ${SystemUtils.JAVA_VM_VERSION} " }
+            LOGGER.debug { "Java VM Vendor            : ${SystemUtils.JAVA_VM_VENDOR}  " }
+            LOGGER.debug { "Java VM Name              : ${SystemUtils.JAVA_VM_NAME} " }
+            LOGGER.debug { "Java VM Spec Version      : ${SystemUtils.JAVA_VM_SPECIFICATION_VERSION}" }
+            LOGGER.debug { "Java VM Spec Vendor       : ${SystemUtils.JAVA_VM_SPECIFICATION_VENDOR}" }
+            LOGGER.debug { "Java VM Spec Name         : ${SystemUtils.JAVA_VM_SPECIFICATION_NAME}" }
+            LOGGER.debug { "Java Runtime Spec Version : ${SystemUtils.JAVA_SPECIFICATION_VERSION}" }
+            LOGGER.debug { "Java Runtime Spec Vendor  : ${SystemUtils.JAVA_SPECIFICATION_VENDOR}" }
+            LOGGER.debug { "Java Runtime Spec Name    : ${SystemUtils.JAVA_SPECIFICATION_NAME}" }
 
             if (args.size == 1) {
 
