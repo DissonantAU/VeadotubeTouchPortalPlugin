@@ -191,6 +191,10 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
 
 
+    // Apache Commons Lang 3 - mainly for SystemUtils
+    // https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
+    implementation(libs.apache.commons.lang3)
+
     // Apache Commons Collections 4 - mainly for LRUMap
     // https://mvnrepository.com/artifact/org.apache.commons/commons-collections4
     implementation(libs.apache.commons.collections4)
