@@ -1,5 +1,6 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.gradle.jvm.tasks.Jar
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -35,7 +36,7 @@ project.extra["resourcesBundle"] = "DEBUG"
 val pluginFullName: String = "Veadotube Touch Portal Plugin"
 val pluginShortName: String = "Veadotube Plugin"
 
-val pluginDownloadPage:String = "https://github.com/DissonantAU/VeadotubeTouchPortalPlugin/releases/latest"
+val pluginDownloadPage: String = "https://github.com/DissonantAU/VeadotubeTouchPortalPlugin/releases/latest"
 
 val mainClassSimpleName: String = "VeadoTouchPlugin"
 val mainClassPackage: String = "io.github.dissonantau.veadotubetouchportalplugin"
@@ -152,6 +153,32 @@ buildConfig {
         "PLUGIN_RELEASES_UPDATE_CHECK_URI",
         "\"https://dissonantau.github.io/veadoTouchPortalPlugin/releases.json\""
     )
+}
+
+/*kapt {
+    arguments {
+        arg("tp.entry.startcmd.jre.all.optimised")
+        arg("tp.entry.startcmd.jre.win.external")
+        arg("tp.entry.startcmd.jre.mac.internal")
+        //arg("tp.entry.startcmd.jre.linux.default")
+    }
+}*/
+
+project.extra["compilerAnnotationArguments"] = mutableListOf<String>(
+    "tp.entry.startcmd.jre.all.optimised",
+    "tp.entry.startcmd.jre.win.external",
+    "tp.entry.startcmd.jre.mac.internal"
+)
+
+val compilerAnnotationArguments: Provider<List<String>> = provider {
+    val list = project.extra["compilerAnnotationArguments"] as List<*>
+    val out = mutableListOf<String>()
+    list.forEach { out.add("$it") }
+    return@provider out
+}
+
+val compilerAnnotationArgumentsB: Provider<List<*>> = provider {
+    project.extra["compilerAnnotationArguments"] as List<*>
 }
 
 
@@ -303,6 +330,74 @@ tasks {
 
     }
 
+    /* Compiler Options */
+    withType<JavaCompile>().forEach { thisTask ->
+        thisTask.doFirst {
+            // Get Annotation Arguments from Provider, add -A to start
+            val javaCompilerArgs = thisTask.options.compilerArgs;
+            compilerAnnotationArguments.get().forEach { newArg ->
+                println("Task ${thisTask.name} (${thisTask.javaClass.name}): add argument: '$newArg'")
+                javaCompilerArgs.add("-A$newArg")
+            }
+        }
+    }
+
+    /* Compiler Options */
+    withType<KotlinCompile>().forEach { thisTask ->
+        thisTask.doFirst {
+            // Get Annotation Arguments from Provider, add -A to start
+            compilerAnnotationArguments.get().forEach { newArg ->
+                println("Task ${thisTask.name}: add argument: '$newArg'")
+                kapt.arguments { arg(newArg) }
+            }
+        }
+    }
+
+    /* Compiler Options */
+    withType<KotlinCompile>().forEach { thisTask ->
+        thisTask.doFirst {
+            // Get Annotation Arguments from Provider, add -A to start
+            compilerAnnotationArguments.get().forEach { newArg ->
+                println("Task ${thisTask.name}: add argument: '$newArg'")
+                kapt.arguments { arg(newArg) }
+            }
+        }
+    }
+
+    withType<Jar>().named("jar") {
+        dependsOn(
+            named("calculateLibraryVersion")
+        )
+
+        // Set
+        doFirst {
+            println(
+                "Setting JAR archive for ${
+                    rootProject.name
+                } - BaseName = ${
+                    project.extra["releaseName"]
+                }; Version = ${project.extra["versionBaseName"]}"
+            )
+        }
+
+        archiveBaseName.set(provider { "${project.extra["releaseName"]}" })
+        archiveVersion.set(provider { "${project.extra["versionBaseName"]}" })
+    }
+
+    register("cleanBuildLibs"){
+        doFirst {
+            // Cleanup Libs folder
+            val libs = project.layout.buildDirectory.get().dir("libs")
+            println("Cleaning Build Libs: $libs")
+            libs.asFileTree.files.forEach {
+                println("Deleting ${it.name}")
+                delete(it)
+            }
+        }
+    }
+
+
+
     /* Meta Build Jobs */
 
     register("buildCopyBetaTraceToPluginBuilds") {
@@ -316,6 +411,7 @@ tasks {
         }
 
         finalizedBy(
+            named("cleanBuildLibs"),
             named("copyToPluginBuilds"),
         )
     }
@@ -331,6 +427,7 @@ tasks {
         }
 
         finalizedBy(
+            named("cleanBuildLibs"),
             named("copyToPluginBuilds"),
         )
     }
@@ -346,6 +443,7 @@ tasks {
         }
 
         finalizedBy(
+            named("cleanBuildLibs"),
             named("copyToPluginBuilds"),
         )
     }
@@ -361,6 +459,7 @@ tasks {
         }
 
         finalizedBy(
+            named("cleanBuildLibs"),
             named("copyToPluginBuilds"),
         )
     }
@@ -376,6 +475,7 @@ tasks {
         }
 
         finalizedBy(
+            named("cleanBuildLibs"),
             named("copyToPluginBuilds"),
         )
     }
@@ -391,6 +491,7 @@ tasks {
         }
 
         finalizedBy(
+            named("cleanBuildLibs"),
             named("copyToPluginBuilds"),
         )
     }
@@ -406,6 +507,7 @@ tasks {
         }
 
         finalizedBy(
+            named("cleanBuildLibs"),
             named("copyToPluginBuilds"),
         )
     }
@@ -422,6 +524,7 @@ tasks {
         }
 
         finalizedBy(
+            named("cleanBuildLibs"),
             named("copyToPluginBuilds"),
         )
     }
