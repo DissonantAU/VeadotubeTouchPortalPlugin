@@ -10,7 +10,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 
     id("java")
-    id("application")
+//    id("application")
 
     alias(libs.plugins.gmazzo.buildconfig)
     alias(libs.plugins.touchportal.plugin.packager)
@@ -60,15 +60,15 @@ val resourcesTrace: Directory = layout.projectDirectory.dir("src/trace/resources
 
 
 /* Gradle defined run task */
-application.mainClass = "$mainClassPackage.$mainClassSimpleName"
+//application.mainClass = "$mainClassPackage.$mainClassSimpleName"
 
-tasks.run<JavaExec> {
-    dependsOn(tasks.packagePlugin)
-
-    args(listOf("start"))
-    workingDir =
-        project.layout.buildDirectory.get().dir("plugin").dir(mainClassSimpleName).asFile
-}
+//tasks.run<JavaExec> {
+//    dependsOn(tasks.packagePlugin)
+//
+//    args(listOf("start"))
+//    workingDir =
+//        project.layout.buildDirectory.get().dir("plugin").dir(mainClassSimpleName).asFile
+//}
 
 
 project.extra["releaseName"] = mainClassSimpleName
