@@ -231,8 +231,8 @@ class PluginUpdateChecker(private val listener: UpdateCheckResultListener, priva
 
                     if (currentRecommendedDevSameMajorVer) {
                         // If Next Ver is Same Major Version, break if we pass it
-                        if (recommendedDevBranchRelease != null &&
-                            release.versionSemantic > recommendedDevBranchRelease
+                        if (//recommendedDevBranchRelease != null &&
+                            release.versionSemantic > recommendedDevBranchRelease!!
                         ) break
 
                         // If we find an exact match for recommended version while scanning, return it
