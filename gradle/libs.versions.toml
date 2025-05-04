@@ -17,8 +17,8 @@ serialization-json = "1.7.3"
 
 # 3.17.0
 commons-lang3 = "3.17.0"
-# 4.5.0-M2 > 4.5.0-M3
-commons-collections4 = "4.5.0-M3"
+# 4.5.0-M3 > 4.5.0
+commons-collections4 = "4.5.0"
 # 2.0.0
 semver = "2.0.0"
 
