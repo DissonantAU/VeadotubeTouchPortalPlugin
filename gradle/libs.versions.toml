@@ -28,8 +28,8 @@ semver = "2.0.0"
 log4j = "2.24.3"
 # 2.0.16
 slf4j = "2.0.16"
-# 7.0.0 > 7.0.3
-kotlinLogging = "7.0.3"
+# 7.0.3 > 7.0.6
+kotlinLogging = "7.0.6"
 
 ## Testing
 
