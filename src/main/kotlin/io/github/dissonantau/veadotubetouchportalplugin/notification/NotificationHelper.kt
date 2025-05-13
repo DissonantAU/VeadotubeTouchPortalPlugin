@@ -1,3 +1,5 @@
+@file:Suppress("MemberVisibilityCanBePrivate", "unused")
+
 package io.github.dissonantau.veadotubetouchportalplugin.notification
 
 import com.christophecvb.touchportal.TouchPortalPlugin
