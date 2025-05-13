@@ -61,36 +61,63 @@ class VeadoConnectionData(connection: Connection) {
     /**
      * Get [VtState] from this connection by State Name - Compatibility Version
      *
-     * If Connection is pre 2.1, state names are searched and:
+     * If Connection is Mini pre-2.1, state names are searched and:
      * - if an exact match is found, it is chosen
-     * - If no exact match is found, the first result that that contains the give name is returned
-     * - if none are found,
+     * - If no exact match is found, the first result that that contains the give name is returned (ignoreCase is used here)
+     * - if none are found, null is returned
      *
-     * If not pre 2.1, [getStateByID] should be used - the same result is returned but overhead is increased
+     * If not Mini pre-2.1, the equivalent of [getStateByID] is used - the same result is returned but overhead is increased
      *
      */
-    fun getStateByNameCompat(stateName: String): VtState? {
+    fun getStateByNameMiniCompat(stateName: String, ignoreCase: Boolean = false): VtState? {
         connection?.let { connection ->
             if (connection.compatibilityFlagMiniPre2dot1) {
-                val candidates: ArrayList<VtState> = ArrayList()
+                var candidates: ArrayList<VtState>? = null
 
                 statesAll.forEach {
                     it.name?.let { name ->
                         if (name == stateName) return it
-                        if (name.contains(stateName)) candidates.add(it)
+                        if (name.contains(stateName, ignoreCase)) {
+                            if (candidates == null) candidates = ArrayList()
+                            candidates!!.add(it)
+                        }
                     }
                 }
 
-                if (candidates.size == 0) return null
-                else candidates.first()
-
+                candidates?.let { if (it.isNotEmpty()) return it.first() }
             } else {
                 statesByID[stateName]
             }
 
         }
 
+        return null
+    }
 
+    /**
+     * Get [VtState] from this connection by State Name
+     *
+     * - if an exact match is found, it is chosen
+     * - If no exact match is found, the first result that that contains the give name is returned (ignoreCase is used here)
+     * - if none are found, null is returned
+     *
+     */
+    fun getStateByNameContains(stateName: String, ignoreCase: Boolean = false): VtState? {
+        connection?.run {
+            var candidates: ArrayList<VtState>? = null
+
+            statesAll.forEach {
+                it.name?.let { name ->
+                    if (name == stateName) return it
+                    if (name.contains(stateName, ignoreCase)) {
+                        if (candidates == null) candidates = ArrayList()
+                        candidates!!.add(it)
+                    }
+                }
+            }
+
+            candidates?.let { if (it.isNotEmpty()) it.first() }
+        }
 
         return null
     }
