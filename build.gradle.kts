@@ -10,7 +10,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 
     id("java")
-//    id("application")
+    //id("application")
 
     alias(libs.plugins.gmazzo.buildconfig)
     alias(libs.plugins.touchportal.plugin.packager)
@@ -20,17 +20,12 @@ plugins {
 * <version>-<pre-release>+<metadata>
 * Full = 1.1.2
 * Pre-release = alpha.<build date>-<build time> or beta.<build date>
-* Metadata = resources bundle (eg debug/trace)
-* eg. 1.0.4-alpha.20241103-1234+debug or 1.0.4-beta.20241205+debug
+* Metadata = resources bundle (e.g. debug/trace)
+* e.g. 1.0.4-alpha.20241103-1234+debug or 1.0.4-beta.20241205+debug
 */
 val versionMajor: Int = 0
 val versionMinor: Int = 7
-val versionPatch: Int = 1
-
-
-// Chooses which resources bundle to include in IDE Testing - e.g. debug/trace and metadata extension for non-release builds
-// Mainly for choosing logging options - "DEBUG" by default, change to "TRACE" needed
-project.extra["resourcesBundle"] = "DEBUG"
+val versionPatch: Int = 3
 
 
 val pluginFullName: String = "Veadotube Touch Portal Plugin"
@@ -44,20 +39,18 @@ val mainClassPackage: String = "io.github.dissonantau.veadotubetouchportalplugin
 group = mainClassPackage
 tpPlugin.mainClassSimpleName.set(mainClassSimpleName)
 
-// Java Version to Target - Java 8 is default
+// Java Version to Target - Java 8 is default. Normally set by Build Tasks
 // Newer versions of TP use JRE 17 if you're able to use the included JVM
-project.extra["javaVersionTarget"] = 8
-tpPlugin.targetJvmVersion.set(provider { project.extra["javaVersionTarget"] as Int })
+tpPlugin.targetJvmVersion.set(8)
 
 /* Build Dirs */
-val buildsDir: Directory = rootProject.layout.projectDirectory.dir("pluginBuilds")
-println("veadotube PluginBuilds Dir: $buildsDir")
+val pluginsBuildsDir: Directory = rootProject.layout.projectDirectory.dir("pluginBuilds")
+println("veadotube PluginBuilds Dir: $pluginsBuildsDir")
 
 val resourcesMain: Directory = layout.projectDirectory.dir("src/main/resources")
 val resourcesRelease: Directory = layout.projectDirectory.dir("src/release/resources")
 val resourcesDebug: Directory = layout.projectDirectory.dir("src/debug/resources")
 val resourcesTrace: Directory = layout.projectDirectory.dir("src/trace/resources")
-
 
 /* Gradle defined run task */
 //application.mainClass = "$mainClassPackage.$mainClassSimpleName"
@@ -70,45 +63,40 @@ val resourcesTrace: Directory = layout.projectDirectory.dir("src/trace/resources
 //        project.layout.buildDirectory.get().dir("plugin").dir(mainClassSimpleName).asFile
 //}
 
-
-project.extra["releaseName"] = mainClassSimpleName
-println("Release project: ${project.extra["releaseName"]}")
+val releaseName = mainClassSimpleName
+println("Release project: $releaseName")
 
 // Version becomes 1203
 val versionCode: Int = versionMajor * 1000 + versionMinor * 100 + versionPatch
-project.extra["versionCode"] = versionCode
 println("Version Code: $versionCode")
 
 // Version Base Name becomes 1.2.3, doesn't change
 val versionBaseName = "$versionMajor.$versionMinor.$versionPatch"
-project.extra["versionBaseName"] = versionBaseName
 project.version = versionBaseName
 
 // Version Semantic Name - becomes 1.2.3-alpha etc. - will be updated as needed
-project.extra["versionName"] = "$versionMajor.$versionMinor.$versionPatch-snapshot"
-val versionSemanticProvider: Provider<String> = provider { "${project.extra["versionName"]}" }
+val versionSemanticProvider =
+    objects.property(String::class).convention("$versionMajor.$versionMinor.$versionPatch-snapshot")
 
+// If Build is Release - No Tags. Changed by tasks if needed
+val buildIsRelease = objects.property(Boolean::class).convention(false)
 
-// Changed by tasks if needed
-project.extra["releaseBuild"] = false
-val releaseBuildProvider: Provider<Boolean> = provider { project.extra["releaseBuild"] as Boolean }
+// If Build should be flagged so TP launches using the Internal Changed by tasks if needed
+val tpUseInternalJreProvider = objects.property(Boolean::class).convention(false)
+val compilerAnnotationArguments: ListProperty<String> = objects.listProperty<String>()
 
+// whether this is alpha/beta/snapshot. Ignored during Build Release. Set by Build Tasks
+val buildPreReleaseTag = objects.property(String::class).convention("SNAPSHOT")
 
-// Changed by tasks if needed
-project.extra["tpUseBundledJre"] = false
-val tpUseInternalJreProvider: Provider<Boolean> = provider { project.extra["tpUseBundledJre"] as Boolean }
-
-
-// whether this is alpha/beta. Ignored during Build Release
-project.extra["preReleaseVersion"] = "SNAPSHOT"
-val preReleaseVersionProvider: Provider<String> = provider { "${project.extra["preReleaseVersion"]}" }
-
-val resourcesBundleProvider: Provider<String> = provider { "${project.extra["resourcesBundle"]}" }
+// Chooses which resources bundle to include in IDE Testing - e.g. debug/trace and metadata extension for non-release builds
+// Normally set by Build Tasks
+// Mainly for choosing logging options - "DEBUG" by default, change to "TRACE" if needed for IDE Run.
+val buildResourcesBundle = objects.property(String::class).convention("DEBUG")
 
 
 updateReleaseType()
-generateSemanticVersion(releaseBuildProvider, preReleaseVersionProvider, resourcesBundleProvider)
-setMainResources(resourcesBundleProvider)
+generateSemanticVersion(buildIsRelease, buildPreReleaseTag, buildResourcesBundle)
+setMainResources(buildResourcesBundle)
 
 
 buildConfig {
@@ -120,26 +108,26 @@ buildConfig {
     buildConfigField("String", "NAME_SHORT", "\"$pluginShortName\"")
 
     // Version as Long - 1.7.11 > 1711
-    buildConfigField("long", "VERSION_CODE", "${project.extra["versionCode"]}")
+    buildConfigField("long", "VERSION_CODE", "$versionCode")
     // Version Base Name - e.g. "1.7.11"
-    buildConfigField("String", "VERSION_NAME_BASE", "\"${project.extra["versionBaseName"]}\"")
+    buildConfigField("String", "VERSION_NAME_BASE", "\"${versionBaseName}\"")
     // Version Full SemVer Name - including any extra types, etc. - e.g. "1.7.11-snapshot.20241228-2119+debug"
-    buildConfigField("String", "VERSION_NAME_FULL", provider { "\"${project.extra["versionName"]}\"" })
+    buildConfigField("String", "VERSION_NAME_FULL", provider { "\"${versionSemanticProvider.get()}\"" })
 
     // Is Release Build - true/false
-    buildConfigField("boolean", "BUILD_IS_RELEASE", "${project.extra["releaseBuild"]}")
+    buildConfigField("boolean", "BUILD_IS_RELEASE", buildIsRelease)
 
     // Use TP Bundled JRE - true/false
-    buildConfigField("boolean", "USES_TP_BUNDLED_JRE", "${project.extra["tpUseBundledJre"]}")
+    buildConfigField("boolean", "USES_TP_BUNDLED_JRE", tpUseInternalJreProvider)
 
     // Pre Release Version - "ALPHA", "BETA", "SNAPSHOT", or blank
-    buildConfigField("String", "BUILD_PRE_RELEASE_VERSION", provider { "\"${project.extra["preReleaseVersion"]}\"" })
+    buildConfigField("String", "BUILD_PRE_RELEASE_VERSION", provider { "\"${buildPreReleaseTag.get()}\"" })
 
     // Build Resources Bundle Value - "INFO", "TRACE", "DEBUG"
-    buildConfigField("String", "BUILD_RESOURCES_BUNDLE", provider { "\"${project.extra["resourcesBundle"]}\"" })
+    buildConfigField("String", "BUILD_RESOURCES_BUNDLE", provider { "\"${buildResourcesBundle.get()}\"" })
 
     // Java Target Specification - Minimum Version Targeted by JAR
-    buildConfigField("integer", "TARGET_JRE_SPEC", provider { "${project.extra["javaVersionTarget"]}" })
+    buildConfigField("integer", "TARGET_JRE_SPEC", provider { tpPlugin.targetJvmVersion.get() })
 
     // Java JDK Specification - Major Version of the JDK this is Building the JAR
     buildConfigField("integer", "BUILD_JDK_SPEC", provider { JavaVersion.current().majorVersion })
@@ -153,32 +141,6 @@ buildConfig {
         "PLUGIN_RELEASES_UPDATE_CHECK_URI",
         "\"https://dissonantau.github.io/veadoTouchPortalPlugin/releases.json\""
     )
-}
-
-/*kapt {
-    arguments {
-        arg("tp.entry.startcmd.jre.all.optimised")
-        arg("tp.entry.startcmd.jre.win.external")
-        arg("tp.entry.startcmd.jre.mac.internal")
-        //arg("tp.entry.startcmd.jre.linux.default")
-    }
-}*/
-
-project.extra["compilerAnnotationArguments"] = mutableListOf<String>(
-    "tp.entry.startcmd.jre.all.optimised",
-    "tp.entry.startcmd.jre.win.external",
-    "tp.entry.startcmd.jre.mac.internal"
-)
-
-val compilerAnnotationArguments: Provider<List<String>> = provider {
-    val list = project.extra["compilerAnnotationArguments"] as List<*>
-    val out = mutableListOf<String>()
-    list.forEach { out.add("$it") }
-    return@provider out
-}
-
-val compilerAnnotationArgumentsB: Provider<List<*>> = provider {
-    project.extra["compilerAnnotationArguments"] as List<*>
 }
 
 
@@ -275,17 +237,22 @@ java {
     //targetCompatibility = JavaVersion.VERSION_17
 }
 
+
 tasks {
+    withType<Jar> {
+        isPreserveFileTimestamps = false
+        isReproducibleFileOrder = true
+    }
 
     // Calculate Version/Build names, etc.
     register("calculatePluginVersion") {
         doFirst {
             updateReleaseType()
-            generateSemanticVersion(releaseBuildProvider, preReleaseVersionProvider, resourcesBundleProvider)
+            generateSemanticVersion(buildIsRelease, buildPreReleaseTag, buildResourcesBundle)
         }
 
         doLast {
-            setMainResources(resourcesBundleProvider)
+            setMainResources(buildResourcesBundle)
         }
     }
 
@@ -313,7 +280,7 @@ tasks {
         )
 
         doFirst {
-            println("Copy to '${buildsDir.dir("${project.extra["releaseName"]}_${project.extra["versionBaseName"]}")}'")
+            println("Copy to '${pluginsBuildsDir.dir("${releaseName}_${versionBaseName}")}'")
         }
 
         dependsOn(
@@ -321,9 +288,17 @@ tasks {
             packagePlugin
         )
         from(packagePlugin)
-        into { buildsDir.dir("${project.extra["releaseName"]}_${project.extra["versionBaseName"]}") }
+        into { pluginsBuildsDir.dir("${releaseName}_${versionBaseName}") }
         rename { filename ->
-            val newFilename = filename.replace(".tpp", "_${project.extra["versionName"]}.tpp")
+            val newFilename =
+                filename.replace(
+                    ".tpp",
+                    if (tpUseInternalJreProvider.get()) {
+                        "_${versionSemanticProvider.get()}_internalJRE.tpp"
+                    } else {
+                        "_${versionSemanticProvider.get()}.tpp"
+                    }
+                )
             println("Copy $filename to $newFilename")
             newFilename
         }
@@ -334,21 +309,10 @@ tasks {
     withType<JavaCompile>().forEach { thisTask ->
         thisTask.doFirst {
             // Get Annotation Arguments from Provider, add -A to start
-            val javaCompilerArgs = thisTask.options.compilerArgs;
-            compilerAnnotationArguments.get().forEach { newArg ->
-                println("Task ${thisTask.name} (${thisTask.javaClass.name}): add argument: '$newArg'")
-                javaCompilerArgs.add("-A$newArg")
-            }
-        }
-    }
-
-    /* Compiler Options */
-    withType<KotlinCompile>().forEach { thisTask ->
-        thisTask.doFirst {
-            // Get Annotation Arguments from Provider, add -A to start
+            val javaCompilerArgs = thisTask.options.compilerArgs
             compilerAnnotationArguments.get().forEach { newArg ->
                 println("Task ${thisTask.name}: add argument: '$newArg'")
-                kapt.arguments { arg(newArg) }
+                javaCompilerArgs.add("-A$newArg")
             }
         }
     }
@@ -366,25 +330,21 @@ tasks {
 
     withType<Jar>().named("jar") {
         dependsOn(
-            named("calculateLibraryVersion")
+            named("calculatePluginVersion")
         )
 
-        // Set
         doFirst {
             println(
-                "Setting JAR archive for ${
-                    rootProject.name
-                } - BaseName = ${
-                    project.extra["releaseName"]
-                }; Version = ${project.extra["versionBaseName"]}"
+                "Setting JAR archive for ${rootProject.name} - BaseName = ${releaseName}; Version = $versionBaseName"
             )
         }
 
-        archiveBaseName.set(provider { "${project.extra["releaseName"]}" })
-        archiveVersion.set(provider { "${project.extra["versionBaseName"]}" })
+        // Set Names for build archive
+        archiveBaseName.set(provider { releaseName })
+        archiveVersion.set(provider { versionBaseName })
     }
 
-    register("cleanBuildLibs"){
+    register("cleanBuildLibs") {
         doFirst {
             // Cleanup Libs folder
             val libs = project.layout.buildDirectory.get().dir("libs")
@@ -396,135 +356,276 @@ tasks {
         }
     }
 
-
+    register("buildEnableTPInternalJRELaunch") {
+        doFirst {
+            // If tpUseInternalJreProvider is true, add needed argument for annotation processor
+            if (tpUseInternalJreProvider.get()) {
+                compilerAnnotationArguments.add("tp.entry.startcmd.jre.all.internal")
+            }
+        }
+    }
 
     /* Meta Build Jobs */
 
     register("buildCopyBetaTraceToPluginBuilds") {
-        group = "build"
+        group = "buildCopy"
 
         doFirst {
             println("Set to Beta Trace Build")
-            project.extra["releaseBuild"] = false
-            project.extra["resourcesBundle"] = "TRACE"
-            project.extra["preReleaseVersion"] = "BETA"
+            buildIsRelease.set(false)
+            buildResourcesBundle.set("TRACE")
+            buildPreReleaseTag.set("BETA")
         }
 
         finalizedBy(
-            named("cleanBuildLibs"),
+            //named("cleanBuildLibs"),
+            named("buildEnableTPInternalJRELaunch"),
+            named("copyToPluginBuilds"),
+        )
+    }
+
+    register("buildCopyBetaTraceInternalToPluginBuilds") {
+        group = "buildCopy"
+
+        doFirst {
+            println("Set to Beta Trace Build")
+            buildIsRelease.set(false)
+            buildResourcesBundle.set("TRACE")
+            buildPreReleaseTag.set("BETA")
+            tpUseInternalJreProvider.set(true)
+        }
+
+        finalizedBy(
+            //named("cleanBuildLibs"),
+            named("buildEnableTPInternalJRELaunch"),
             named("copyToPluginBuilds"),
         )
     }
 
     register("buildCopyAlphaTraceToPluginBuilds") {
-        group = "build"
+        group = "build copy"
 
         doFirst {
             println("Set to Alpha Trace Build")
-            project.extra["releaseBuild"] = false
-            project.extra["resourcesBundle"] = "TRACE"
-            project.extra["preReleaseVersion"] = "ALPHA"
+            buildIsRelease.set(false)
+            buildResourcesBundle.set("TRACE")
+            buildPreReleaseTag.set("ALPHA")
         }
 
         finalizedBy(
-            named("cleanBuildLibs"),
+            //named("cleanBuildLibs"),
+            named("buildEnableTPInternalJRELaunch"),
+            named("copyToPluginBuilds"),
+        )
+    }
+
+    register("buildCopyAlphaTraceInternalToPluginBuilds") {
+        group = "build copy"
+
+        doFirst {
+            println("Set to Alpha Trace Build")
+            buildIsRelease.set(false)
+            buildResourcesBundle.set("TRACE")
+            buildPreReleaseTag.set("ALPHA")
+            tpUseInternalJreProvider.set(true)
+        }
+
+        finalizedBy(
+            //named("cleanBuildLibs"),
+            named("buildEnableTPInternalJRELaunch"),
             named("copyToPluginBuilds"),
         )
     }
 
     register("buildCopyBetaDebugToPluginBuilds") {
-        group = "build"
+        group = "build copy"
 
         doFirst {
             println("Set to Beta Debug Build")
-            project.extra["releaseBuild"] = false
-            project.extra["resourcesBundle"] = "DEBUG"
-            project.extra["preReleaseVersion"] = "BETA"
+            buildIsRelease.set(false)
+            buildResourcesBundle.set("DEBUG")
+            buildPreReleaseTag.set("BETA")
         }
 
         finalizedBy(
-            named("cleanBuildLibs"),
+            //named("cleanBuildLibs"),
+            named("buildEnableTPInternalJRELaunch"),
+            named("copyToPluginBuilds"),
+        )
+    }
+
+    register("buildCopyBetaDebugInternalToPluginBuilds") {
+        group = "build copy"
+
+        doFirst {
+            println("Set to Beta Debug Build")
+            buildIsRelease.set(false)
+            buildResourcesBundle.set("DEBUG")
+            buildPreReleaseTag.set("BETA")
+            tpUseInternalJreProvider.set(true)
+        }
+
+        finalizedBy(
+            //named("cleanBuildLibs"),
+            named("buildEnableTPInternalJRELaunch"),
             named("copyToPluginBuilds"),
         )
     }
 
     register("buildCopyAlphaDebugToPluginBuilds") {
-        group = "build"
+        group = "build copy"
 
         doFirst {
             println("Set to Alpha Debug Build")
-            project.extra["releaseBuild"] = false
-            project.extra["resourcesBundle"] = "DEBUG"
-            project.extra["preReleaseVersion"] = "ALPHA"
+            buildIsRelease.set(false)
+            buildResourcesBundle.set("DEBUG")
+            buildPreReleaseTag.set("ALPHA")
         }
 
         finalizedBy(
-            named("cleanBuildLibs"),
+            //named("cleanBuildLibs"),
+            named("buildEnableTPInternalJRELaunch"),
+            named("copyToPluginBuilds"),
+        )
+    }
+
+    register("buildCopyAlphaDebugInternalToPluginBuilds") {
+        group = "build copy"
+
+        doFirst {
+            println("Set to Alpha Debug Build")
+            buildIsRelease.set(false)
+            buildResourcesBundle.set("DEBUG")
+            buildPreReleaseTag.set("ALPHA")
+            tpUseInternalJreProvider.set(true)
+        }
+
+        finalizedBy(
+            //named("cleanBuildLibs"),
+            named("buildEnableTPInternalJRELaunch"),
             named("copyToPluginBuilds"),
         )
     }
 
     register("buildCopyBetaInfoToPluginBuilds") {
-        group = "build"
+        group = "build copy"
 
         doFirst {
             println("Set to Beta Debug Build")
-            project.extra["releaseBuild"] = false
-            project.extra["resourcesBundle"] = "INFO"
-            project.extra["preReleaseVersion"] = "BETA"
+            buildIsRelease.set(false)
+            buildResourcesBundle.set("INFO")
+            buildPreReleaseTag.set("BETA")
         }
 
         finalizedBy(
-            named("cleanBuildLibs"),
+            //named("cleanBuildLibs"),
+            named("buildEnableTPInternalJRELaunch"),
+            named("copyToPluginBuilds"),
+        )
+    }
+
+    register("buildCopyBetaInfoInternalToPluginBuilds") {
+        group = "build copy"
+
+        doFirst {
+            println("Set to Beta Debug Build")
+            buildIsRelease.set(false)
+            buildResourcesBundle.set("INFO")
+            buildPreReleaseTag.set("BETA")
+            tpUseInternalJreProvider.set(true)
+        }
+
+        finalizedBy(
+            //named("cleanBuildLibs"),
+            named("buildEnableTPInternalJRELaunch"),
             named("copyToPluginBuilds"),
         )
     }
 
     register("buildCopyAlphaInfoToPluginBuilds") {
-        group = "build"
+        group = "build copy"
 
         doFirst {
             println("Set to Alpha Debug Build")
-            project.extra["releaseBuild"] = false
-            project.extra["resourcesBundle"] = "INFO"
-            project.extra["preReleaseVersion"] = "ALPHA"
+            buildIsRelease.set(false)
+            buildResourcesBundle.set("INFO")
+            buildPreReleaseTag.set("ALPHA")
         }
 
         finalizedBy(
-            named("cleanBuildLibs"),
+            //named("cleanBuildLibs"),
+            named("buildEnableTPInternalJRELaunch"),
+            named("copyToPluginBuilds"),
+        )
+    }
+
+    register("buildCopyAlphaInfoInternalToPluginBuilds") {
+        group = "build copy"
+
+        doFirst {
+            println("Set to Alpha Debug Build")
+            buildIsRelease.set(false)
+            buildResourcesBundle.set("INFO")
+            buildPreReleaseTag.set("ALPHA")
+            tpUseInternalJreProvider.set(true)
+        }
+
+        finalizedBy(
+            //named("cleanBuildLibs"),
+            named("buildEnableTPInternalJRELaunch"),
             named("copyToPluginBuilds"),
         )
     }
 
     register("buildCopyReleaseToPluginBuilds") {
-        group = "build"
+        group = "build copy"
 
         doFirst {
             println("Set to Release Build")
-            project.extra["releaseBuild"] = true
-            project.extra["resourcesBundle"] = "INFO"
-            project.extra["preReleaseVersion"] = ""
+            buildIsRelease.set(true)
+            buildResourcesBundle.set("INFO")
+            buildPreReleaseTag.set("")
         }
 
         finalizedBy(
-            named("cleanBuildLibs"),
+            //named("cleanBuildLibs"),
+            named("buildEnableTPInternalJRELaunch"),
+            named("copyToPluginBuilds"),
+        )
+    }
+
+    register("buildCopyReleaseInternalToPluginBuilds") {
+        group = "build copy"
+
+        doFirst {
+            println("Set to Release Build")
+            buildIsRelease.set(true)
+            buildResourcesBundle.set("INFO")
+            buildPreReleaseTag.set("")
+            tpUseInternalJreProvider.set(true)
+        }
+
+        finalizedBy(
+            //named("cleanBuildLibs"),
+            named("buildEnableTPInternalJRELaunch"),
             named("copyToPluginBuilds"),
         )
     }
 
     register("buildCopyReleaseToPluginBuildsJVM17") {
-        group = "build"
+        group = "build copy"
 
         doFirst {
             println("Set to Release Build,JVM17")
-            project.extra["releaseBuild"] = true
-            project.extra["resourcesBundle"] = "INFO"
-            project.extra["preReleaseVersion"] = ""
-            project.extra["javaVersionTarget"] = 17
+            buildIsRelease.set(true)
+            buildResourcesBundle.set("INFO")
+            buildPreReleaseTag.set("")
+            tpPlugin.targetJvmVersion.set(17)
         }
 
         finalizedBy(
-            named("cleanBuildLibs"),
+            //named("cleanBuildLibs"),
+            named("buildEnableTPInternalJRELaunch"),
             named("copyToPluginBuilds"),
         )
     }
@@ -548,19 +649,19 @@ fun updateReleaseType() {
 
             when (envBuildType) {
                 "RELEASE" -> {
-                    project.extra["releaseBuild"] = true
-                    project.extra["resourcesBundle"] = "INFO"
+                    buildIsRelease.set(true)
+                    buildResourcesBundle.set("INFO")
                 }
 
                 "TRACE" -> {
-                    project.extra["releaseBuild"] = false
-                    project.extra["resourcesBundle"] = "TRACE"
+                    buildIsRelease.set(false)
+                    buildResourcesBundle.set("TRACE")
                 }
 
                 else -> {
                     // DEBUG or TRACE
-                    project.extra["releaseBuild"] = false
-                    project.extra["resourcesBundle"] = "DEBUG"
+                    buildIsRelease.set(false)
+                    buildResourcesBundle.set("DEBUG")
                 }
             }
         }
@@ -576,9 +677,9 @@ fun generateSemanticVersion(
     resourcesBundleProvider: Provider<String>
 ) {
     val genVersionSemantic =
-        if (releaseBuildProvider.get()) "${project.extra["versionBaseName"]}"
+        if (releaseBuildProvider.get()) versionBaseName
         else {
-            println("Base Version Name: ${project.extra["versionBaseName"]}")
+            println("Base Version Name: $versionBaseName")
 
             val preReleaseVersion = preReleaseVersionProvider.get()
             println("Pre-release Version: $preReleaseVersion")
@@ -600,7 +701,7 @@ fun generateSemanticVersion(
             "$versionMajor.$versionMinor.$versionPatch-${preReleaseVersion.lowercase()}.${timeOfBuild}$metadata"
         }
 
-    project.extra["versionName"] = genVersionSemantic
+    versionSemanticProvider.set(genVersionSemantic)
     project.version = genVersionSemantic
     println("Version Updated Name: $genVersionSemantic")
 }
