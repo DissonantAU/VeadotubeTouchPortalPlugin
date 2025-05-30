@@ -32,12 +32,11 @@ if (enableLibrarySubstitution) {
         }
     }
 
-
     /*
     * Optional: Get TouchPortal SDK from Local project - Should be in folder next to this Project
     * Useful if TP SDK has Libraries that need Updating, etc.
     */
-    val inclBuildTouchPortalSdkDir = file("../TouchPortalPluginSDK-8.3.0")
+    val inclBuildTouchPortalSdkDir = file("../TouchPortalPluginSDK")
 
     if (useTouchPortalSdkLocal && isDirectory(inclBuildTouchPortalSdkDir)) {
         includeBuild(inclBuildTouchPortalSdkDir) {
@@ -65,6 +64,7 @@ if (enableLibrarySubstitution) {
                 }
             }
         }
+
     }
 
 }
