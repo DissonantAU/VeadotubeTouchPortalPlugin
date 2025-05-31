@@ -21,19 +21,19 @@ jobs:
       contents: read
 
     steps:
-      - name: Check out Veadotube Touch Portal Plugin from repo
+      - name: VeadotubeTouchPortalPlugin - Check out from repo
         uses: actions/checkout@v4
         with:
           path: ./VeadotubeTouchPortalPlugin
 
-      - name: Check out bleatkan from repo
+      - name: bleatkan - Check out from repo (Dependency)
         uses: actions/checkout@v4
         with:
           repository: DissonantAU/bleatkan
           ref: dev
           path: ./bleatkan
 
-      - name: Check out Touch Portal SDK from repo
+      - name: TouchPortalPluginSDK - Check out from repo (Dependency)
         uses: actions/checkout@v4
         with:
           repository: DissonantAU/TouchPortalPluginSDK
@@ -55,10 +55,10 @@ jobs:
       - name: TouchPortalPluginSDK - Change wrapper permissions
         run: chmod +x ./TouchPortalPluginSDK/gradlew
 
-      - name: TouchPortalPluginSDK - Build with Gradle Wrapper
-        run: ./TouchPortalPluginSDK/gradlew --project-dir ./TouchPortalPluginSDK/ Annotations:build Helpers:build AnnotationsProcessor:build Library:build Packager:build
+      - name: TouchPortalPluginSDK - Generate JARs with Gradle Wrapper
+        run: ./TouchPortalPluginSDK/gradlew --project-dir ./TouchPortalPluginSDK/ Annotations:jar Helpers:jar AnnotationsProcessor:jar Library:jar Packager:jar
 
-      - name: TouchPortalPluginSDK - Publish Packager Plugin to Maven Local with Gradle Wrapper
+      - name: TouchPortalPluginSDK - Publish Packager Plugin to Maven Local with Wrapper
         run: ./TouchPortalPluginSDK/gradlew --project-dir ./TouchPortalPluginSDK/ Packager:publishToMavenLocal
 
       # Veadotube Touch Portal Plugin
@@ -68,18 +68,6 @@ jobs:
       - name: VeadotubeTouchPortalPlugin - Build with Gradle Wrapper
         run: ./VeadotubeTouchPortalPlugin/gradlew --project-dir ./VeadotubeTouchPortalPlugin/ build
 
-
-    # NOTE: The Gradle Wrapper is the default and recommended way to run Gradle (https://docs.gradle.org/current/userguide/gradle_wrapper.html).
-    # If your project does not have the Gradle Wrapper configured, you can use the following configuration to run Gradle with a specified version.
-    #
-    # - name: Setup Gradle
-    #   uses: gradle/actions/setup-gradle@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4.0.0
-    #   with:
-    #     gradle-version: '8.9'
-    #
-    # - name: Build with Gradle 8.9
-    #   run: gradle build
-
   dependency-submission:
 
     runs-on: ubuntu-latest
@@ -87,10 +75,24 @@ jobs:
       contents: write
 
     steps:
-      - name: Check out Veadotube Touch Portal Plugin from repo
+      - name: VeadotubeTouchPortalPlugin - Check out from repo
         uses: actions/checkout@v4
-        #with:
-        #  path: ./VeadotubeTouchPortalPlugin
+        with:
+          path: ./VeadotubeTouchPortalPlugin
+
+      - name: bleatkan - Check out from repo (Dependency)
+        uses: actions/checkout@v4
+        with:
+          repository: DissonantAU/bleatkan
+          ref: dev
+          path: ./bleatkan
+
+      - name: TouchPortalPluginSDK - Check out from repo (Dependency)
+        uses: actions/checkout@v4
+        with:
+          repository: DissonantAU/TouchPortalPluginSDK
+          ref: 8.3.1-RC
+          path: ./TouchPortalPluginSDK
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -98,12 +100,32 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Change wrapper permissions
-        run: chmod +x ./gradlew
+      # Configure Gradle for optimal use in GitHub Actions, including caching of downloaded dependencies.
+      # See: https://github.com/gradle/actions/blob/main/setup-gradle/README.md
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4.0.0
+
+      # Touch Portal Plugin SDK
+      - name: TouchPortalPluginSDK - Change wrapper permissions
+        run: chmod +x ./TouchPortalPluginSDK/gradlew
+
+      - name: TouchPortalPluginSDK - Generate JARs with Gradle Wrapper
+        run: ./TouchPortalPluginSDK/gradlew --project-dir ./TouchPortalPluginSDK/ Annotations:jar Helpers:jar AnnotationsProcessor:jar Library:jar Packager:jar
+        env:
+          GITHUB_DEPENDENCY_GRAPH_ENABLED: false
+
+      - name: TouchPortalPluginSDK - Publish Packager Plugin to Maven Local with Wrapper
+        run: ./TouchPortalPluginSDK/gradlew --project-dir ./TouchPortalPluginSDK/ Packager:publishToMavenLocal
+        env:
+          GITHUB_DEPENDENCY_GRAPH_ENABLED: false
+
+      # Veadotube Touch Portal Plugin
+      - name: VeadotubeTouchPortalPlugin - Change wrapper permissions
+        run: chmod +x ./VeadotubeTouchPortalPlugin/gradlew
 
       # Generates and submits a dependency graph, enabling Dependabot Alerts for all project dependencies.
       # See: https://github.com/gradle/actions/blob/main/dependency-submission/README.md
-      - name: Generate and submit dependency graph
+      - name: VeadotubeTouchPortalPlugin - Generate and submit dependency graph
         uses: gradle/actions/dependency-submission@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4.0.0
-    #   with:
-    #    build-root-directory: ./VeadotubeTouchPortalPlugin/
+        with:
+          build-root-directory: ./VeadotubeTouchPortalPlugin/
