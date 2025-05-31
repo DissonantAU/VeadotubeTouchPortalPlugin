@@ -86,7 +86,7 @@ jobs:
       contents: write
 
     steps:
-      - name: Check out Veadotube Touch Portal Plugin from repo
+      - name: VeadotubeTouchPortalPlugin - Check out from repo
         uses: actions/checkout@v4
         with:
           path: ./VeadotubeTouchPortalPlugin
@@ -97,8 +97,9 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Change wrapper permissions
-        run: chmod +x ./gradlew
+      # Veadotube Touch Portal Plugin
+      - name: VeadotubeTouchPortalPlugin - Change wrapper permissions
+        run: chmod +x ./VeadotubeTouchPortalPlugin/gradlew
 
       # Generates and submits a dependency graph, enabling Dependabot Alerts for all project dependencies.
       # See: https://github.com/gradle/actions/blob/main/dependency-submission/README.md

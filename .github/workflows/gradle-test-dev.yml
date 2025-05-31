@@ -21,19 +21,19 @@ jobs:
       contents: read
 
     steps:
-      - name: Check out Veadotube Touch Portal Plugin from repo
+      - name: VeadotubeTouchPortalPlugin - Check out from repo
         uses: actions/checkout@v4
         with:
           path: ./VeadotubeTouchPortalPlugin
 
-      - name: Check out bleatkan from repo
+      - name: bleatkan - Check out from repo
         uses: actions/checkout@v4
         with:
           repository: DissonantAU/bleatkan
           ref: dev
           path: ./bleatkan
 
-      - name: Check out Touch Portal SDK from repo
+      - name: TouchPortalPluginSDK - Check out from repo
         uses: actions/checkout@v4
         with:
           repository: DissonantAU/TouchPortalPluginSDK
@@ -111,9 +111,13 @@ jobs:
 
       - name: TouchPortalPluginSDK - Generate JARs with Gradle Wrapper
         run: ./TouchPortalPluginSDK/gradlew --project-dir ./TouchPortalPluginSDK/ Annotations:jar Helpers:jar AnnotationsProcessor:jar Library:jar Packager:jar
+        env:
+          GITHUB_DEPENDENCY_GRAPH_ENABLED: false
 
       - name: TouchPortalPluginSDK - Publish Packager Plugin to Maven Local with Gradle Wrapper
         run: ./TouchPortalPluginSDK/gradlew --project-dir ./TouchPortalPluginSDK/ Packager:publishToMavenLocal
+        env:
+          GITHUB_DEPENDENCY_GRAPH_ENABLED: false
 
       # Veadotube Touch Portal Plugin
       - name: VeadotubeTouchPortalPlugin - Change wrapper permissions
