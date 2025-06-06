@@ -9,8 +9,7 @@ import io.github.dissonantau.bleatkan.connection.Connection
 import io.github.dissonantau.bleatkan.connection.ConnectionError
 import io.github.dissonantau.bleatkan.connection.ConnectionListener
 import io.github.dissonantau.bleatkan.instance.*
-import io.github.dissonantau.bleatkan.message.ResultMessage
-import io.github.dissonantau.bleatkan.message.VeadoRequest
+import io.github.dissonantau.bleatkan.message.*
 import io.github.dissonantau.veadotubetouchportalplugin.data.VeadoInstanceMap
 import io.github.dissonantau.veadotubetouchportalplugin.data.VtState
 import io.github.dissonantau.veadotubetouchportalplugin.notification.NotificationHelper
@@ -1304,7 +1303,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
                 LOGGER.trace { "Message -> Version: ${message.version}" }
             }
 
-            is ResultMessage.ResultMessageWithPayloadBoolean ->{
+            is ResultMessage.ResultMessageWithPayloadBoolean -> {
                 LOGGER.debug { "onConnectionReceive: Message Payload Boolean" }
                 LOGGER.trace { "Message -> ID:      ${message.id}" }
                 LOGGER.trace { "Message -> Type:    ${message.type}" }
@@ -1312,14 +1311,14 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
                 LOGGER.trace { "Message -> Payload: ${message.payload}" }
             }
 
-            is ResultMessage.ResultMessageWithPayloadNumber ->{
+            is ResultMessage.ResultMessageWithPayloadNumber -> {
                 LOGGER.debug { "onConnectionReceive: Message Payload Number" }
                 LOGGER.trace { "Message -> ID:          ${message.id}" }
                 LOGGER.trace { "Message -> Type:        ${message.type}" }
                 LOGGER.trace { "Message -> Name:        ${message.name}" }
-                LOGGER.trace { "Message -> Payload Val: ${message.payload.value?:"null"}" }
-                LOGGER.trace { "Message -> Payload Max: ${message.payload.min?:"null"}" }
-                LOGGER.trace { "Message -> Payload Min: ${message.payload.max?:"null"}" }
+                LOGGER.trace { "Message -> Payload Val: ${message.payload.value}" }
+                LOGGER.trace { "Message -> Payload Max: ${message.payload.min ?: "null"}" }
+                LOGGER.trace { "Message -> Payload Min: ${message.payload.max ?: "null"}" }
             }
 
             is ResultMessage.ResultMessageWithEntryList -> {
@@ -1790,23 +1789,30 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
      * until an API message to toggle/unmute is sent
      * * If a hotkey is set, API won't work
      *
-     *
      * @param sendValue
      * * true > PPT Node 'enabled' > Mic Unmuted
      * * false > PPT Node 'disabled' > Mic Muted
      * * null > Toggle
      *
-     *
      */
     private fun sendRequestPushToTalkMicInput(connection: Connection, sendValue: Boolean? = null) {
-        //TODO Create proper Bleatkan Request Message for PPT
         try {
-            val pushToTalk =
-                "{\"event\":\"payload\",\"type\":\"boolean\",\"id\":\"mini\",\"payload\": {${
-                    if (sendValue != null)
-                        "\"event\":\"set\",\"value\":$sendValue"
-                    else "\"event\":\"toggle\""
-                }}}"
+            val pushToTalk = if (sendValue != null) {
+                VeadoRequest.createRequestWithPayload(
+                    event = MessageEvent.PAYLOAD,
+                    type = MessagePayloadType.BOOLEAN,
+                    id = MessagePayloadId.MINI,
+                    payloadEvent = PayloadEvent.SET,
+                    payloadValue = sendValue
+                )
+            } else {
+                VeadoRequest.createRequestWithPayload(
+                    event = MessageEvent.PAYLOAD,
+                    type = MessagePayloadType.BOOLEAN,
+                    id = MessagePayloadId.MINI,
+                    payloadEvent = PayloadEvent.TOGGLE
+                )
+            }
             LOGGER.trace { "sendRequestPushToTalkMicInput: $pushToTalk" }
             connection.send(
                 channel = channelNodes,
