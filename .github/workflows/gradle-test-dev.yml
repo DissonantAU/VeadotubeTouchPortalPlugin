@@ -49,7 +49,7 @@ jobs:
       # Configure Gradle for optimal use in GitHub Actions, including caching of downloaded dependencies.
       # See: https://github.com/gradle/actions/blob/main/setup-gradle/README.md
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4.0.0
+        uses: gradle/actions/setup-gradle@v4
 
       # Touch Portal Plugin SDK
       - name: TouchPortalPluginSDK - Change wrapper permissions
@@ -67,6 +67,7 @@ jobs:
 
       - name: VeadotubeTouchPortalPlugin - Build with Gradle Wrapper
         run: ./VeadotubeTouchPortalPlugin/gradlew --project-dir ./VeadotubeTouchPortalPlugin/ build
+
 
   dependency-submission:
 
@@ -103,21 +104,16 @@ jobs:
       # Configure Gradle for optimal use in GitHub Actions, including caching of downloaded dependencies.
       # See: https://github.com/gradle/actions/blob/main/setup-gradle/README.md
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4.0.0
+        uses: gradle/actions/setup-gradle@v4
 
       # Touch Portal Plugin SDK
       - name: TouchPortalPluginSDK - Change wrapper permissions
         run: chmod +x ./TouchPortalPluginSDK/gradlew
 
-      - name: TouchPortalPluginSDK - Generate JARs with Gradle Wrapper
-        run: ./TouchPortalPluginSDK/gradlew --project-dir ./TouchPortalPluginSDK/ Annotations:jar Helpers:jar AnnotationsProcessor:jar Library:jar Packager:jar
-        env:
-          GITHUB_DEPENDENCY_GRAPH_ENABLED: false
-
       - name: TouchPortalPluginSDK - Publish Packager Plugin to Maven Local with Wrapper
         run: ./TouchPortalPluginSDK/gradlew --project-dir ./TouchPortalPluginSDK/ Packager:publishToMavenLocal
-        env:
-          GITHUB_DEPENDENCY_GRAPH_ENABLED: false
+        #env:
+        #  GITHUB_DEPENDENCY_GRAPH_ENABLED: false
 
       # Veadotube Touch Portal Plugin
       - name: VeadotubeTouchPortalPlugin - Change wrapper permissions
@@ -126,6 +122,6 @@ jobs:
       # Generates and submits a dependency graph, enabling Dependabot Alerts for all project dependencies.
       # See: https://github.com/gradle/actions/blob/main/dependency-submission/README.md
       - name: VeadotubeTouchPortalPlugin - Generate and submit dependency graph
-        uses: gradle/actions/dependency-submission@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4.0.0
+        uses: gradle/actions/dependency-submission@v4
         with:
           build-root-directory: ./VeadotubeTouchPortalPlugin/
