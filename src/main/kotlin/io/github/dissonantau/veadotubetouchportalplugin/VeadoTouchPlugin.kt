@@ -2,6 +2,7 @@ package io.github.dissonantau.veadotubetouchportalplugin
 
 import com.christophecvb.touchportal.TouchPortalPlugin
 import com.christophecvb.touchportal.annotations.*
+import com.christophecvb.touchportal.annotations.State
 import com.christophecvb.touchportal.helpers.PluginHelper
 import com.christophecvb.touchportal.model.*
 import com.google.gson.JsonObject
@@ -1360,6 +1361,12 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
                         processReceivedPayloadThumbnail(connection, payload)
                     }
                 }
+            }
+
+            else -> {
+                LOGGER.error { "onConnectionReceive: Unknown Message Payload" }
+                LOGGER.error { "Message -> Channel: ${message.channel}" }
+                LOGGER.error { "Message -> Event:   ${message.event}" }
             }
 
         }
