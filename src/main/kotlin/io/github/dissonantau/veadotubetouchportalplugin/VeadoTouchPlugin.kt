@@ -228,29 +228,29 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
 
 
     /* Touch Portal States, Events, etc. */
-//    /**
-//     * Current Avatar State - `Name` (`ID`) Format
-//     */
-//    @State(
-//        desc = "Current Mini Avatar State - Name & ID (Deprecated)",
-//        defaultValue = "Not Connected",
-//        categoryId = "PrimaryInstance",
-//        id = "currentAvatarState"
-//    )
-//    private var stateCurrentAvatarState: String = "Not Connected"
-// TODO Remove
+    ///**
+    // * Current Avatar State - `Name` (`ID`) Format
+    // */
+    //@State(
+    //    desc = "Current Mini Avatar State - Name & ID (Deprecated)",
+    //    defaultValue = "Not Connected",
+    //    categoryId = "PrimaryInstance",
+    //    id = "currentAvatarState"
+    //)
+    //private var stateCurrentAvatarState: String = "Not Connected"
+    //TODO Remove
 
-//    /**
-//     * Current Avatar State ID
-//     */
-//    @State(
-//        desc = "Current Mini Avatar State - ID (Deprecated)",
-//        defaultValue = "Not Connected",
-//        categoryId = "PrimaryInstance",
-//        id = "currentAvatarStateId"
-//    )
-//    private var stateCurrentAvatarStateId: String = "Not Connected"
-// TODO Remove
+    ///**
+    // * Current Avatar State ID
+    // */
+    //@State(
+    //    desc = "Current Mini Avatar State - ID (Deprecated)",
+    //    defaultValue = "Not Connected",
+    //    categoryId = "PrimaryInstance",
+    //    id = "currentAvatarStateId"
+    //)
+    //private var stateCurrentAvatarStateId: String = "Not Connected"
+    // TODO Remove
 
     /**
      * Current Avatar State - Name
@@ -1456,33 +1456,33 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
     }
 
 
-//    /**
-//     * Call when Current State has updated - updates name and sends to Touch Portal
-//     *
-//     * e.g. State Names may have Changed, etc.
-//     *
-//     * Probably obsolete
-//     */
-//    @Deprecated("Obsolete")
-//    private fun onCurrentStateNameUpdated(connection: Connection) {
-//        // Update current state name
-//        synchronized(connection) {
-//
-//            //Get current State for Connection
-//            val currentState = collConnectionData[connection]?.currentState
-//            LOGGER.debug { "updateCurrentStateName: Got Current State $currentState" }
-//
-//            if (currentState != null) {
-//                //If not null, send
-//
-//                sendStateUpdateCurrentAvatarState(connection, currentState)
-//
-//                sendStateUpdateCurrentAvatarStateName(currentState.name ?: "Unknown")
-//
-//            }
-//        }
-//    }
-// TODO Remove
+    ///**
+    // * Call when Current State has updated - updates name and sends to Touch Portal
+    // *
+    // * e.g. State Names may have Changed, etc.
+    // *
+    // * Probably obsolete
+    // */
+    //@Deprecated("Obsolete")
+    //private fun onCurrentStateNameUpdated(connection: Connection) {
+    //    // Update current state name
+    //    synchronized(connection) {
+    //
+    //        //Get current State for Connection
+    //        val currentState = collConnectionData[connection]?.currentState
+    //        LOGGER.debug { "updateCurrentStateName: Got Current State $currentState" }
+    //
+    //        if (currentState != null) {
+    //            //If not null, send
+    //
+    //            sendStateUpdateCurrentAvatarState(connection, currentState)
+    //
+    //            sendStateUpdateCurrentAvatarStateName(currentState.name ?: "Unknown")
+    //
+    //        }
+    //    }
+    //}
+    // TODO Remove
 
     private fun processReceivedPayloadThumbnail(connection: Connection, payload: BleatkanStateThumbnail) {
         LOGGER.trace { "Message -> Payload -> Event/State:  ${payload.event}; ${payload.state}" }
@@ -1533,105 +1533,105 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
     private val channelInstance = "instance"
 
 
-//    /**
-//     * Actions for updating the Current Avatar State in Touch Portal etc.
-//     *
-//     * State and State Name, etc
-//     *
-//     * @see stateCurrentAvatarState
-//     */
-//    @Suppress("DEPRECATION")
-//    private fun sendStateUpdateCurrentAvatarState(
-//        connection: Connection,
-//        state: VtState,
-//        allowEmptyValue: Boolean = false,
-//        forceUpdate: Boolean = false
-//    ) {
-//        // State ID is different pre 2.1 - from 2.1 it's just the name
-//        val stateString = if (connection.compatibilityFlagMiniPre2dot1) {
-//            // Generate String with Name and ID - pre 2.1
-//            avatarStateToString(state.id, state.name ?: "Unknown")
-//        } else {
-//            // ID is just name
-//            state.id
-//        }
-//        stateCurrentAvatarState = stateString
-//
-//        // Update State - do this first in case Plugin State is used for checks
-//        this.sendStateUpdate(
-//            VeadoTouchPluginConstants.PrimaryInstance.States.CurrentAvatarState.ID,
-//            stateString,
-//            /* allowEmptyValue = */ allowEmptyValue,
-//            /* forceUpdate = */ forceUpdate
-//        )
-//
-//    }
-// TODO Remove
+    ///**
+    // * Actions for updating the Current Avatar State in Touch Portal etc.
+    // *
+    // * State and State Name, etc
+    // *
+    // * @see stateCurrentAvatarState
+    // */
+    //@Suppress("DEPRECATION")
+    //private fun sendStateUpdateCurrentAvatarState(
+    //    connection: Connection,
+    //    state: VtState,
+    //    allowEmptyValue: Boolean = false,
+    //    forceUpdate: Boolean = false
+    //) {
+    //    // State ID is different pre 2.1 - from 2.1 it's just the name
+    //    val stateString = if (connection.compatibilityFlagMiniPre2dot1) {
+    //        // Generate String with Name and ID - pre 2.1
+    //        avatarStateToString(state.id, state.name ?: "Unknown")
+    //    } else {
+    //        // ID is just name
+    //        state.id
+    //    }
+    //    stateCurrentAvatarState = stateString
+    //
+    //    // Update State - do this first in case Plugin State is used for checks
+    //    this.sendStateUpdate(
+    //        VeadoTouchPluginConstants.PrimaryInstance.States.CurrentAvatarState.ID,
+    //        stateString,
+    //        /* allowEmptyValue = */ allowEmptyValue,
+    //        /* forceUpdate = */ forceUpdate
+    //    )
+    //
+    //}
+    // TODO Remove
 
-//    /**
-//     * Action for clearing the Current Avatar State in Touch Portal etc.
-//     *
-//     * State and State Name, etc
-//     *
-//     * @see stateCurrentAvatarState
-//     */
-//    private fun sendStateClearCurrentAvatarState() {
-//        stateCurrentAvatarState = ""
-//
-//        // Update State - do this first in case Plugin State is used for checks
-//        this.sendStateUpdate(
-//            VeadoTouchPluginConstants.PrimaryInstance.States.CurrentAvatarState.ID,
-//            stateCurrentAvatarState,
-//        )
-//
-//    }
-// TODO Remove
+    ///**
+    // * Action for clearing the Current Avatar State in Touch Portal etc.
+    // *
+    // * State and State Name, etc
+    // *
+    // * @see stateCurrentAvatarState
+    // */
+    //private fun sendStateClearCurrentAvatarState() {
+    //    stateCurrentAvatarState = ""
+    //
+    //    // Update State - do this first in case Plugin State is used for checks
+    //    this.sendStateUpdate(
+    //        VeadoTouchPluginConstants.PrimaryInstance.States.CurrentAvatarState.ID,
+    //        stateCurrentAvatarState,
+    //    )
+    //
+    //}
+    // TODO Remove
 
-//    /**
-//     * Actions for updating the Current Avatar State ID in Touch Portal etc.
-//     *
-//     * State ID Only
-//     *
-//     * @see stateCurrentAvatarStateId
-//     */
-//    private fun sendStateUpdateCurrentAvatarStateId(
-//        stateID: String,
-//        allowEmptyValue: Boolean = false,
-//        forceUpdate: Boolean = false
-//    ) {
-//        stateCurrentAvatarStateId = stateID
-//
-//        // Update State - do this first in case Plugin State is used for checks
-//        this.sendStateUpdate(
-//            /* stateId = */ VeadoTouchPluginConstants.PrimaryInstance.States.CurrentAvatarStateId.ID,
-//            /* value = */ stateCurrentAvatarStateId,
-//            /* allowEmptyValue = */ allowEmptyValue,
-//            /* forceUpdate = */ forceUpdate
-//        )
-//
-//    }
-// TODO Remove
+    ///**
+    // * Actions for updating the Current Avatar State ID in Touch Portal etc.
+    // *
+    // * State ID Only
+    // *
+    // * @see stateCurrentAvatarStateId
+    // */
+    //private fun sendStateUpdateCurrentAvatarStateId(
+    //    stateID: String,
+    //    allowEmptyValue: Boolean = false,
+    //    forceUpdate: Boolean = false
+    //) {
+    //    stateCurrentAvatarStateId = stateID
+    //
+    //    // Update State - do this first in case Plugin State is used for checks
+    //    this.sendStateUpdate(
+    //        /* stateId = */ VeadoTouchPluginConstants.PrimaryInstance.States.CurrentAvatarStateId.ID,
+    //        /* value = */ stateCurrentAvatarStateId,
+    //        /* allowEmptyValue = */ allowEmptyValue,
+    //        /* forceUpdate = */ forceUpdate
+    //    )
+    //
+    //}
+    // TODO Remove
 
-//    /**
-//     * Actions for clearing the Current Avatar State ID in Touch Portal etc.
-//     *
-//     * State ID Only
-//     *
-//     * @see stateCurrentAvatarStateId
-//     */
-//    private fun sendStateClearCurrentAvatarStateId() {
-//        stateCurrentAvatarStateId = ""
-//
-//        // Update State - do this first in case Plugin State is used for checks
-//        this.sendStateUpdate(
-//            /* stateId = */ VeadoTouchPluginConstants.PrimaryInstance.States.CurrentAvatarStateId.ID,
-//            /* value = */ stateCurrentAvatarStateId,
-//            /* allowEmptyValue = */ true,
-//            /* forceUpdate = */ false
-//        )
-//
-//    }
-// TODO Remove
+    ///**
+    // * Actions for clearing the Current Avatar State ID in Touch Portal etc.
+    // *
+    // * State ID Only
+    // *
+    // * @see stateCurrentAvatarStateId
+    // */
+    //private fun sendStateClearCurrentAvatarStateId() {
+    //    stateCurrentAvatarStateId = ""
+    //
+    //    // Update State - do this first in case Plugin State is used for checks
+    //    this.sendStateUpdate(
+    //        /* stateId = */ VeadoTouchPluginConstants.PrimaryInstance.States.CurrentAvatarStateId.ID,
+    //        /* value = */ stateCurrentAvatarStateId,
+    //        /* allowEmptyValue = */ true,
+    //        /* forceUpdate = */ false
+    //    )
+    //
+    //}
+    // TODO Remove
 
     /**
      * Actions for updating the Current Avatar State Name in Touch Portal etc.
