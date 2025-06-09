@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="VeadoTouchPlugin" type="JetRunConfigurationType" nameIsGenerated="true">
+  <configuration default="false" name="Plugin Start" type="JetRunConfigurationType">
     <option name="MAIN_CLASS_NAME" value="io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin" />
     <module name="VeadotubeTouchPortalPlugin.main" />
     <option name="PROGRAM_PARAMETERS" value="start" />
