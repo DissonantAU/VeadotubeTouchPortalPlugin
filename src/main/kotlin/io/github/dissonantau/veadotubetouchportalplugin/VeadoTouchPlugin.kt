@@ -11,6 +11,9 @@ import io.github.dissonantau.bleatkan.connection.ConnectionError
 import io.github.dissonantau.bleatkan.connection.ConnectionListener
 import io.github.dissonantau.bleatkan.instance.*
 import io.github.dissonantau.bleatkan.message.*
+import io.github.dissonantau.bleatkan.message.RequestMessage.RequestMessageNodeEvent
+import io.github.dissonantau.bleatkan.message.VeadoRequest.FACTORY.getPayloadEventGet
+import io.github.dissonantau.bleatkan.message.VeadoRequest.FACTORY.getPayloadEventList
 import io.github.dissonantau.veadotubetouchportalplugin.data.VeadoInstanceMap
 import io.github.dissonantau.veadotubetouchportalplugin.data.VtState
 import io.github.dissonantau.veadotubetouchportalplugin.notification.NotificationHelper
@@ -394,9 +397,9 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         if (connection != null) {
             try {
                 when (choices[0]) {
-                    "Toggle" -> sendRequestPushToTalkMicInput(connection, null)
-                    "Unmute" -> sendRequestPushToTalkMicInput(connection, true) // Prev Enable
-                    "Mute" -> sendRequestPushToTalkMicInput(connection, false) // Prev Disable
+                    "Toggle" -> sendRequestMiniPushToTalkMicInput(connection, null)
+                    "Unmute" -> sendRequestMiniPushToTalkMicInput(connection, true) // Prev Enable
+                    "Mute" -> sendRequestMiniPushToTalkMicInput(connection, false) // Prev Disable
                 }
             } catch (ex: Exception) {
                 LOGGER.debug { "actionSetPushToTalkMicInput: Error sending message ${ex.message}" }
@@ -911,27 +914,27 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
     }
 
 
-    //    /**
-    //     * Requests [stateCurrentAvatarStateId] from [primaryConnection]
-    //     */
-    //    @Deprecated(
-    //        "Use sendRequestStateThumbnail with primaryConnection as value",
-    //        ReplaceWith("sendRequestStateThumbnail")
-    //    )
-    //    private fun sendRequestCurrentStateThumbnail() = kotlin.runCatching {
-    //        primaryConnection?.let {
-    //            if (stateCurrentAvatarStateId.isNotBlank()) {
-    //                try {
-    //                    primaryConnection?.send(
-    //                        channel = channelNodes,
-    //                        requestData = VeadoRequest.createThumbnailStateMini(stateCurrentAvatarStateId)
-    //                    )
-    //                } catch (ex: Exception) {
-    //                    LOGGER.warn { "Failed to Request Current Avatar State Thumbnail for ${it.connUri}: ${ex.message}" }
-    //                }
+    ///**
+    // * Requests [stateCurrentAvatarStateId] from [primaryConnection]
+    // */
+    //@Deprecated(
+    //    "Use sendRequestMiniStateThumbnail with primaryConnection as value",
+    //    ReplaceWith("sendRequestMiniStateThumbnail")
+    //)
+    //private fun sendRequestCurrentStateThumbnail() = kotlin.runCatching {
+    //    primaryConnection?.let {
+    //        if (stateCurrentAvatarStateId.isNotBlank()) {
+    //            try {
+    //                primaryConnection?.send(
+    //                    channel = channelNodes,
+    //                    requestData = VeadoRequest.createThumbnailStateMini(stateCurrentAvatarStateId)
+    //                )
+    //            } catch (ex: Exception) {
+    //                LOGGER.warn { "Failed to Request Current Avatar State Thumbnail for ${it.connUri}: ${ex.message}" }
     //            }
     //        }
     //    }
+    //}
     // TODO Remove
 
     private fun updateTPConnectionSettingInfo() {
@@ -1007,7 +1010,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
                 if (!settingVeadoAutoRequestThumbnailEnabled) {
                     settingVeadoAutoRequestThumbnailEnabled = true
                     //Send Peek request - when the reply is received, png will be checked, etc.
-                    primaryMiniConnection?.let { sendRequestStatePeek(it) }
+                    primaryMiniConnection?.let { sendRequestMiniAvatarStatePeek(it) }
                 }
 
             } else {
@@ -1268,20 +1271,22 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
                 /* Connection Marked active */
                 veadoInstanceMaps.onConnectionActivate(connection)
 
+                sendRequestNodeList(connection)
+
                 // Request list of possible States
-                sendRequestStateList(connection)
+                sendRequestMiniAvatarStateList(connection)
 
                 // Request Current State
-                sendRequestStatePeek(connection)
+                sendRequestMiniAvatarStatePeek(connection)
 
                 // Start State Listener
-                sendRequestStartListener(connection)
+                sendRequestMiniStartListener(connection)
 
             } else {
                 /* Connection Marked inactive */
 
                 //Stop Listener
-                sendRequestStopListener(connection)
+                sendRequestMiniStopListener(connection)
 
                 veadoInstanceMaps.cleanupConnectionStates(connection)
 
@@ -1428,7 +1433,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
                     val stateCurrentName = stateCurrent.name
                     if (stateCurrentName.isNullOrEmpty()) {
                         //If we don't have the name, send request for fresh state list
-                        sendRequestStateList(connection)
+                        sendRequestMiniAvatarStateList(connection)
                     } else {
                         try {
                             sendStateUpdateCurrentAvatarStateName(stateCurrentName)
@@ -1438,7 +1443,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
 
                     if (settingVeadoAutoRequestThumbnailEnabled) {
                         when (val png = stateCurrent.thumbnail?.png) {
-                            null -> sendRequestStateThumbnail(connection, stateCurrent.id)
+                            null -> sendRequestMiniStateThumbnail(connection, stateCurrent.id)
                             else -> sendStateUpdateCurrentAvatarStateThumbnail(png)
                         }
                     }
@@ -1511,7 +1516,14 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
     private val listenerToken = "TpVtPlugin.ChangeState"
 
     /**
-     * Nodes Channel - default channel used in Mini
+     * Token for Listener
+     */
+    private val listenerTokenBase = "TpVtPlugin"
+
+    /**
+     * Nodes Channel
+     *
+     * Default channel used in Mini
      */
     private val channelNodes = "nodes"
 
@@ -1764,8 +1776,150 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         }
     }
 
+    private fun sendRequestNodeList(connection: Connection) {
+        try {
+            connection.send(
+                channel = channelNodes,
+                requestData = VeadoRequest.getEventList
+            )
+        } catch (ex: Exception) {
+            LOGGER.warn { "Failed to Request Node List for ${connection.connUri}: ${ex.message}" }
+        }
+    }
 
-    private fun sendRequestStateList(connection: Connection) {
+    private fun sendNodesListenerEnable(connection: Connection, channel: String = channelNodes) {
+        try {
+            println("Send enable nodes listener")
+            connection.send(
+                channel = channel,
+                RequestMessage.RequestMessageNodeEventToken(
+                    event = PayloadEvent.LISTEN.value,
+                    token = "$listenerTokenBase.$channelNodes"
+                )
+            )
+        } catch (ex: Exception) {
+            LOGGER.warn { "Failed to Enable Node Listener for ${connection.connUri}; ${channel}: ${ex.message}" }
+        }
+    }
+
+    private fun sendNodesListenerDisable(connection: Connection, channel: String = channelNodes) {
+        try {
+            println("Send enable nodes listener")
+            connection.send(
+                channel = channel,
+                RequestMessage.RequestMessageNodeEventToken(
+                    event = PayloadEvent.UNLISTEN.value,
+                    token = "$listenerTokenBase.$channelNodes"
+                )
+            )
+        } catch (ex: Exception) {
+            LOGGER.warn { "Failed to Disable Node Listener for ${connection.connUri}; ${channel}: ${ex.message}" }
+        }
+    }
+
+    private fun sendRequestNodeStateEventsList(
+        connection: Connection,
+        channel: String = channelNodes,
+        nodeId: String = MessagePayloadId.MINI.value
+    ) {
+        try {
+            connection.send(
+                channel = channel,
+                requestData = RequestMessageNodeEvent(
+                    event = MessageEvent.PAYLOAD.value,
+                    type = MessagePayloadType.STATE_EVENTS.value,
+                    id = nodeId,
+                    payload = getPayloadEventList
+                )
+            )
+        } catch (ex: Exception) {
+            LOGGER.warn { "Failed to Request State List for ${connection.connUri}; ${channel}; ${nodeId}: ${ex.message}" }
+        }
+    }
+
+    private fun sendRequestNodeNumberList(
+        connection: Connection,
+        channel: String = channelNodes,
+        nodeId: String
+    ) {
+        try {
+            connection.send(
+                channel = channel,
+                requestData = RequestMessageNodeEvent(
+                    event = MessageEvent.PAYLOAD.value,
+                    type = MessagePayloadType.NUMBER.value,
+                    id = nodeId,
+                    payload = getPayloadEventList
+                )
+            )
+        } catch (ex: Exception) {
+            LOGGER.warn { "Failed to Request State List for ${connection.connUri}; ${channel}; ${nodeId}: ${ex.message}" }
+        }
+    }
+
+    private fun sendRequestNodeBooleanList(
+        connection: Connection,
+        channel: String = channelNodes,
+        nodeId: String
+    ) {
+        try {
+            connection.send(
+                channel = channel,
+                requestData = RequestMessageNodeEvent(
+                    event = MessageEvent.PAYLOAD.value,
+                    type = MessagePayloadType.BOOLEAN.value,
+                    id = nodeId,
+                    payload = getPayloadEventList
+                )
+            )
+        } catch (ex: Exception) {
+            LOGGER.warn { "Failed to Request State List for ${connection.connUri}; ${channel}; ${nodeId}: ${ex.message}" }
+        }
+    }
+
+    private fun sendRequestNodeStateGet(
+        connection: Connection,
+        channel: String = channelNodes,
+        nodeId: String
+    ) {
+        require(nodeId.isNotBlank()) { "Node ID can't be blank" }
+        try {
+            connection.send(
+                channel = channel,
+                requestData = RequestMessageNodeEvent(
+                    event = MessageEvent.PAYLOAD.value,
+                    type = MessagePayloadType.STATE_EVENTS.value,
+                    id = nodeId,
+                    payload = getPayloadEventGet
+                )
+            )
+        } catch (ex: Exception) {
+            LOGGER.warn { "Failed to Get Current State for ${connection.connUri}; ${channel}; ${nodeId}: ${ex.message}" }
+        }
+    }
+
+    private fun sendRequestNodeBooleanGet(
+        connection: Connection,
+        channel: String = channelNodes,
+        nodeId: String
+    ) {
+        require(nodeId.isNotBlank()) { "Node ID can't be blank" }
+        try {
+            connection.send(
+                channel = channel,
+                requestData = RequestMessageNodeEvent(
+                    event = MessageEvent.PAYLOAD.value,
+                    type = MessagePayloadType.BOOLEAN.value,
+                    id = nodeId,
+                    payload = getPayloadEventGet
+                )
+            )
+        } catch (ex: Exception) {
+            LOGGER.warn { "Failed to Get Current State for ${connection.connUri}; ${channel}; ${nodeId}: ${ex.message}" }
+        }
+    }
+
+    private fun sendRequestMiniAvatarStateList(connection: Connection) {
         try {
             connection.send(
                 channel = channelNodes,
@@ -1776,8 +1930,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         }
     }
 
-
-    private fun sendRequestStatePeek(connection: Connection) {
+    private fun sendRequestMiniAvatarStatePeek(connection: Connection) {
         try {
             connection.send(
                 channel = channelNodes,
@@ -1802,7 +1955,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
      * * null > Toggle
      *
      */
-    private fun sendRequestPushToTalkMicInput(connection: Connection, sendValue: Boolean? = null) {
+    private fun sendRequestMiniPushToTalkMicInput(connection: Connection, sendValue: Boolean? = null) {
         try {
             val pushToTalk = if (sendValue != null) {
                 VeadoRequest.createRequestWithPayload(
@@ -1820,7 +1973,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
                     payloadEvent = PayloadEvent.TOGGLE
                 )
             }
-            LOGGER.trace { "sendRequestPushToTalkMicInput: $pushToTalk" }
+            LOGGER.trace { "sendRequestMiniPushToTalkMicInput: $pushToTalk" }
             connection.send(
                 channel = channelNodes,
                 requestData = pushToTalk
@@ -1831,7 +1984,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
     }
 
 
-    private fun sendRequestStateThumbnail(connection: Connection, stateID: String) {
+    private fun sendRequestMiniStateThumbnail(connection: Connection, stateID: String) {
         try {
             connection.send(
                 channel = channelNodes,
@@ -1843,7 +1996,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
     }
 
 
-    private fun sendRequestStartListener(connection: Connection) {
+    private fun sendRequestMiniStartListener(connection: Connection) {
         try {
             connection.send(
                 channel = channelNodes,
@@ -1855,7 +2008,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
     }
 
 
-    private fun sendRequestStopListener(connection: Connection) {
+    private fun sendRequestMiniStopListener(connection: Connection) {
         try {
             connection.send(
                 channel = channelNodes,
