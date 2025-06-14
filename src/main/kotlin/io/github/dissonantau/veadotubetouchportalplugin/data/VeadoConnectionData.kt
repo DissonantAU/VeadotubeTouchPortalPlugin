@@ -3,6 +3,7 @@ package io.github.dissonantau.veadotubetouchportalplugin.data
 import org.apache.commons.collections4.map.LRUMap
 import io.github.dissonantau.bleatkan.connection.Connection
 import io.github.dissonantau.bleatkan.message.State
+import io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPluginConstants
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.lang.ref.SoftReference
 import java.lang.ref.WeakReference
@@ -59,42 +60,6 @@ class VeadoConnectionData(connection: Connection) {
     fun getStateByID(stateID: String): VtState? = statesByID[stateID]
 
     /**
-     * Get [VtState] from this connection by State Name - Compatibility Version
-     *
-     * If Connection is Mini pre-2.1, state names are searched and:
-     * - if an exact match is found, it is chosen
-     * - If no exact match is found, the first result that that contains the give name is returned (ignoreCase is used here)
-     * - if none are found, null is returned
-     *
-     * If not Mini pre-2.1, the equivalent of [getStateByID] is used - the same result is returned but overhead is increased
-     *
-     */
-    fun getStateByNameMiniCompat(stateName: String, ignoreCase: Boolean = false): VtState? {
-        connection?.let { connection ->
-            if (connection.compatibilityFlagMiniPre2dot1) {
-                var candidates: ArrayList<VtState>? = null
-
-                statesAll.forEach {
-                    it.name?.let { name ->
-                        if (name == stateName) return it
-                        if (name.contains(stateName, ignoreCase)) {
-                            if (candidates == null) candidates = ArrayList()
-                            candidates!!.add(it)
-                        }
-                    }
-                }
-
-                candidates?.let { if (it.isNotEmpty()) return it.first() }
-            } else {
-                statesByID[stateName]
-            }
-
-        }
-
-        return null
-    }
-
-    /**
      * Get [VtState] from this connection by State Name
      *
      * - if an exact match is found, it is chosen
@@ -104,19 +69,25 @@ class VeadoConnectionData(connection: Connection) {
      */
     fun getStateByNameContains(stateName: String, ignoreCase: Boolean = false): VtState? {
         connection?.run {
-            var candidates: ArrayList<VtState>? = null
 
+            // Find exact match
             statesAll.forEach {
                 it.name?.let { name ->
                     if (name == stateName) return it
+                }
+            }
+
+            //No Exact match Found, search for containing match
+            val candidates: ArrayList<VtState> = ArrayList()
+            statesAll.forEach {
+                it.name?.let { name ->
                     if (name.contains(stateName, ignoreCase)) {
-                        if (candidates == null) candidates = ArrayList()
-                        candidates!!.add(it)
+                        candidates.add(it)
                     }
                 }
             }
 
-            candidates?.let { if (it.isNotEmpty()) it.first() }
+            candidates.let { if (it.isNotEmpty()) it.first() }
         }
 
         return null
@@ -166,10 +137,93 @@ class VeadoConnectionData(connection: Connection) {
         LRUMap<VtState, SoftReference<VtThumbnail>>(lruSoftMapSize)
 
 
-    /** Replaces all states
+    // StateID Strings for Mini Instances
+    /** Instance Title
+     *
+     * Simplified Title after first Dash, if one is set
+     * * only Letters and Digits are kept - no spaces, etc. ( e.g. 'veadotube mini - my @ title 3!' becomes 'mytitle3')
+     *
+     * If no non-default title exists (e.g. 'veadotube mini') the Type & Process ID are used (mini123456)
+     *
+     * This should be updated if title changes
+     * */
+    var instanceTitleSimplified: String = ""
+        private set
+
+    /** Instance Title
+     *
+     * Cleaned Title after first Dash, if one is set
+     * * Trimmed ( e.g. 'veadotube mini - my @ title 3!' becomes 'my @ title 3!')
+     *
+     * If no non-default title exists (e.g. 'veadotube mini') the Type & Process ID are used (mini-123456)
+     *
+     * This should be updated if title changes
+     * */
+    var instanceTitleCleaned: String = ""
+        private set
+
+    /**
+     * Generated State ID for mini Current Avatar Name
+     * e.g. io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.MiniInstance.myTitle.state.currentAvatarStateName
+     * */
+    var stateIDCurrentAvatarName = ""
+        private set
+
+    var stateIDCurrentAvatarNameShort = ""
+        private set
+
+    /**
+     * Generated State ID for mini Current Avatar Name
+     * e.g. io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.MiniInstance.myTitle.state.currentAvatarStateThumbnail
+     * */
+    var stateIDCurrentAvatarThumbnail = ""
+        private set
+
+    var stateIDCurrentAvatarThumbnailShort = ""
+        private set
+
+    init {
+        refreshInstanceTitle()
+    }
+
+    /**
+     * Updates [instanceTitleSimplified]
+     *
+     * Returns old State IDs for Removal
+     */
+    fun refreshInstanceTitle(): List<String> {
+        val firstDash = instance.title.indexOf('-')
+        instanceTitleCleaned = if (firstDash >= 0) {
+            instance.title.substring(firstDash + 1).trim()
+        } else {
+            "${instance.id.type}-${instance.id.process}"
+        }
+
+        val list: MutableList<String> = mutableListOf()
+
+        instanceTitleSimplified = instanceTitleCleaned.filter { it.isLetterOrDigit() }
+
+        list.add(stateIDCurrentAvatarNameShort)
+        stateIDCurrentAvatarName =
+            "${VeadoTouchPluginConstants.ID}.MiniInstance.state.$instanceTitleSimplified.currentAvatarStateName"
+
+        stateIDCurrentAvatarNameShort = "$instanceTitleSimplified.currentAvatarStateName"
+
+
+        list.add(stateIDCurrentAvatarThumbnailShort)
+        stateIDCurrentAvatarThumbnail =
+            "${VeadoTouchPluginConstants.ID}.MiniInstance.state.$instanceTitleSimplified.currentAvatarStateThumbnail"
+
+        stateIDCurrentAvatarThumbnailShort =
+            "$instanceTitleSimplified.currentAvatarStateThumbnail"
+
+        return list
+    }
+
+    /**
+     * Replaces all states
      *
      * If the list's don't match, items are checked and updated
-     *
      */
     fun updateStates(payload: BleatkanStateList) {
         LOGGER.trace { "updateStates: Begin" }
