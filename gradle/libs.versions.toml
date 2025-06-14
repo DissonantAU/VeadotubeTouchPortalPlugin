@@ -1,6 +1,6 @@
 [versions]
 
-bleatkan = "0.7.+"
+bleatkan = "0.8.+"
 touchportalSDK = "8.3.+"
 
 # 2.1.0 > 2.1.10

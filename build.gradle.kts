@@ -24,8 +24,8 @@ plugins {
 * e.g. 1.0.4-alpha.20241103-1234+debug or 1.0.4-beta.20241205+debug
 */
 val versionMajor: Int = 0
-val versionMinor: Int = 7
-val versionPatch: Int = 5
+val versionMinor: Int = 8
+val versionPatch: Int = 0
 
 
 val pluginFullName: String = "Veadotube Touch Portal Plugin"
