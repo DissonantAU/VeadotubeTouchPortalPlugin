@@ -607,7 +607,13 @@ class VeadoInstanceMap {
                     collInstanceIDTitle[instanceID] = connection.instance.title
 
                     //Trigger Title Refresh
-                    collConnectionData[connection]?.refreshInstanceTitle()
+                    val lists = mutableListOf<String>()
+                    collConnectionData[connection]?.also { connData ->
+                        connData.refreshInstanceTitle().also { lists.addAll(it) }
+                        connData.refreshInstanceNumber().also { lists.addAll(it) }
+                    }
+
+                    lists
                 } else null
 
             return Pair(connection, titles)
@@ -646,17 +652,18 @@ class VeadoInstanceMap {
             // Add to Map if it hasn't been added already
             val putNumberResult = addInstanceNumberMap(instance.id)
 
+            if (putNumberResult == -1) {
+                LOGGER.warn { "Connection ${connection.instance} can't be mapped to Stable Instance Number" }
+            }
+
             // Create Connection Data Holder and add to collection
             val connData = collConnectionData.getOrPut(connection) { VeadoConnectionData(connection) }
 
             // Update instance IDs
             when (instanceType) {
                 "mini" -> {
-                    if (putNumberResult == -1) {
-                        LOGGER.warn { "Connection can't be mapped to Stable Instance Number" }
-                    }
                     connData.setInstanceNumber(putNumberResult)
-
+                    connData.refreshInstanceNumber()
                     return connData
                 }
 
@@ -673,17 +680,18 @@ class VeadoInstanceMap {
         return null
     }
 
-    /** Updates Instance IDs - returns list of connections with updated Numbers*/
+
+    /** Updates Instance IDs - returns list of connections with updated Numbers */
     private fun updateMiniInstanceNumbers(): List<VeadoConnectionData> {
         val updated = mutableListOf<VeadoConnectionData>()
         lock.write {
-            var count = 1
             getMiniInstanceConnectionList().forEach { connection ->
                 collConnectionData[connection]?.let { connData ->
                     // Get current number, if it doesn't match expected, update and add to 'update' list
-                    val current = connData.getInstanceNumber()
-                    if (current != count) {
-                        connData.setInstanceNumber(count++)
+                    if (connData.getInstanceNumber() < 0) {
+                        // Set Instance Number, then refresh automatically if no number was assigned previously
+                        addInstanceNumberMap(connection.instance.id)
+                        connData.refreshInstanceNumber()
                         updated.add(connData)
                     }
                 }

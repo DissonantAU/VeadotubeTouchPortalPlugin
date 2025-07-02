@@ -166,8 +166,18 @@ class VeadoConnectionData(connection: Connection) {
         private set
 
     /**
+     * Generated State ID for mini Windows Title
+     * e.g. io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.MiniInstances.myTitle.state.currentAvatarStateName
+     * */
+    var stateIDTitledInstanceTitle = ""
+        private set
+
+    var stateIDTitledInstanceTitleShort = ""
+        private set
+
+    /**
      * Generated State ID for mini Current Avatar Name
-     * e.g. io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.MiniInstance.myTitle.state.currentAvatarStateName
+     * e.g. io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.MiniInstances.myTitle.state.currentAvatarStateName
      * */
     var stateIDTitledCurrentAvatarName = ""
         private set
@@ -177,7 +187,7 @@ class VeadoConnectionData(connection: Connection) {
 
     /**
      * Generated State ID for mini Current Avatar Name
-     * e.g. io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.MiniInstance.myTitle.state.currentAvatarStateThumbnail
+     * e.g. io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.MiniInstances.myTitle.state.currentAvatarStateThumbnail
      * */
     var stateIDTitledCurrentAvatarThumbnail = ""
         private set
@@ -194,7 +204,7 @@ class VeadoConnectionData(connection: Connection) {
      *
      * Returns old State IDs for Removal
      */
-    fun refreshInstanceTitle(): List<String> {
+    fun refreshInstanceTitle(): MutableList<String> {
         val firstDash = instance.title.indexOf('-')
         instanceTitleCleaned = if (firstDash >= 0) {
             instance.title.substring(firstDash + 1).trim()
@@ -206,16 +216,26 @@ class VeadoConnectionData(connection: Connection) {
 
         instanceTitleSimplified = instanceTitleCleaned.filter { it.isLetterOrDigit() }
 
+        list.add(stateIDTitledInstanceTitleShort)
+        stateIDTitledInstanceTitle =
+            "${VeadoTouchPluginConstants.ID}.MiniInstances.state.$instanceTitleSimplified.title"
+
+        stateIDTitledInstanceTitleShort =
+            "$instanceTitleSimplified.title"
+
+
         list.add(stateIDTitledCurrentAvatarNameShort)
         stateIDTitledCurrentAvatarName =
-            "${VeadoTouchPluginConstants.ID}.MiniInstance.state.$instanceTitleSimplified.currentAvatarStateName"
+            "${VeadoTouchPluginConstants.ID}.MiniInstances.state.$instanceTitleSimplified.currentAvatarStateName"
 
-        stateIDTitledCurrentAvatarNameShort = "$instanceTitleSimplified.currentAvatarStateName"
+        stateIDTitledCurrentAvatarNameShort =
+            "$instanceTitleSimplified.currentAvatarStateName"
+
 
 
         list.add(stateIDTitledCurrentAvatarThumbnailShort)
         stateIDTitledCurrentAvatarThumbnail =
-            "${VeadoTouchPluginConstants.ID}.MiniInstance.state.$instanceTitleSimplified.currentAvatarStateThumbnail"
+            "${VeadoTouchPluginConstants.ID}.MiniInstances.state.$instanceTitleSimplified.currentAvatarStateThumbnail"
 
         stateIDTitledCurrentAvatarThumbnailShort =
             "$instanceTitleSimplified.currentAvatarStateThumbnail"
@@ -231,10 +251,20 @@ class VeadoConnectionData(connection: Connection) {
      */
     private var instanceNumber = -1
 
+    /**
+     * Generated State ID for mini Window Title
+     * e.g. io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.MiniInstances.state.1.currentAvatarStateName
+     * */
+    var stateIDNumberedInstanceTitle = ""
+        private set
+
+    var stateIDNumberedInstanceTitleShort = ""
+        private set
+
 
     /**
      * Generated State ID for mini Current Avatar Name
-     * e.g. io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.MiniInstance.state.1.currentAvatarStateName
+     * e.g. io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.MiniInstances.state.1.currentAvatarStateName
      * */
     var stateIDNumberedCurrentAvatarName = ""
         private set
@@ -244,7 +274,7 @@ class VeadoConnectionData(connection: Connection) {
 
     /**
      * Generated State ID for mini Current Avatar Name
-     * e.g. io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.MiniInstance.state.1.currentAvatarStateThumbnail
+     * e.g. io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.MiniInstances.state.1.currentAvatarStateThumbnail
      * */
     var stateIDNumberedCurrentAvatarThumbnail = ""
         private set
@@ -267,19 +297,28 @@ class VeadoConnectionData(connection: Connection) {
      *
      * Returns old State IDs for Removal
      */
-    fun refreshInstanceNumber(): List<String> {
+    fun refreshInstanceNumber(): MutableList<String> {
         val list: MutableList<String> = mutableListOf()
+
+        list.add(stateIDNumberedInstanceTitleShort)
+        stateIDNumberedInstanceTitle =
+            "${VeadoTouchPluginConstants.ID}.MiniInstances.state.$instanceNumber.title"
+
+        stateIDNumberedInstanceTitleShort =
+            "$instanceNumber.title"
+
 
         list.add(stateIDNumberedCurrentAvatarNameShort)
         stateIDNumberedCurrentAvatarName =
-            "${VeadoTouchPluginConstants.ID}.MiniInstance.state.$instanceNumber.currentAvatarStateName"
+            "${VeadoTouchPluginConstants.ID}.MiniInstances.state.$instanceNumber.currentAvatarStateName"
 
-        stateIDNumberedCurrentAvatarNameShort = "$instanceNumber.currentAvatarStateName"
+        stateIDNumberedCurrentAvatarNameShort =
+            "$instanceNumber.currentAvatarStateName"
 
 
         list.add(stateIDNumberedCurrentAvatarThumbnailShort)
         stateIDNumberedCurrentAvatarThumbnail =
-            "${VeadoTouchPluginConstants.ID}.MiniInstance.state.$instanceNumber.currentAvatarStateThumbnail"
+            "${VeadoTouchPluginConstants.ID}.MiniInstances.state.$instanceNumber.currentAvatarStateThumbnail"
 
         stateIDNumberedCurrentAvatarThumbnailShort =
             "$instanceNumber.currentAvatarStateThumbnail"
