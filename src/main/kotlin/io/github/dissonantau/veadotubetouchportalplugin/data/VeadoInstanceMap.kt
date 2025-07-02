@@ -13,17 +13,6 @@ import kotlin.concurrent.read
 import kotlin.concurrent.withLock
 import kotlin.concurrent.write
 
-enum class VeadoInstanceMapTypes(lowercase: String) {
-    MINI("mini"),
-    FULL("full");
-
-    companion object {
-        fun valueOfCaseInsensitive(name: String): VeadoInstanceMapTypes =
-            VeadoInstanceMapTypes.valueOf(name.uppercase())
-    }
-
-}
-
 class VeadoInstanceMap {
     companion object {
         private val LOGGER = KotlinLogging.logger {}
@@ -412,6 +401,18 @@ class VeadoInstanceMap {
             // Create Connection Data Holder and add to collection
             collConnectionData[connection] = VeadoConnectionData(connection)
         }
+    }
+
+}
+
+
+enum class VeadoInstanceMapTypes(lowercase: String) {
+    MINI("mini"),
+    FULL("full");
+
+    companion object {
+        fun valueOfCaseInsensitive(name: String): VeadoInstanceMapTypes =
+            valueOf(name.uppercase())
     }
 
 }
