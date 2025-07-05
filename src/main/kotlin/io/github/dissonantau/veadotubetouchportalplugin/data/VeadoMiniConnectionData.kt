@@ -13,7 +13,7 @@ import io.github.dissonantau.bleatkan.message.ResultPayload.ResultPayloadStateLi
 import io.github.dissonantau.bleatkan.message.ResultPayload.ResultPayloadPng as BleatkanStateThumbnail
 
 @Suppress("unused")
-class VeadoConnectionData(connection: Connection) {
+class VeadoMiniConnectionData(connection: Connection) {
 
     companion object {
         private val LOGGER = KotlinLogging.logger {}

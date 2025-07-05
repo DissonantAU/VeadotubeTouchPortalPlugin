@@ -340,14 +340,14 @@ class VeadoInstanceMap {
 
 
     /**
-     * Map of [Connection]s with related [VeadoConnectionData]
+     * Map of [Connection]s with related [VeadoStateNodeData]
      *
      * Contains data collected from Connection
      *
      * Work on held objects with should be synchronized with the [Connection] to prevent issues.
      *
      */
-    private val collConnectionData = HashMap<Connection, VeadoConnectionData>()
+    private val collConnectionData = HashMap<Connection, VeadoStateNodeData>()
 
     /**
      * Veadotube Instance Collection
@@ -482,7 +482,7 @@ class VeadoInstanceMap {
      * Returns Connection related to Instance for closing and external cleanup
      *
      */
-    fun instanceRemoveConnection(instance: Instance): Pair<Connection?, VeadoConnectionData?> {
+    fun instanceRemoveConnection(instance: Instance): Pair<Connection?, VeadoStateNodeData?> {
         val instanceTitle = instance.title
         val instanceServer = instance.server
         val instanceConnectionID = instance.instanceConnectionID
@@ -581,7 +581,7 @@ class VeadoInstanceMap {
     }
 
 
-    fun getConnectionInstanceData(connection: Connection): VeadoConnectionData? {
+    fun getConnectionInstanceData(connection: Connection): VeadoStateNodeData? {
         lock.read {
             return collConnectionData[connection]
         }
@@ -635,7 +635,7 @@ class VeadoInstanceMap {
      *
      * Returns list of connections updated, including any that have had Instance numbers updated
      */
-    fun onConnectionActivate(connection: Connection): VeadoConnectionData? {
+    fun onConnectionActivate(connection: Connection): VeadoStateNodeData? {
         val instance = connection.instance
         val instanceID = instance.id.toString()
         val instanceType = instance.id.type
@@ -657,7 +657,7 @@ class VeadoInstanceMap {
             }
 
             // Create Connection Data Holder and add to collection
-            val connData = collConnectionData.getOrPut(connection) { VeadoConnectionData(connection) }
+            val connData = collConnectionData.getOrPut(connection) { VeadoStateNodeData(connection) }
 
             // Update instance IDs
             when (instanceType) {
@@ -682,8 +682,8 @@ class VeadoInstanceMap {
 
 
     /** Updates Instance IDs - returns list of connections with updated Numbers */
-    private fun updateMiniInstanceNumbers(): List<VeadoConnectionData> {
-        val updated = mutableListOf<VeadoConnectionData>()
+    private fun updateMiniInstanceNumbers(): List<VeadoStateNodeData> {
+        val updated = mutableListOf<VeadoStateNodeData>()
         lock.write {
             getMiniInstanceConnectionList().forEach { connection ->
                 collConnectionData[connection]?.let { connData ->
