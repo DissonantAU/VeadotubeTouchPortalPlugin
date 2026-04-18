@@ -42,7 +42,8 @@ tpPlugin.mainClassSimpleName.set(mainClassSimpleName)
 
 // Java Version to Target - Java 8 is default. Normally set by Build Tasks
 // Newer versions of TP use JRE 17 if you're able to use the included JVM
-tpPlugin.targetJvmVersion.set(8)
+val buildTargetJvmVersion = objects.property(Int::class).convention(8)
+tpPlugin.targetJvmVersion.set(buildTargetJvmVersion)
 
 /* Build Dirs */
 val pluginsBuildsDir: Directory = rootProject.layout.projectDirectory.dir("pluginBuilds")
@@ -128,7 +129,8 @@ buildConfig {
     buildConfigField("String", "BUILD_RESOURCES_BUNDLE", provider { "\"${buildResourcesBundle.get()}\"" })
 
     // Java Target Specification - Minimum Version Targeted by JAR
-    buildConfigField("integer", "TARGET_JRE_SPEC", provider { tpPlugin.targetJvmVersion.get() })
+    buildConfigField("integer", "TARGET_JRE_SPEC", buildTargetJvmVersion)
+    //buildConfigField("integer", "TARGET_JRE_SPEC", provider { tpPlugin.targetJvmVersion.get() })
 
     // Java JDK Specification - Major Version of the JDK this is Building the JAR
     buildConfigField("integer", "BUILD_JDK_SPEC", provider { JavaVersion.current().majorVersion })
@@ -144,8 +146,8 @@ buildConfig {
     )
 }
 
-
 repositories {
+    mavenLocal()
     mavenCentral()
 }
 
@@ -231,7 +233,7 @@ kotlin {
 }
 
 java {
-    //sourceCompatibility = JavaVersion.VERSION_1_8
+    sourceCompatibility = JavaVersion.VERSION_1_8
     //targetCompatibility = JavaVersion.VERSION_1_8
 
     //sourceCompatibility = JavaVersion.VERSION_17
@@ -254,6 +256,13 @@ tasks {
 
         doLast {
             setMainResources(buildResourcesBundle)
+        }
+    }
+
+
+    if (JavaVersion.current().isJava9Compatible) {
+        withType<JavaCompile>().configureEach {
+            options.release = buildTargetJvmVersion
         }
     }
 
@@ -621,7 +630,8 @@ tasks {
             buildIsRelease.set(true)
             buildResourcesBundle.set("INFO")
             buildPreReleaseTag.set("")
-            tpPlugin.targetJvmVersion.set(17)
+            //tpPlugin.targetJvmVersion.set(17)
+            buildTargetJvmVersion.set(17)
         }
 
         finalizedBy(
