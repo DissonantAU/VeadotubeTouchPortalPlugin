@@ -1,4 +1,5 @@
 import org.gradle.jvm.tasks.Jar
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.time.LocalDateTime
@@ -25,7 +26,7 @@ plugins {
 */
 val versionMajor: Int = 0
 val versionMinor: Int = 8
-val versionPatch: Int = 1
+val versionPatch: Int = 2
 
 
 val pluginFullName: String = "Veadotube Touch Portal Plugin"
@@ -91,7 +92,7 @@ val buildPreReleaseTag = objects.property(String::class).convention("SNAPSHOT")
 // Chooses which resources bundle to include in IDE Testing - e.g. debug/trace and metadata extension for non-release builds
 // Normally set by Build Tasks
 // Mainly for choosing logging options - "DEBUG" by default, change to "TRACE" if needed for IDE Run.
-val buildResourcesBundle = objects.property(String::class).convention("DEBUG")
+val buildResourcesBundle = objects.property(String::class).convention("TRACE")
 
 
 updateReleaseType()
