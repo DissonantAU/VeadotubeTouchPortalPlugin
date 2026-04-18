@@ -14,15 +14,19 @@ class VeadoState
     /** State ID */
     val id: String,
     /** State Name */
-    name: String? = null
+    name: String? = null,
+    /** Thumbnail Hash */
+    thumbHash: String? = null
 ) {
-    //Construct from a State
+    // Construct from a State
     constructor(state: State) : this(
         id = state.id,
-        name = state.name
+        name = state.name,
+        thumbHash = state.thumbHash
     )
 
-    //Construct from Peek - Use if Peek is received and State doesn't exist
+    // Construct from Peek - Use if Peek is received and State doesn't exist.
+    // Name should be checked and list requested at some point.
     constructor(state: ResultPayloadState) : this(
         id = state.state
     )
@@ -47,16 +51,30 @@ class VeadoState
     var name: String? = name
         internal set
 
+    /** Thumbnail Hash
+     *
+     * null = never given (e.g. veadotube mini 2.0), empty = none (e.g. state with no image in veado full)
+     */
+    var thumbHash: String? = thumbHash
+        internal set
+
     /**
-     * Updates stored name from State if ID matches and name isn't blank
-     * @return true if [name] was updated
+     * Updates stored name/thumbHash from State if ID matches and name isn't blank
+     * @return true if [name] or [thumbHash] was updated
      */
     internal fun update(state: State): Boolean {
-        if (state.id == id && name != state.name && state.name.isNotBlank()) {
-            name = state.name
-            return true
+        var updated = false
+        if (state.id == id) {
+            if (name != state.name && state.name.isNotBlank()) {
+                name = state.name
+                updated = true
+            }
+            if (thumbHash != state.thumbHash && !state.thumbHash.isNullOrBlank()) {
+                thumbHash = state.thumbHash
+                updated = true
+            }
         }
-        return false
+        return updated
     }
 
     /**
@@ -87,7 +105,6 @@ class VeadoState
                 return thumb.updateThumbnail(newThumbnail)
             }
         }
-
     }
 
     /**
@@ -98,7 +115,6 @@ class VeadoState
     internal fun clearThumbnail(): Boolean {
         if (_thumbnail != null) {
             _thumbnail = null
-
             return true
         }
         return false

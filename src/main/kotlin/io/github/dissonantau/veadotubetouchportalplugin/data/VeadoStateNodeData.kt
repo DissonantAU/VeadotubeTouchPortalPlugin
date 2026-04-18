@@ -1,39 +1,92 @@
 package io.github.dissonantau.veadotubetouchportalplugin.data
 
 import org.apache.commons.collections4.map.LRUMap
-import io.github.dissonantau.bleatkan.connection.Connection
-import io.github.dissonantau.bleatkan.message.State
-import io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPluginConstants
-import io.github.oshai.kotlinlogging.KotlinLogging
 import java.lang.ref.SoftReference
-import java.lang.ref.WeakReference
+import kotlin.collections.set
 
 import io.github.dissonantau.bleatkan.message.ResultPayload.ResultPayloadState as BleatkanStatePeek
 import io.github.dissonantau.bleatkan.message.ResultPayload.ResultPayloadStateList as BleatkanStateList
 import io.github.dissonantau.bleatkan.message.ResultPayload.ResultPayloadPng as BleatkanStateThumbnail
 
 @Suppress("unused")
-class VeadoStateNodeData(connection: Connection) {
+class VeadoStateNodeData(id: String, name: String, type: String = "stateEvents") : VeadoNodeData(id, name, type) {
 
     companion object {
-        private val LOGGER = KotlinLogging.logger {}
+        /**
+         * Node Map of Fixed TP Data IDs.
+         *
+         * These are the fixed/Core IDs that always exist and don't change
+         * - no Dynamic State IDs are kept here (e.g. Values of non-active states)
+         */
+        @JvmStatic
+        val StateNodeTPStateIDLabelMap: Map<String, String> = mapOf(
+            //tpStateNodeIdVeadoId to tpStateNodeDescriptionVeadoId,
+            //tpStateNodeIdType to tpStateNodeDescriptionType,
+            tpStateNodeIdName to tpStateNodeDescriptionName,
+
+            tpStateNodeIdCurrentStateId to tpStateNodeDescriptionCurrentStateId,
+            tpStateNodeIdCurrentStateName to tpStateNodeDescriptionCurrentStateName,
+
+            tpStateNodeIdCurrentStateThumbnailWidth to tpStateNodeDescriptionCurrentStateThumbnailWidth,
+            tpStateNodeIdCurrentStateThumbnailHeight to tpStateNodeDescriptionCurrentStateThumbnailHeight,
+            tpStateNodeIdCurrentStateThumbnailHash to tpStateNodeDescriptionCurrentStateThumbnailHash,
+            tpStateNodeIdCurrentStateThumbnail to tpStateNodeDescriptionCurrentStateThumbnail
+        )
+
+        /** Touch Portal State ID for Veado Node currentStateId*/
+        @Suppress("MemberVisibilityCanBePrivate")
+        inline val tpStateNodeIdCurrentStateId; get() = "currentStateId"
+
+        /** Touch Portal State ID for  Veado Node currentStateName */
+        @Suppress("MemberVisibilityCanBePrivate")
+        inline val tpStateNodeIdCurrentStateName; get() = "currentStateName"
+
+        /** Touch Portal State ID for Veado Node currentStateThumbnail */
+        @Suppress("MemberVisibilityCanBePrivate")
+        inline val tpStateNodeIdCurrentStateThumbnail; get() = "currentStateThumbnail"
+
+        /** Touch Portal State ID for Veado Node currentStateThumbnailHash */
+        @Suppress("MemberVisibilityCanBePrivate")
+        inline val tpStateNodeIdCurrentStateThumbnailHash; get() = "currentStateThumbnailHash"
+
+        /** Touch Portal State ID for Veado Node currentStateThumbnailWidth */
+        @Suppress("MemberVisibilityCanBePrivate")
+        inline val tpStateNodeIdCurrentStateThumbnailWidth; get() = "currentStateThumbnailWidth"
+
+        /** Touch Portal State ID for Veado Node currentStateThumbnailHeight */
+        @Suppress("MemberVisibilityCanBePrivate")
+        inline val tpStateNodeIdCurrentStateThumbnailHeight; get() = "currentStateThumbnailHeight"
+
+        /** Touch Portal State ID for Veado Node Current State ID */
+        @Suppress("MemberVisibilityCanBePrivate")
+        inline val tpStateNodeDescriptionCurrentStateId; get() = "Current State ID"
+
+        /** Touch Portal State ID for Veado Node Current State Name */
+        @Suppress("MemberVisibilityCanBePrivate")
+        inline val tpStateNodeDescriptionCurrentStateName; get() = "Current State Name"
+
+        /** Touch Portal State ID for Veado Node Current State Thumbnail */
+        @Suppress("MemberVisibilityCanBePrivate")
+        inline val tpStateNodeDescriptionCurrentStateThumbnail; get() = "Current State Thumbnail"
+
+        /** Touch Portal State ID for Veado Node Current State Thumbnail Hash */
+        @Suppress("MemberVisibilityCanBePrivate")
+        inline val tpStateNodeDescriptionCurrentStateThumbnailHash; get() = "Current State Thumbnail Hash"
+
+        /** Touch Portal State ID for Veado Node Current State Thumbnail Width */
+        @Suppress("MemberVisibilityCanBePrivate")
+        inline val tpStateNodeDescriptionCurrentStateThumbnailWidth; get() = "Current State Thumbnail Width"
+
+        /** Touch Portal State ID for Veado Node Current State Thumbnail Height */
+        @Suppress("MemberVisibilityCanBePrivate")
+        inline val tpStateNodeDescriptionCurrentStateThumbnailHeight; get() = "Current State Thumbnail Height"
+
+
+        inline val thumbnailPngIdSuffix; get() = ".thumbnailPng"
+        inline val thumbnailHashIdSuffix; get() = ".thumbnailHash"
+        inline val thumbnailWidthIdSuffix; get() = ".thumbnailWidth"
+        inline val thumbnailHeightIdSuffix; get() = ".thumbnailHeight"
     }
-
-    /** Connection Weak Ref - used to prevent GC issues */
-    private val _connection: WeakReference<Connection> = WeakReference(connection)
-
-    /** [Connection] this data belongs to.
-     *
-     *  Backed by a [WeakReference] - returns null if Connection has been dereferenced elsewhere and cleaned
-     */
-    @Suppress("MemberVisibilityCanBePrivate")
-    val connection: Connection?
-        get() {
-            return _connection.get()
-        }
-
-    /** Instance this data belongs to */
-    private val instance = connection.instance
 
     /**
      * ArrayList of all [VeadoState] available
@@ -44,8 +97,7 @@ class VeadoStateNodeData(connection: Connection) {
      *
      * Work with this should probably be synchronised using the connection obj
      */
-    var statesAll =
-        ArrayList<VeadoState>()
+    var statesAll = ArrayList<VeadoState>()
         private set
 
     /**
@@ -56,54 +108,21 @@ class VeadoStateNodeData(connection: Connection) {
     private val statesByID = HashMap<String, VeadoState>()
 
     /**
-     * Get [VeadoState] from this connection by State ID
-     *
-     * ID = Name from Mini 2.1
-     */
-    fun getStateByID(stateID: String): VeadoState? = statesByID[stateID]
-
-    /**
-     * Get [VeadoState] from this connection by State Name
-     *
-     * - if an exact match is found, it is chosen
-     * - If no exact match is found, the first result that that contains the give name is returned (ignoreCase is used here)
-     * - if none are found, null is returned
-     *
-     */
-    fun getStateByNameContains(stateName: String, ignoreCase: Boolean = false): VeadoState? {
-        connection?.run {
-
-            // Find exact match
-            statesAll.forEach {
-                it.name?.let { name ->
-                    if (name == stateName) return it
-                }
-            }
-
-            //No Exact match Found, search for containing match
-            val candidates: ArrayList<VeadoState> = ArrayList()
-            statesAll.forEach {
-                it.name?.let { name ->
-                    if (name.contains(stateName, ignoreCase)) {
-                        candidates.add(it)
-                    }
-                }
-            }
-
-            candidates.let { if (it.isNotEmpty()) it.first() }
-        }
-
-        return null
-    }
-
-    /**
      * Pair with the current Avatar State with `ID` and `Name`
      *
      * Names can be duplicates, so the Current state may not match a value in the collectionStates
      *
      * If there's no match, it should request a new list in case a new value was added since list was fetched
      */
+    @Suppress("MemberVisibilityCanBePrivate")
     var currentState: VeadoState? = null
+        private set(value) {
+            stateIdNodeValuesClean = false
+            field = value
+        }
+
+    /** Set if node should act as though auto get thumbnail is enabled. Set true if a thumbnail is assigned */
+    var overrideEnableAutoGetThumbnail = false
         private set
 
     /**
@@ -112,7 +131,9 @@ class VeadoStateNodeData(connection: Connection) {
      * Prevents deletion if several thumbnails are fetched and pushes the current state out of the LRU Maps
      *
      */
-    private var currentStateThumbnail: VeadoThumbnail? = null
+    @Suppress("MemberVisibilityCanBePrivate")
+    var currentStateThumbnail: VeadoThumbnail? = null
+        private set
 
     /** Default Size of LRU Map - Hard References */
     private val lruHardMapSize = 4
@@ -127,215 +148,29 @@ class VeadoStateNodeData(connection: Connection) {
      *
      * See: [Apache Commons LRUMap](https://commons.apache.org/proper/commons-collections/apidocs/org/apache/commons/collections4/map/LRUMap.html)
      */
-    private val thumbnailHardLRUMap: LRUMap<VeadoState, VeadoThumbnail> = LRUMap<VeadoState, VeadoThumbnail>(lruHardMapSize)
+    private val thumbnailHardLRUMap: LRUMap<VeadoState, VeadoThumbnail> =
+        LRUMap<VeadoState, VeadoThumbnail>(lruHardMapSize)
 
     /**
      * Least Recently Used Map with Soft References
      *
-     * Will keep #[lruSoftMapSize] last used values to reduce chance of deletion by GC
+     * Will keep #[lruHardMapSize] + #[lruSoftMapSize] last used values to reduce chance of deletion by GC
      *
      * See: [Apache Commons LRUMap](https://commons.apache.org/proper/commons-collections/apidocs/org/apache/commons/collections4/map/LRUMap.html)
      */
     private val thumbnailSoftLRUMap: LRUMap<VeadoState, SoftReference<VeadoThumbnail>> =
         LRUMap<VeadoState, SoftReference<VeadoThumbnail>>(lruSoftMapSize)
 
-
-    // StateID Strings for Mini Instances
-    /** Instance Title
-     *
-     * Simplified Title after first Dash, if one is set
-     * * only Letters and Digits are kept - no spaces, etc. ( e.g. 'veadotube mini - my @ title 3!' becomes 'mytitle3')
-     *
-     * If no non-default title exists (e.g. 'veadotube mini') the Type & Process ID are used (mini123456)
-     *
-     * This should be updated if title changes
-     * */
-    var instanceTitleSimplified: String = ""
-        private set
-
-    /** Instance Title
-     *
-     * Cleaned Title after first Dash, if one is set
-     * * Trimmed ( e.g. 'veadotube mini - my @ title 3!' becomes 'my @ title 3!')
-     *
-     * If no non-default title exists (e.g. 'veadotube mini') the Type & Process ID are used (mini-123456)
-     *
-     * This should be updated if title changes
-     * */
-    var instanceTitleCleaned: String = ""
-        private set
-
-    /**
-     * Generated State ID for mini Windows Title
-     * e.g. io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.MiniInstances.myTitle.state.currentAvatarStateName
-     * */
-    var stateIDTitledInstanceTitle = ""
-        private set
-
-    var stateIDTitledInstanceTitleShort = ""
-        private set
-
-    /**
-     * Generated State ID for mini Current Avatar Name
-     * e.g. io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.MiniInstances.myTitle.state.currentAvatarStateName
-     * */
-    var stateIDTitledCurrentAvatarName = ""
-        private set
-
-    var stateIDTitledCurrentAvatarNameShort = ""
-        private set
-
-    /**
-     * Generated State ID for mini Current Avatar Name
-     * e.g. io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.MiniInstances.myTitle.state.currentAvatarStateThumbnail
-     * */
-    var stateIDTitledCurrentAvatarThumbnail = ""
-        private set
-
-    var stateIDTitledCurrentAvatarThumbnailShort = ""
-        private set
-
-    init {
-        refreshInstanceTitle()
-    }
-
-    /**
-     * Updates [instanceTitleSimplified]
-     *
-     * Returns old State IDs for Removal
-     */
-    fun refreshInstanceTitle(): MutableList<String> {
-        val firstDash = instance.title.indexOf('-')
-        instanceTitleCleaned = if (firstDash >= 0) {
-            instance.title.substring(firstDash + 1).trim()
-        } else {
-            "${instance.id.type}-${instance.id.process}"
-        }
-
-        val list: MutableList<String> = mutableListOf()
-
-        instanceTitleSimplified = instanceTitleCleaned.filter { it.isLetterOrDigit() }
-
-        list.add(stateIDTitledInstanceTitleShort)
-        stateIDTitledInstanceTitle =
-            "${VeadoTouchPluginConstants.ID}.MiniInstances.state.$instanceTitleSimplified.title"
-
-        stateIDTitledInstanceTitleShort =
-            "$instanceTitleSimplified.title"
-
-
-        list.add(stateIDTitledCurrentAvatarNameShort)
-        stateIDTitledCurrentAvatarName =
-            "${VeadoTouchPluginConstants.ID}.MiniInstances.state.$instanceTitleSimplified.currentAvatarStateName"
-
-        stateIDTitledCurrentAvatarNameShort =
-            "$instanceTitleSimplified.currentAvatarStateName"
-
-
-
-        list.add(stateIDTitledCurrentAvatarThumbnailShort)
-        stateIDTitledCurrentAvatarThumbnail =
-            "${VeadoTouchPluginConstants.ID}.MiniInstances.state.$instanceTitleSimplified.currentAvatarStateThumbnail"
-
-        stateIDTitledCurrentAvatarThumbnailShort =
-            "$instanceTitleSimplified.currentAvatarStateThumbnail"
-
-        return list
-    }
-
-
-    /**
-     * Number for Mapping Instance in Touch Portal
-     *
-     * Related to Age (1st 2nd, etc.)
-     */
-    private var instanceNumber = -1
-
-    /**
-     * Generated State ID for mini Window Title
-     * e.g. io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.MiniInstances.state.1.currentAvatarStateName
-     * */
-    var stateIDNumberedInstanceTitle = ""
-        private set
-
-    var stateIDNumberedInstanceTitleShort = ""
-        private set
-
-
-    /**
-     * Generated State ID for mini Current Avatar Name
-     * e.g. io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.MiniInstances.state.1.currentAvatarStateName
-     * */
-    var stateIDNumberedCurrentAvatarName = ""
-        private set
-
-    var stateIDNumberedCurrentAvatarNameShort = ""
-        private set
-
-    /**
-     * Generated State ID for mini Current Avatar Name
-     * e.g. io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.MiniInstances.state.1.currentAvatarStateThumbnail
-     * */
-    var stateIDNumberedCurrentAvatarThumbnail = ""
-        private set
-
-    var stateIDNumberedCurrentAvatarThumbnailShort = ""
-        private set
-
-    fun getInstanceNumber(): Int {
-        return instanceNumber
-    }
-
-    fun setInstanceNumber(newInstanceNumber: Int): Int {
-        val oldInstanceNumber = instanceNumber
-        instanceNumber = newInstanceNumber
-        return oldInstanceNumber
-    }
-
-    /**
-     * Updates [instanceTitleSimplified]
-     *
-     * Returns old State IDs for Removal
-     */
-    fun refreshInstanceNumber(): MutableList<String> {
-        val list: MutableList<String> = mutableListOf()
-
-        list.add(stateIDNumberedInstanceTitleShort)
-        stateIDNumberedInstanceTitle =
-            "${VeadoTouchPluginConstants.ID}.MiniInstances.state.$instanceNumber.title"
-
-        stateIDNumberedInstanceTitleShort =
-            "$instanceNumber.title"
-
-
-        list.add(stateIDNumberedCurrentAvatarNameShort)
-        stateIDNumberedCurrentAvatarName =
-            "${VeadoTouchPluginConstants.ID}.MiniInstances.state.$instanceNumber.currentAvatarStateName"
-
-        stateIDNumberedCurrentAvatarNameShort =
-            "$instanceNumber.currentAvatarStateName"
-
-
-        list.add(stateIDNumberedCurrentAvatarThumbnailShort)
-        stateIDNumberedCurrentAvatarThumbnail =
-            "${VeadoTouchPluginConstants.ID}.MiniInstances.state.$instanceNumber.currentAvatarStateThumbnail"
-
-        stateIDNumberedCurrentAvatarThumbnailShort =
-            "$instanceNumber.currentAvatarStateThumbnail"
-
-        return list
-    }
-
     /**
      * Replaces all states
      *
      * If the list's don't match, items are checked and updated
      */
-    fun updateStates(payload: BleatkanStateList) {
+    fun updateStates(payload: BleatkanStateList): Boolean {
         LOGGER.trace { "updateStates: Begin" }
 
         val stateList = payload.states
-        // New List, lazy initialised to create on unless needed
+        // New List
         val newAllList: ArrayList<VeadoState> = ArrayList(stateList.size)
 
         // Track if list has changed - Count, Names, etc. - We want to regenerate the list and send to Touch Portal
@@ -397,9 +232,13 @@ class VeadoStateNodeData(connection: Connection) {
             statesByID.values.retainAll(tempHashSet)
             thumbnailHardLRUMap.keys.retainAll(tempHashSet)
             thumbnailSoftLRUMap.keys.retainAll(tempHashSet)
+
+            stateIdNodeValuesClean = false
         }
 
+        return listReplace
     }
+
 
     /**
      * Update Current State
@@ -409,27 +248,24 @@ class VeadoStateNodeData(connection: Connection) {
      * @return Whether state was updated - false means the state is already the one provided
      */
     fun updateCurrentState(stateID: BleatkanStatePeek): Boolean {
-
         if (currentState?.id == stateID.state) {
-            //Already matches
+            // Already matches
             return false
-
         } else {
             // Not a match
             val newCurrentState: VeadoState = statesByID.getOrPut(stateID.state) { VeadoState(stateID) }
 
             // Update and return
             currentState = newCurrentState
+            stateIdNodeValuesClean = false
             return true
-
         }
-
     }
 
 
     /** Clear currentStateThumbnail, Maps, etc. */
-    fun clearedStateThumbnail(veadoState: VeadoState) {
-        veadoState.clearThumbnail()
+    fun clearedStateThumbnail(veadoState: VeadoState): Boolean {
+        val result = veadoState.clearThumbnail()
 
         if (currentState == veadoState) {
             currentStateThumbnail = null
@@ -437,49 +273,460 @@ class VeadoStateNodeData(connection: Connection) {
 
         thumbnailHardLRUMap.remove(veadoState)
         thumbnailSoftLRUMap.remove(veadoState)
+
+        overrideEnableAutoGetThumbnail = false
+        stateIdNodeValuesClean = false
+        return result
     }
+
 
     /** Updates a State Thumbnail, creating the state if it doesn't exist
      *
      * @param payload Payload with State Thumbnail Data to update
      * @param updateToMRU forces the State Thumbnail to be made the *Most Recently Used* on in the Soft and Hard Thumbnail Maps
+     *
+     * @return Pair: First = Boolean, if thumbnail was Updated; Second = VeadoState Updated, Third = VeadoThumbnail?, thumbnail object if updated
      */
-    fun updateStateThumbnail(payload: BleatkanStateThumbnail, updateToMRU: Boolean = false): Boolean {
-        //Get State, create if it doesn't exist (Thumbnail Payload is used, but Thumbnail info not used so se get accurate update response)
-        val newCurrentState: VeadoState = statesByID.getOrPut(payload.state) { VeadoState(payload) }
-
+    fun updateStateThumbnail(
+        payload: BleatkanStateThumbnail,
+        updateToMRU: Boolean = false
+    ): Triple<Boolean, VeadoState, VeadoThumbnail?> {
+        // Get State, create if it doesn't exist (Thumbnail Payload is used, but Thumbnail info not used so se get accurate update response)
+        val updateState: VeadoState = statesByID.getOrPut(payload.state) { VeadoState(payload) }
 
         // Update and return Success Boolean
-        return newCurrentState.updateThumbnail(payload).also {
-            if (it) {
-                newCurrentState.thumbnail?.let { newThumbnail ->
+        val updateThumbnailResult = updateState.updateThumbnail(payload)
 
-                    if (currentState == newCurrentState) {
-                        currentStateThumbnail = newThumbnail
-                    }
+        if (updateThumbnailResult) {
+            val newThumbnail = updateState.thumbnail
 
-                    //If in current Hard Map, object should have updated already
-                    if ((thumbnailHardLRUMap.get(
-                            newCurrentState,
-                            updateToMRU
-                        ) == null && updateToMRU) || !thumbnailHardLRUMap.isFull
-                    ) {
-                        //If NOT in list, and update to MRU is true OR Map isn't full - Add
-                        thumbnailHardLRUMap[newCurrentState] = newThumbnail
-                    }
+            if (newThumbnail != null) {
+                if (currentState == updateState) {
+                    currentStateThumbnail = newThumbnail
+                }
 
-                    //If in current Soft Map, object should have updated already
-                    if ((thumbnailSoftLRUMap.get(
-                            newCurrentState,
-                            updateToMRU
-                        )?.get() == null && updateToMRU) || !thumbnailSoftLRUMap.isFull
-                    ) {
-                        //If NOT in list, and update to MRU is true OR Map isn't full - Add
-                        thumbnailSoftLRUMap[newCurrentState] = SoftReference(newThumbnail)
-                    }
+                // If in current Hard Map, object should have updated already
+                if ((thumbnailHardLRUMap.get(updateState, updateToMRU) == null && updateToMRU)
+                    || !thumbnailHardLRUMap.isFull
+                ) {
+                    // If NOT in list, and update to MRU is true OR Map isn't full - Add
+                    thumbnailHardLRUMap[updateState] = newThumbnail
+                }
 
+                // If in current Soft Map, object should have updated already
+                if ((thumbnailSoftLRUMap.get(updateState, updateToMRU)?.get() == null && updateToMRU)
+                    || !thumbnailSoftLRUMap.isFull
+                ) {
+                    // If NOT in list, and update to MRU is true OR Map isn't full - Add
+                    thumbnailSoftLRUMap[updateState] = SoftReference(newThumbnail)
                 }
             }
+
+            overrideEnableAutoGetThumbnail = true
+            stateIdNodeValuesClean = false
+            // Return true (thumbnail updated) and null (thumbnail not of Current State)
+            return Triple(true, updateState, newThumbnail)
+        }
+        // Return false (thumbnail not updated) and null (thumbnail not updated)
+        return Triple(false, updateState, null)
+    }
+
+
+    /**
+     * Get [VeadoState] from this connection by State ID
+     *
+     * ID = Name from Mini 2.1
+     */
+    fun getStateByID(stateID: String): VeadoState? = statesByID[stateID]
+
+
+    /**
+     * Get [VeadoState] from this Connection/Instance by State Name
+     *
+     * - if an exact match is found, it is chosen
+     * - If no exact match is found, the first result that that contains the give name is returned (ignoreCase is used here)
+     * - if none are found, null is returned
+     *
+     */
+    fun getStateByNameContains(stateName: String, ignoreCase: Boolean = false): VeadoState? {
+
+        // Find exact match
+        statesAll.forEach {
+            it.name?.let { name ->
+                if (name == stateName) return it
+            }
+        }
+
+        //No Exact match Found, search for containing match
+        val candidates: ArrayList<VeadoState> = ArrayList()
+        statesAll.forEach {
+            it.name?.let { name ->
+                if (name.contains(stateName, ignoreCase)) {
+                    candidates.add(it)
+                }
+            }
+        }
+
+        candidates.let { if (it.isNotEmpty()) it.first() }
+
+        return null
+    }
+
+    private val _nodeDataStateIds: MutableList<InstanceStateIdDescription> = mutableListOf()
+
+
+    /**
+     * Get End/Right Side of Node Touch Portal State IDs
+     *
+     * e.g. name, currentStateId, states.<stateId>.id
+     *
+     * These should be appended to a base Node ID (not done by this function)
+     * e.g. `state.<InstanceTitle>.nodes.<type>.<nodeId>.currentStateId`
+     */
+    override fun getNodeDataStateIds(): List<InstanceStateIdDescription> {
+        if (_nodeDataStateIds.isEmpty()) {
+            // (state.<InstanceTitle>.nodes.<type>.)<nodeId>.id
+            _nodeDataStateIds.add(InstanceStateIdDescription(tpStateNodeIdVeadoId, tpStateNodeDescriptionVeadoId))
+            _nodeDataStateIds.add(InstanceStateIdDescription(tpStateNodeIdName, tpStateNodeDescriptionName))
+            _nodeDataStateIds.add(InstanceStateIdDescription(tpStateNodeIdType, tpStateNodeDescriptionType))
+
+            _nodeDataStateIds.add(
+                InstanceStateIdDescription(
+                    tpStateNodeIdCurrentStateId, tpStateNodeDescriptionCurrentStateId
+                )
+            )
+            _nodeDataStateIds.add(
+                InstanceStateIdDescription(
+                    tpStateNodeIdCurrentStateName, tpStateNodeDescriptionCurrentStateName
+                )
+            )
+            _nodeDataStateIds.add(
+                InstanceStateIdDescription(
+                    tpStateNodeIdCurrentStateThumbnail, tpStateNodeDescriptionCurrentStateThumbnail
+                )
+            )
+            _nodeDataStateIds.add(
+                InstanceStateIdDescription(
+                    tpStateNodeIdCurrentStateThumbnailHash, tpStateNodeDescriptionCurrentStateThumbnailHash
+                )
+            )
+            _nodeDataStateIds.add(
+                InstanceStateIdDescription(
+                    tpStateNodeIdCurrentStateThumbnailWidth, tpStateNodeDescriptionCurrentStateThumbnailWidth
+                )
+            )
+            _nodeDataStateIds.add(
+                InstanceStateIdDescription(
+                    tpStateNodeIdCurrentStateThumbnailHeight, tpStateNodeDescriptionCurrentStateThumbnailHeight
+                )
+            )
+
+            // For Each State TODO Add option toggle with toggle - (re)generation will need work
+            //statesAll.forEach { state -> getTpStateVeadoStateIdDesc(state, listStateIDs) }
+        }
+
+        return _nodeDataStateIds.toList()
+    }
+
+
+    fun getTpStateVeadoStateIdDesc(
+        state: VeadoState, listStateIDs: MutableList<InstanceStateIdDescription> = mutableListOf()
+    ): MutableList<InstanceStateIdDescription> {
+        val stateNode = "states.${state.id}"
+        listStateIDs.add(InstanceStateIdDescription("$stateNode.id", "State ID - ${state.name ?: state.id}"))
+        listStateIDs.add(InstanceStateIdDescription("$stateNode.name", "State Name - ${state.name ?: state.id}"))
+
+        if (state.thumbnail != null) {
+            listStateIDs.add(
+                InstanceStateIdDescription(
+                    "$stateNode$thumbnailPngIdSuffix", "State Thumbnail - ${state.name ?: state.id}"
+                )
+            )
+            listStateIDs.add(
+                InstanceStateIdDescription(
+                    "$stateNode$thumbnailHashIdSuffix", "State Thumbnail Hash - ${state.name ?: state.id}"
+                )
+            )
+            listStateIDs.add(
+                InstanceStateIdDescription(
+                    "$stateNode$thumbnailWidthIdSuffix", "State Thumbnail Width - ${state.name ?: state.id}"
+                )
+            )
+            listStateIDs.add(
+                InstanceStateIdDescription(
+                    "$stateNode$thumbnailHeightIdSuffix", "State Thumbnail Height - ${state.name ?: state.id}"
+                )
+            )
+        }
+        return listStateIDs
+    }
+
+
+    /**
+     * Get End/Right Side of Node Touch Portal State IDs Mapped vs their values
+     *
+     * e.g. name, currentStateId, states.<stateId>.id
+     *
+     * Map has data inserted in the following order:
+     * - node id, name, type
+     * - Current State values (currentStateId, currentStateName, currentStateThumbnailPng, etc.)
+     * - All state values
+     *
+     * State values are inserted in the following order:
+     * id - name - Png - Hash - Height
+     *
+     * These should be appended to a base Node ID (not done by this function)
+     * e.g. `state.<InstanceTitle>.nodes.<type>.<nodeId>.currentStateId`
+     */
+    override fun getNodeDataValues(): Map<String, String> {
+        return allNodeDataValues
+    }
+
+    override fun getNodeTPStateIDLabelMap(): Map<String, String> {
+        return StateNodeTPStateIDLabelMap
+    }
+
+    private val _allNodeDataValues = mutableMapOf<String, String>()
+
+    val allNodeDataValues: Map<String, String>
+        get() {
+            if (!stateIdNodeValuesClean) {
+                generateNodeDataValues()
+            }
+            return _allNodeDataValues.toMap()
+        }
+
+
+    private var stateIdNodeValuesClean = false;
+
+
+    /**
+     * Get End/Right Side of Node Touch Portal State IDs Mapped vs their values
+     *
+     * e.g. name, currentStateId, states.<stateId>.id
+     *
+     * Map has data inserted in the following order:
+     * - node id, name, type
+     * - Current State values (currentStateId, currentStateName, currentStateThumbnailPng, etc.)
+     * - All state values
+     *
+     * State values are inserted in the following order:
+     * id - name - Png - Hash - Height
+     *
+     * These should be appended to a base Node ID (not done by this function)
+     * e.g. `state.<InstanceTitle>.nodes.<type>.<nodeId>.currentStateId`
+     */
+    fun generateNodeDataValues() {
+        _allNodeDataValues.clear()
+
+        // (state.<InstanceTitle/Number>.nodes.<type>.<nodeId>.)id
+        _allNodeDataValues[tpStateNodeIdVeadoId] = id
+        // (state.<InstanceTitle/Number>.nodes.<type>.<nodeId>.)name
+        _allNodeDataValues[tpStateNodeIdName] = name
+        // (state.<InstanceTitle/Number>.nodes.<type>.<nodeId>.)type
+        _allNodeDataValues[tpStateNodeIdType] = type
+
+        when (val currState = currentState) {
+            null -> {
+                _allNodeDataValues["currentStateId"] = ""
+                _allNodeDataValues["currentStateName"] = ""
+                _allNodeDataValues["currentStateThumbnailPng"] = ""
+                _allNodeDataValues["currentStateThumbnailHash"] = ""
+                _allNodeDataValues["currentStateThumbnailWidth"] = ""
+                _allNodeDataValues["currentStateThumbnailHeight"] = ""
+            }
+
+            else -> {
+                _allNodeDataValues["currentStateId"] = currState.id
+                _allNodeDataValues["currentStateName"] = currState.name ?: ""
+
+                val thumb = currState.thumbnail
+                if (thumb == null) {
+                    _allNodeDataValues["currentStateThumbnailPng"] = ""
+                    _allNodeDataValues["currentStateThumbnailHash"] = ""
+                    _allNodeDataValues["currentStateThumbnailWidth"] = ""
+                    _allNodeDataValues["currentStateThumbnailHeight"] = ""
+                } else {
+                    _allNodeDataValues["currentStateThumbnailPng"] = thumb.png
+                    _allNodeDataValues["currentStateThumbnailHash"] = thumb.hash
+                    _allNodeDataValues["currentStateThumbnailWidth"] = thumb.widthOrBlank
+                    _allNodeDataValues["currentStateThumbnailHeight"] = thumb.heightOrBlank
+                }
+            }
+        }
+
+        // For Each State TODO Add option toggle with toggle
+        //statesAll.forEach { state -> getTpStateVeadoStateValues(state, stateIdNodeValues) }
+
+        stateIdNodeValuesClean = true;
+
+    }
+
+    override var name: String
+        get() = super.name
+        set(value) {
+            super.name = value
+            _allNodeDataValues[tpStateNodeIdName] = value
+        }
+
+
+    inline fun inlineGetPropertyTpStateIdValue(postProcessActions: (id: String, value: String?) -> Unit) {
+        val currentState = currentState
+
+        //postProcessActions(tpStateNodeIdVeadoId, id)
+        //postProcessActions(tpStateNodeIdType, type)
+        postProcessActions(tpStateNodeIdName, name)
+
+        when (currentState) {
+            null -> {
+                postProcessActions(tpStateNodeIdCurrentStateId, null)
+                postProcessActions(tpStateNodeIdCurrentStateName, null)
+                postProcessActions(tpStateNodeIdCurrentStateThumbnailHash, null)
+                postProcessActions(tpStateNodeIdCurrentStateThumbnail, null)
+                postProcessActions(tpStateNodeIdCurrentStateThumbnailWidth, null)
+                postProcessActions(tpStateNodeIdCurrentStateThumbnailHeight, null)
+            }
+
+            else -> {
+                postProcessActions(tpStateNodeIdCurrentStateId, currentState.id)
+                postProcessActions(tpStateNodeIdCurrentStateName, currentState.name)
+
+                val thumb = currentState.thumbnail
+                if (thumb == null) {
+                    postProcessActions(tpStateNodeIdCurrentStateThumbnailHash, null)
+                    postProcessActions(tpStateNodeIdCurrentStateThumbnail, null)
+                    postProcessActions(tpStateNodeIdCurrentStateThumbnailWidth, null)
+                    postProcessActions(tpStateNodeIdCurrentStateThumbnailHeight, null)
+                } else {
+                    postProcessActions(tpStateNodeIdCurrentStateThumbnailHash, thumb.hash)
+                    postProcessActions(tpStateNodeIdCurrentStateThumbnail, thumb.png)
+                    postProcessActions(
+                        tpStateNodeIdCurrentStateThumbnailWidth,
+                        thumb.widthOrBlank
+                    )
+                    postProcessActions(
+                        tpStateNodeIdCurrentStateThumbnailHeight,
+                        thumb.heightOrBlank
+                    )
+                }
+            }
+        }
+    }
+
+    inline fun inlineGetPropertyTpStateIdLabel(postProcessActions: (id: String, label: String) -> Unit) {
+        //postProcessActions(tpStateNodeIdVeadoId, tpStateNodeDescriptionVeadoId)
+        //postProcessActions(tpStateNodeIdType, tpStateNodeDescriptionType)
+        postProcessActions(tpStateNodeIdName, tpStateNodeDescriptionName)
+
+        postProcessActions(tpStateNodeIdCurrentStateId, tpStateNodeDescriptionCurrentStateId)
+        postProcessActions(tpStateNodeIdCurrentStateName, tpStateNodeDescriptionCurrentStateName)
+
+        postProcessActions(tpStateNodeIdCurrentStateThumbnail, tpStateNodeDescriptionCurrentStateThumbnail)
+        postProcessActions(tpStateNodeIdCurrentStateThumbnailHash, tpStateNodeDescriptionCurrentStateThumbnailHash)
+        postProcessActions(tpStateNodeIdCurrentStateThumbnailWidth, tpStateNodeDescriptionCurrentStateThumbnailWidth)
+        postProcessActions(tpStateNodeIdCurrentStateThumbnailHeight, tpStateNodeDescriptionCurrentStateThumbnailHeight)
+    }
+
+
+    inline fun inlineGetPropertyTpStateIdLabelValue(postProcessActions: (id: String, label: String, value: String?) -> Unit) {
+        val currentState = currentState
+
+        //postProcessActions(tpStateNodeIdVeadoId, tpStateNodeDescriptionVeadoId, id)
+        //postProcessActions(tpStateNodeIdType, tpStateNodeDescriptionType, type)
+        postProcessActions(tpStateNodeIdName, tpStateNodeDescriptionName, name)
+
+        if (currentState == null) {
+            postProcessActions(
+                tpStateNodeIdCurrentStateId, tpStateNodeDescriptionCurrentStateId, null
+            )
+            postProcessActions(
+                tpStateNodeIdCurrentStateName, tpStateNodeDescriptionCurrentStateName, null
+            )
+            postProcessActions(
+                tpStateNodeIdCurrentStateThumbnail, tpStateNodeDescriptionCurrentStateThumbnail, null
+            )
+            postProcessActions(
+                tpStateNodeIdCurrentStateThumbnailHash, tpStateNodeDescriptionCurrentStateThumbnailHash, null
+            )
+            postProcessActions(
+                tpStateNodeIdCurrentStateThumbnailWidth, tpStateNodeDescriptionCurrentStateThumbnailWidth, null
+            )
+            postProcessActions(
+                tpStateNodeIdCurrentStateThumbnailHeight, tpStateNodeDescriptionCurrentStateThumbnailHeight, null
+            )
+            return
+        }
+
+
+        postProcessActions(
+            tpStateNodeIdCurrentStateId, tpStateNodeDescriptionCurrentStateId, currentState.id
+        )
+        postProcessActions(
+            tpStateNodeIdCurrentStateName, tpStateNodeDescriptionCurrentStateName, currentState.name
+        )
+
+        val thumb = currentState.thumbnail
+        if (thumb == null) {
+            postProcessActions(
+                tpStateNodeIdCurrentStateThumbnail, tpStateNodeDescriptionCurrentStateThumbnail, null
+            )
+            postProcessActions(
+                tpStateNodeIdCurrentStateThumbnailHash, tpStateNodeDescriptionCurrentStateThumbnailHash, null
+            )
+            postProcessActions(
+                tpStateNodeIdCurrentStateThumbnailWidth, tpStateNodeDescriptionCurrentStateThumbnailWidth, null
+            )
+            postProcessActions(
+                tpStateNodeIdCurrentStateThumbnailHeight,
+                tpStateNodeDescriptionCurrentStateThumbnailHeight,
+                null
+            )
+
+        } else {
+            postProcessActions(
+                tpStateNodeIdCurrentStateThumbnail, tpStateNodeDescriptionCurrentStateThumbnail,
+                thumb.png
+            )
+            postProcessActions(
+                tpStateNodeIdCurrentStateThumbnailHash, tpStateNodeDescriptionCurrentStateThumbnailHash,
+                thumb.hash
+            )
+            postProcessActions(
+                tpStateNodeIdCurrentStateThumbnailWidth, tpStateNodeDescriptionCurrentStateThumbnailWidth,
+                thumb.widthOrBlank
+            )
+            postProcessActions(
+                tpStateNodeIdCurrentStateThumbnailHeight, tpStateNodeDescriptionCurrentStateThumbnailHeight,
+                thumb.heightOrBlank
+            )
+
+        }
+
+    }
+
+    override fun getNodePropertyIdLabels(map: MutableMap<String, String>): Map<String, String> {
+        inlineGetPropertyTpStateIdLabel { id, label -> map[id] = label }
+        return map
+    }
+
+    override fun getNodePropertyIdValues(map: MutableMap<String, String>): Map<String, String> {
+        inlineGetPropertyTpStateIdValue { id, value -> map[id] = value ?: "" }
+        return map
+    }
+
+
+    fun getTpStateVeadoStateValues(state: VeadoState, stateIdNodeValues: MutableMap<String, String> = mutableMapOf()) {
+        // (state.<InstanceTitle>.nodes.<type>.<nodeId>.)states.<stateId> (No trailing .)
+        val stateNode = "states.${state.id}"
+        stateIdNodeValues["$stateNode.id"] = state.id
+        stateIdNodeValues["$stateNode.name"] = state.name ?: ""
+
+        val thumb = state.thumbnail
+        if (thumb != null) {
+            stateIdNodeValues["$stateNode.thumbnailPng"] = thumb.png
+            stateIdNodeValues["$stateNode.thumbnailHash"] = thumb.hash
+            stateIdNodeValues["$stateNode.thumbnailWidth"] = thumb.widthOrBlank
+            stateIdNodeValues["$stateNode.thumbnailHeight"] = thumb.heightOrBlank
         }
     }
 

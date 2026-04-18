@@ -6,11 +6,15 @@ import io.github.dissonantau.bleatkan.message.ResultPayload.ResultPayloadPng
 @Suppress("MemberVisibilityCanBePrivate")
 class VeadoThumbnail(thumbnail: ResultPayloadPng) {
 
-    /** State Thumbnail - as PNG */
+    /** State Thumbnail - as PNG (Base64 String) */
     var png: String = ""
         private set
+
+    /** Width of image in pixels */
     var width: Int = -1
         private set
+
+    /** Height of image in pixels */
     var height: Int = -1
         private set
 
@@ -27,11 +31,43 @@ class VeadoThumbnail(thumbnail: ResultPayloadPng) {
     /**
      * Hash of Thumbnail before any transformations (Resize, etc.)
      *
-     * 1 if not set or Hash is provided by Veado (2.1 and later)
-     *
+     * -1 if not set or Hash is provided by Veado (2.1 and later)
      */
     var pngHash: Int = -1
         private set
+
+
+    /**
+     * Returns any available Hash value
+     * - If [pngHash] is set (not -1) and [hash] is empty, returns [pngHash] as a String
+     * - Otherwise [hash] is returned, even if empty
+     */
+    @Suppress("unused")
+    val hashAny: String
+        get() {
+            return if (pngHash >= 0 && hash.isNotEmpty())
+                pngHash.toString()
+            else hash
+        }
+
+    /** [width] of image in pixels, as [String]
+     *
+     * If not set (-1) returns blank
+     */
+    val widthOrBlank: String
+        get() = if (width >= 0)
+            width.toString()
+        else ""
+
+    /** [height] of image in pixels, as [String]
+     *
+     * If not set (-1) returns blank
+     */
+    val heightOrBlank: String
+        get() = if (height >= 0)
+            height.toString()
+        else ""
+
 
     init {
         val veadoHash = thumbnail.hash
