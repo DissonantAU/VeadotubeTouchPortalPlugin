@@ -602,72 +602,6 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
 
 
     /**
-     * Change veado Full Instance State Node (ID) by State Name
-     */
-    @Action(
-        name = "Change Instance # - State Node by Name",
-        format = "veadotube Full Instance #{\$instanceNumber\$} - {\$choices\$} Node ID {\$nodeId\$} to State named {\$stateName\$}",
-        categoryId = "FullInstance",
-        prefix = "Veadotube Full",
-        id = "changeVeadoNumNodeListStateName"
-    )
-    private fun changeVeadoNumNodeIDStateName(
-        @Data(minValue = 1.0, defaultValue = "1") instanceNumber: Int,
-        @Data(valueChoices = ["Set", "Push", "Pop", "Toggle"], defaultValue = "Set") choices: Array<String>,
-        @Data nodeId: String,
-        @Data stateName: String
-    ) {
-        // TODO
-        LOGGER.debug { "actionFullChangeStateNodeIDStateID: veado Full #$instanceNumber; ${choices[0]} Node ID '$nodeId' to State named '$stateName'" }
-        val connection = veadoInstanceMaps.getConnectionByNumber("veado", instanceNumber)
-
-        if (connection != null) {
-            fullChangeStateByName(connection, choices[0], nodeId, stateName)
-        } else {
-            LOGGER.warn { "Can't find Connection for veado Full #$instanceNumber; can't ${choices[0]} Node ID '$nodeId' to State named '$stateName'" }
-        }
-    }
-
-
-    /**
-     * Set Current Avatar State with State ID String in 'Name (ID)' Format (Mini 2.0) or just Name (Mini 2.1+)
-     */
-    @Action(
-        name = "Set Avatar State from List",
-        format = "Set Veado Instance {\$instanceChoices\$} nodeChoices {\$nodeChoices\$} stateChoices {\$stateChoices\$}",
-        categoryId = "FullInstance",
-        prefix = "Veadotube Full",
-        id = "changeVeadoNumNodeListStateList"
-    )
-    private fun actionFullSetStateFromList(
-        @Data(valueChoices = ["1 - Instance A", "2 - Instance B"]) instanceChoices: Array<String>,
-        @Data(valueChoices = ["a358e - node 1", "be34 - node 2"]) nodeChoices: Array<String>,
-        @Data(valueChoices = ["6nfr4 - state 1", "7brr4 - state 2"]) stateChoices: Array<String>
-    ) {
-        LOGGER.warn { "Set Veado Avatar State from List:  Set Veado '${instanceChoices[0]}' State Node '${nodeChoices[0]}' to State '${stateChoices[0]}'" }
-        //    val currentMiniConnection = veadoInstanceMaps.getConnectionByNumber("veado", instanceNumber)
-        //    if (currentMiniConnection != null) {
-        //        //Get State Object ID from String
-        //        try {
-        //            fullChangeStateByName()
-        //            val newState = fullFindStateFromString(currentMiniConnection, choices[0])
-        //
-        //            if (newState != null) {
-        //                currentMiniConnection.send(channelNodes, VeadoRequest.createSetStateMini(newState.id))
-        //                LOGGER.debug { "actionPrimaryMiniSetAvatarFromList: Set to '${choices[0]}'" }
-        //            } else {
-        //                LOGGER.warn { "Avatar Choice not Found: ${choices[0]}" }
-        //            }
-        //        } catch (ex: Exception) {
-        //            LOGGER.warn { "Failed to send Set Avatar State From List: ${ex.message}" }
-        //        }
-        //    } else {
-        //        LOGGER.warn { "Set Mini Avatar State from List: No connection, can't set Set Avatar to '${choices[0]}'" }
-        //    }
-    }
-
-
-    /**
      * Set Primary Mini Instance Push To Talk/Mute input
      *
      * Enabling Push to Talk Mutes until the PTT Hotkey is pressed
@@ -1130,33 +1064,6 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         }
 
     }
-
-    /**
-     * Updates the Node States for a Connection/Veadotube Instance
-     *
-     * @param connection Connection where List was updated
-     *
-     */
-    private fun onUpdateNodeStateList(
-        connection: Connection,
-        connData: VeadoFullConnectionData,
-        node: VeadoStateNodeData
-    ) {
-        //TODO nothing to do with this yet
-        //val choices: LinkedHashMap<String, VeadoState> = LinkedHashMap()
-        //
-        //val collectionsStates: ArrayList<VeadoState> = node.statesAll
-        //
-        //if (collectionsStates.isNotEmpty()) {
-        //    for (state in collectionsStates) {
-        //        val stateString = stateNameIDToString(state)
-        //
-        //        LOGGER.trace { "updateAvatarState: Added Choice \"$stateString\"" }
-        //        choices[stateString] = state
-        //    }
-        //}
-    }
-
 
     /**
      * Extracts the ID from an Avatar State String and returns the matched Avatar State
