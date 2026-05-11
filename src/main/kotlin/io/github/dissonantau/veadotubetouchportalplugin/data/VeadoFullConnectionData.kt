@@ -209,11 +209,8 @@ class VeadoFullConnectionData(connection: Connection) : VeadoConnectionData(conn
                 nodeNameFuzzySearch(nodesNumberMap, searchString) { resultRatio, node ->
                     candidates.add(Pair(resultRatio, node))
                 }
-
             }
         )
-
-
 
         return candidates.firstOrNull()?.second
     }
@@ -443,9 +440,7 @@ class VeadoFullConnectionData(connection: Connection) : VeadoConnectionData(conn
      * Basically returns [baseStateID].[stateIDNumberedInstanceTitle]
      */
     @Suppress("MemberVisibilityCanBePrivate")
-    val stateIDNumberedInstanceTitleLong
-        get() = "${baseStateID}.$stateIDNumberedInstanceTitle"
-
+    val stateIDNumberedInstanceTitleLong; get() = "${baseStateID}.$stateIDNumberedInstanceTitle"
 
     inline val tpStateIDInstanceNodePrefixNumber; get() = "$instanceNumber.nodes."
 
@@ -491,10 +486,8 @@ class VeadoFullConnectionData(connection: Connection) : VeadoConnectionData(conn
         return when (val payload = message.payload) {
             is BleatkanStatePeek ->
                 updateStateNodeCurrentState(message.id, message.name, payload)
-
             is ResultPayload.ResultPayloadPng ->
                 updateStateNodeThumbnail(message.id, message.name, payload)
-
             is ResultPayload.ResultPayloadStateList ->
                 updateNodeStates(message.id, message.name, payload)
         }
@@ -510,8 +503,7 @@ class VeadoFullConnectionData(connection: Connection) : VeadoConnectionData(conn
      * @return Whether state was updated - false means the state is already the one provided
      */
     fun updateStateNodeCurrentState(
-        nodeId: String, nodeName: String = "",
-        payloadState: BleatkanStatePeek
+        nodeId: String, nodeName: String = "", payloadState: BleatkanStatePeek
     ): UpdateNodeStateResult {
         var isNodeCreated = false
 
@@ -541,8 +533,7 @@ class VeadoFullConnectionData(connection: Connection) : VeadoConnectionData(conn
      * @return Whether state was updated - false means the state is already the one provided
      */
     fun updateNodeStates(
-        nodeId: String, nodeName: String = "",
-        payloadStateList: BleatkanStateList
+        nodeId: String, nodeName: String = "", payloadStateList: BleatkanStateList
     ): UpdateNodeStateResult {
         var isNodeCreated = false
         val node = getOrCreateStateEventsNode(nodeId, nodeName) { isNodeCreated = true }
@@ -612,8 +603,7 @@ class VeadoFullConnectionData(connection: Connection) : VeadoConnectionData(conn
      * @return Whether thumbnail was cleared - false means the there was no thumbnail stored
      */
     fun clearStateNodeThumbnail(
-        nodeId: String,
-        veadoState: VeadoState
+        nodeId: String, veadoState: VeadoState
     ): Boolean {
         val node = nodesStateEventsMap[nodeId] ?: return false;
         return node.clearedStateThumbnail(veadoState)
@@ -747,7 +737,6 @@ class VeadoFullConnectionData(connection: Connection) : VeadoConnectionData(conn
 
         // Add all to Nodes to Removed List - we then remove them as they're in the entries list
         nodesList.values.forEach { it.values.forEach { nodeData -> removedList.add(nodeData) } }
-
 
         entries.forEach { entry ->
             var isNodeNew = false

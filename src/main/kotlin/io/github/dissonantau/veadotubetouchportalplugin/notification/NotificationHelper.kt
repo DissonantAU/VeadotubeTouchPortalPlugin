@@ -91,15 +91,12 @@ object NotificationHelper {
 
     fun respondNotificationClickedUpdateBoth(
         tpNotificationOptionClickedMessage: TPNotificationOptionClickedMessage,
-        versionInfoMain: ReleaseData,
-        versionInfo: ReleaseData
+        versionInfoMain: ReleaseData, versionInfo: ReleaseData
     ) {
         when (tpNotificationOptionClickedMessage.optionId) {
             UpdateOptionIDs.MAIN_DOWNLOAD_BROWSER.id -> {
                 val dlUrl = if (BuildConfig.USES_TP_BUNDLED_JRE && versionInfoMain.downloadUrlBundled != null)
-                    versionInfoMain.urlDownloadBundled
-                else
-                    versionInfoMain.urlDownloadExternal
+                    versionInfoMain.urlDownloadBundled else versionInfoMain.urlDownloadExternal
 
                 if (dlUrl == null) {
                     LOGGER.debug { "onNotificationOptionClicked - Open Download Button Pressed, but Download URL is missing. Opening Download Page URL instead" }
@@ -113,9 +110,7 @@ object NotificationHelper {
 
             UpdateOptionIDs.MAIN_DOWNLOAD_COPY_LINK.id -> {
                 val dlUrl = if (BuildConfig.USES_TP_BUNDLED_JRE && versionInfoMain.downloadUrlBundled != null)
-                    versionInfoMain.urlDownloadBundled
-                else
-                    versionInfoMain.urlDownloadExternal
+                    versionInfoMain.urlDownloadBundled else versionInfoMain.urlDownloadExternal
 
                 if (dlUrl == null) {
                     LOGGER.debug { "onNotificationOptionClicked - Copy Download Button Pressed, but Download URL is missing. copying Download Page URL instead" }
@@ -153,9 +148,7 @@ object NotificationHelper {
 
             UpdateOptionIDs.DEV_DOWNLOAD_COPY_LINK.id -> {
                 val dlUrl = if (BuildConfig.USES_TP_BUNDLED_JRE && versionInfo.downloadUrlBundled != null)
-                    versionInfo.urlDownloadBundled
-                else
-                    versionInfo.urlDownloadExternal
+                    versionInfo.urlDownloadBundled else versionInfo.urlDownloadExternal
 
                 if (dlUrl == null) {
                     LOGGER.debug { "onNotificationOptionClicked - Copy Download Button Pressed, but Download URL is missing. copying Download Page URL instead" }
@@ -181,15 +174,12 @@ object NotificationHelper {
     }
 
     fun respondNotificationClickedUpdateDev(
-        tpNotificationOptionClickedMessage: TPNotificationOptionClickedMessage,
-        versionInfo: ReleaseData
+        tpNotificationOptionClickedMessage: TPNotificationOptionClickedMessage, versionInfo: ReleaseData
     ) {
         when (tpNotificationOptionClickedMessage.optionId) {
             UpdateOptionIDs.DEV_DOWNLOAD_BROWSER.id -> {
                 val dlUrl = if (BuildConfig.USES_TP_BUNDLED_JRE && versionInfo.downloadUrlBundled != null)
-                    versionInfo.urlDownloadBundled
-                else
-                    versionInfo.urlDownloadExternal
+                    versionInfo.urlDownloadBundled else versionInfo.urlDownloadExternal
 
                 if (dlUrl == null) {
                     LOGGER.debug { "onNotificationOptionClicked - Open Download Button Pressed, but Download URL is missing. Opening Download Page URL instead" }
@@ -202,9 +192,7 @@ object NotificationHelper {
 
             UpdateOptionIDs.DEV_DOWNLOAD_COPY_LINK.id -> {
                 val dlUrl = if (BuildConfig.USES_TP_BUNDLED_JRE && versionInfo.downloadUrlBundled != null)
-                    versionInfo.urlDownloadBundled
-                else
-                    versionInfo.urlDownloadExternal
+                    versionInfo.urlDownloadBundled else versionInfo.urlDownloadExternal
 
                 if (dlUrl == null) {
                     LOGGER.debug { "onNotificationOptionClicked - Copy Download Button Pressed, but Download URL is missing. copying Download Page URL instead" }
@@ -231,8 +219,7 @@ object NotificationHelper {
     }
 
     fun respondNotificationClickedUpdateMain(
-        tpNotificationOptionClickedMessage: TPNotificationOptionClickedMessage,
-        versionInfo: ReleaseData
+        tpNotificationOptionClickedMessage: TPNotificationOptionClickedMessage, versionInfo: ReleaseData
     ) {
 
         when (tpNotificationOptionClickedMessage.optionId) {
@@ -252,7 +239,6 @@ object NotificationHelper {
                 }
 
             }
-
             UpdateOptionIDs.MAIN_DOWNLOAD_COPY_LINK.id -> {
                 val dlUrl =
                     if (BuildConfig.USES_TP_BUNDLED_JRE && versionInfo.downloadUrlBundled != null)
@@ -268,17 +254,14 @@ object NotificationHelper {
                     copyTextToClipboard(dlUrl.toString())
                 }
             }
-
             UpdateOptionIDs.MAIN_PAGE_BROWSER.id -> {
                 LOGGER.debug { "onNotificationOptionClicked - Open Page Button Pressed, opening page: '${versionInfo.urlDownloadPage}'" }
                 copyTextToClipboard(versionInfo.urlDownloadPage.toString())
             }
-
             UpdateOptionIDs.MAIN_PAGE_COPY_LINK.id -> {
                 LOGGER.debug { "onNotificationOptionClicked - Copy Page Button Pressed, copying to clipboard: '${versionInfo.urlDownloadPage}'" }
                 copyTextToClipboard(versionInfo.urlDownloadPage.toString())
             }
-
             else -> LOGGER.warn { "Unknown Notification Option ID Received" }
         }
     }

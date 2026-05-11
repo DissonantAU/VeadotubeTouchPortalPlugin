@@ -200,9 +200,7 @@ abstract class VeadoConnectionData(connection: Connection) {
      * `state.<InstanceTitle>.nodes.<type>.<nodeId>`
      */
     fun getStateIdTitledForNode(node: VeadoNodeData, nodeId: String = node.id) =
-        buildString {
-            append(instanceTitleSimplified).append(".nodes.").append(node.type).append(".").append(nodeId)
-        }
+        buildString { append(instanceTitleSimplified).append(".nodes.").append(node.type).append(".").append(nodeId) }
 
     /**
      * Get Numbered TP State ID for a Node. Excludes last dot.
@@ -210,9 +208,7 @@ abstract class VeadoConnectionData(connection: Connection) {
      * `state.<InstanceNumber>.nodes.<type>.<nodeId>`
      */
     fun getStateIdNumberedForNode(node: VeadoNodeData, nodeId: String = node.id) =
-        buildString {
-            append(instanceNumber).append(".nodes.").append(node.type).append(".").append(nodeId)
-        }
+        buildString { append(instanceNumber).append(".nodes.").append(node.type).append(".").append(nodeId) }
 
     /**
      * Get Titled and Numbered TP State ID for a Node. Excludes last dot.
@@ -250,12 +246,10 @@ abstract class VeadoConnectionData(connection: Connection) {
 
         // Get List of IDs, append to stateIdTitledNodesId and add to new ID list
         node.getNodeTPStateIDLabelMap().forEach { (stateId, stateLabel) ->
-            /* Title - <InstanceTitle>.nodes.<type>.<nodeId>.<stateId> */
-            instanceTPStateIdNumber(
+            instanceTPStateIdNumber( /* Title - <InstanceTitle>.nodes.<type>.<nodeId>.<stateId> */
                 "$stateIdNodesIdT$stateId", "$tpLabelPrefixT$stateLabel"
             )
-            /* Number - <InstanceNumber>.nodes.<type>.<nodeId>.<stateId> */
-            instanceTPStateIdTitle(
+            instanceTPStateIdTitle( /* Number - <InstanceNumber>.nodes.<type>.<nodeId>.<stateId> */
                 "$stateIdNodesIdN$stateId", "$tpLabelPrefixN$stateLabel"
             )
         }
@@ -295,12 +289,10 @@ abstract class VeadoConnectionData(connection: Connection) {
 
         // Get List of IDs, append to stateIdTitledNodesId and add to new ID list
         node.getNodeTPStateIDLabelMap()[propertyId]?.also { stateLabel ->
-            /* Title - <InstanceTitle>.nodes.<type>.<nodeId>.<stateId> */
-            instanceTPStateIdNumber(
+            instanceTPStateIdNumber(/* Title - <InstanceTitle>.nodes.<type>.<nodeId>.<stateId> */
                 "$stateIdNodesIdT$propertyId", "$tpLabelPrefixT$stateLabel"
             )
-            /* Number - <InstanceNumber>.nodes.<type>.<nodeId>.<stateId> */
-            instanceTPStateIdTitle(
+            instanceTPStateIdTitle(/* Number - <InstanceNumber>.nodes.<type>.<nodeId>.<stateId> */
                 "$stateIdNodesIdN$propertyId", "$tpLabelPrefixN$stateLabel"
             )
         } ?: actionValueIdNotFound()
@@ -311,15 +303,13 @@ abstract class VeadoConnectionData(connection: Connection) {
         nodeLabelPrefix: String, node: VeadoNodeData,
         postProcessActions: (InstanceStateIdDescription) -> Unit = {}
     ) {
-        // <nodePrefix>.nodes.<type>.<nodeId>
-        val stateIdNodesId = ".nodes.${node.type}.${node.id}."
+        val stateIdNodesId = ".nodes.${node.type}.${node.id}." // <nodePrefix>.nodes.<type>.<nodeId>
         // Get List of IDs, append to stateIdTitledNodesId and add to new ID list
         node.getNodeDataStateIds().forEach { stateIdInfo ->
             nodePrefixes.forEach { nodePrefix ->
                 postProcessActions(
                     InstanceStateIdDescription(
-                        // <InstanceTitle>.nodes.<type>.<nodeId>.<stateId>
-                        "${nodePrefix}$stateIdNodesId${stateIdInfo.stateId}",
+                        "${nodePrefix}$stateIdNodesId${stateIdInfo.stateId}", // <InstanceTitle>.nodes.<type>.<nodeId>.<stateId>
                         "$nodeLabelPrefix: Node ${node.name} - ${stateIdInfo.stateLabel}"
                     )
                 )
@@ -331,14 +321,12 @@ abstract class VeadoConnectionData(connection: Connection) {
         nodePrefix: String, nodeLabelPrefix: String,
         node: VeadoNodeData, postProcessActions: (InstanceStateIdDescription) -> Unit = {}
     ) {
-        // <nodePrefix>.nodes.<type>.<nodeId>
-        val stateIdNodesId = "${nodePrefix}.nodes.${node.type}.${node.id}."
+        val stateIdNodesId = "${nodePrefix}.nodes.${node.type}.${node.id}." // <nodePrefix>.nodes.<type>.<nodeId>
         // Get List of IDs, append to stateIdTitledNodesId and add to new ID list
         node.getNodeDataStateIds().forEach { stateIdInfo ->
             postProcessActions(
                 InstanceStateIdDescription(
-                    // <InstanceTitle>.nodes.<type>.<nodeId>.<stateId>
-                    "$stateIdNodesId${stateIdInfo.stateId}",
+                    "$stateIdNodesId${stateIdInfo.stateId}", // <InstanceTitle>.nodes.<type>.<nodeId>.<stateId>
                     "$nodeLabelPrefix: Node ${node.name} - ${stateIdInfo.stateLabel}"
                 )
             )
@@ -350,15 +338,13 @@ abstract class VeadoConnectionData(connection: Connection) {
         nodeLabelPrefix: String, node: VeadoNodeData,
         postProcessActions: (InstanceStateIdDescription) -> Unit = {}
     ) {
-        // <nodePrefix>.nodes.<type>.<nodeId>
-        val stateIdNodesId = ".nodes.${node.type}.${node.id}."
+        val stateIdNodesId = ".nodes.${node.type}.${node.id}." // <nodePrefix>.nodes.<type>.<nodeId>
         // Get List of IDs, append to stateIdTitledNodesId and add to new ID list
         node.getNodePropertyIdLabels().forEach { (stateId, stateLabel) ->
             nodePrefixes.forEach { nodePrefix ->
                 postProcessActions(
                     InstanceStateIdDescription(
-                        // <InstanceTitle>.nodes.<type>.<nodeId>.<stateId>
-                        "$nodePrefix$stateIdNodesId$stateId",
+                        "$nodePrefix$stateIdNodesId$stateId",// <InstanceTitle>.nodes.<type>.<nodeId>.<stateId>
                         "$nodeLabelPrefix: Node ${node.name} - $stateLabel"
                     )
                 )
@@ -367,18 +353,15 @@ abstract class VeadoConnectionData(connection: Connection) {
     }
 
     inline fun generateNodePropertyIdLabel(
-        nodePrefix: String,
-        nodeLabelPrefix: String,
+        nodePrefix: String, nodeLabelPrefix: String,
         node: VeadoNodeData, postProcessActions: (InstanceStateIdDescription) -> Unit = {}
     ) {
-        // <nodePrefix>.nodes.<type>.<nodeId>
-        val stateIdNodesId = "${nodePrefix}.nodes.${node.type}.${node.id}."
+        val stateIdNodesId = "${nodePrefix}.nodes.${node.type}.${node.id}." // <nodePrefix>.nodes.<type>.<nodeId>
         // Get List of IDs, append to stateIdTitledNodesId and add to new ID list
         node.getNodePropertyIdLabels().forEach { (stateId, stateLabel) ->
             postProcessActions(
                 InstanceStateIdDescription(
-                    // <InstanceTitle>.nodes.<type>.<nodeId>.<stateId>
-                    "$stateIdNodesId$stateId",
+                    "$stateIdNodesId$stateId",  // <InstanceTitle>.nodes.<type>.<nodeId>.<stateId>
                     "$nodeLabelPrefix: Node ${node.name} - $stateLabel"
                 )
             )
@@ -389,14 +372,12 @@ abstract class VeadoConnectionData(connection: Connection) {
         nodePrefixes: Array<String> = arrayOf(instanceTitleSimplified, instanceNumber.toString()),
         node: VeadoNodeData, postProcessActions: (id: String, value: String) -> Unit = { _, _ -> }
     ) {
-        // <nodePrefix>.nodes.<type>.<nodeId>
-        val stateIdNodesId = ".nodes.${node.type}.${node.id}."
+        val stateIdNodesId = ".nodes.${node.type}.${node.id}." // <nodePrefix>.nodes.<type>.<nodeId>
         // Get List of IDs, append to stateIdTitledNodesId and add to new ID list
         node.getNodePropertyIdValues().forEach { (stateId, stateValue) ->
             nodePrefixes.forEach { nodePrefix ->
                 postProcessActions(
-                    // <InstanceTitle>.nodes.<type>.<nodeId>.<stateId>
-                    "$nodePrefix$stateIdNodesId$stateId", stateValue
+                    "$nodePrefix$stateIdNodesId$stateId", stateValue // <InstanceTitle>.nodes.<type>.<nodeId>.<stateId>
                 )
             }
         }
@@ -406,13 +387,11 @@ abstract class VeadoConnectionData(connection: Connection) {
         nodePrefix: String,
         node: VeadoNodeData, postProcessActions: (id: String, value: String) -> Unit = { _, _ -> }
     ) {
-        // <nodePrefix>.nodes.<type>.<nodeId>
-        val stateIdNodesId = "${nodePrefix}.nodes.${node.type}.${node.id}."
+        val stateIdNodesId = "${nodePrefix}.nodes.${node.type}.${node.id}." // <nodePrefix>.nodes.<type>.<nodeId>
         // Get List of IDs, append to stateIdTitledNodesId and add to new ID list
         node.getNodePropertyIdValues().forEach { (stateId, stateValue) ->
             postProcessActions(
-                // <InstanceTitle>.nodes.<type>.<nodeId>.<stateId>
-                "$stateIdNodesId$stateId", stateValue
+                "$stateIdNodesId$stateId", stateValue  // <InstanceTitle>.nodes.<type>.<nodeId>.<stateId>
             )
         }
     }
@@ -472,7 +451,6 @@ abstract class VeadoConnectionData(connection: Connection) {
             else -> otherAction(this)
         }
     }
-
 }
 
 data class UpdateInstanceResult(

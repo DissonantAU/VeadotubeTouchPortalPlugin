@@ -82,16 +82,14 @@ class VeadoMiniConnectionData(connection: Connection) : VeadoConnectionData(conn
      *
      * Work with this should probably be synchronised using the connection obj
      */
-    val statesAll: ArrayList<VeadoState>
-        get() = nodeAvatars.statesAll
+    val statesAll: ArrayList<VeadoState>; get() = nodeAvatars.statesAll
 
     /**
      * Get [VeadoState] from this connection by State ID
      *
      * ID = Name from Mini 2.1
      */
-    fun getStateByID(stateID: String): VeadoState? =
-        nodeAvatars.getStateByID(stateID)
+    fun getStateByID(stateID: String): VeadoState? = nodeAvatars.getStateByID(stateID)
 
     /**
      * Get [VeadoState] from this connection by State Name
@@ -111,16 +109,14 @@ class VeadoMiniConnectionData(connection: Connection) : VeadoConnectionData(conn
      *
      * If there's no match, it should request a new list in case a new value was added since list was fetched
      */
-    val currentState: VeadoState?
-        get() = nodeAvatars.currentState
+    val currentState: VeadoState?; get() = nodeAvatars.currentState
 
     /**
      * Current State Thumbnail
      *
      * Prevents deletion if several thumbnails are fetched and pushes the current state out of the LRU Maps
      */
-    private val currentStateThumbnail: VeadoThumbnail?
-        get() = nodeAvatars.currentStateThumbnail
+    private val currentStateThumbnail: VeadoThumbnail?; get() = nodeAvatars.currentStateThumbnail
 
     /** Default Size of LRU Map - Hard References */
     private val lruHardMapSize = 4
@@ -345,8 +341,7 @@ class VeadoMiniConnectionData(connection: Connection) : VeadoConnectionData(conn
      * e.g. io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.MiniInstances.state.1.currentAvatarStateName
      * */
     @Suppress("MemberVisibilityCanBePrivate")
-    val stateIDNumberedInstanceTitleLong
-        get() = "${baseStateID}.${stateIDNumberedInstanceTitle.stateId}"
+    val stateIDNumberedInstanceTitleLong; get() = "${baseStateID}.${stateIDNumberedInstanceTitle.stateId}"
 
     /**
      * Generated State ID for mini Windows Title
@@ -365,8 +360,7 @@ class VeadoMiniConnectionData(connection: Connection) : VeadoConnectionData(conn
      * e.g. io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.MiniInstances.state.1.currentAvatarStateName
      */
     @Suppress("MemberVisibilityCanBePrivate")
-    val stateIDNumberedCurrentAvatarNameLong
-        get() = "${baseStateID}.${stateIDNumberedCurrentAvatarName.stateId}"
+    val stateIDNumberedCurrentAvatarNameLong; get() = "${baseStateID}.${stateIDNumberedCurrentAvatarName.stateId}"
 
     /**
      * Generated State ID for mini Windows Title
@@ -405,9 +399,7 @@ class VeadoMiniConnectionData(connection: Connection) : VeadoConnectionData(conn
      * If the list's don't match, items are checked and updated
      */
     @Suppress("MemberVisibilityCanBePrivate")
-    fun updateStates(payload: BleatkanStateList) =
-        nodeAvatars.updateStates(payload)
-
+    fun updateStates(payload: BleatkanStateList) = nodeAvatars.updateStates(payload)
 
     /**
      * Update Current State

@@ -26,21 +26,14 @@ class PluginUpdateChecker(private val listener: UpdateCheckResultListener, priva
         @JvmOverloads
         fun calculateUpdates(
             resultData: UpdateCheckResult,
-            // Current Release String (SemVer Format)
-            currentReleaseVersionString: String = BuildConfig.VERSION_NAME_FULL,
-            // Main Branch Recommended SemVer
-            recommendedMainReleaseString: String =
-                resultData.mainBranch.recommendedRelease ?: resultData.mainBranch.latestRelease,
-            // If Build is Main Branch Release
-            buildIsRelease: Boolean = BuildConfig.BUILD_IS_RELEASE,
-            // Dev Branch Recommended SemVer
-            recommendedDevRelease: String? = null
+            currentReleaseVersionString: String = BuildConfig.VERSION_NAME_FULL, // Current Release String (SemVer Format)
+            recommendedMainReleaseString: String = resultData.mainBranch.recommendedRelease // Main Branch Recommended SemVer
+                ?: resultData.mainBranch.latestRelease,
+            buildIsRelease: Boolean = BuildConfig.BUILD_IS_RELEASE, // If Build is Main Branch Release
+            recommendedDevRelease: String? = null // Dev Branch Recommended SemVer
         ): UpdateReleaseData {
-            // Current Release SemVer
-            val currentReleaseSemVer = SemVer.parse(currentReleaseVersionString)
-            // Get Main Release SemVer
-            val recommendedMainReleaseSemVer = SemVer.parse(recommendedMainReleaseString)
-
+            val currentReleaseSemVer = SemVer.parse(currentReleaseVersionString) // Current Release SemVer
+            val recommendedMainReleaseSemVer = SemVer.parse(recommendedMainReleaseString) // Get Main Release SemVer
             LOGGER.trace { "onUpdateCheckResult - Current: $currentReleaseVersionString - Recommended: $recommendedMainReleaseString" }
 
             // Object to hold Calculated Update Release info
@@ -56,8 +49,7 @@ class PluginUpdateChecker(private val listener: UpdateCheckResultListener, priva
                     LOGGER.debug { "onUpdateCheckResult - Current Version ($currentReleaseVersionString) Is Older than Recommended ($recommendedMainReleaseString)" }
 
                     calculateNextUpdateRelease(
-                        updateData,
-                        currentReleaseSemVer,
+                        updateData, currentReleaseSemVer,
                         recommendedMainReleaseSemVer,
                         resultData,
                     )
@@ -68,22 +60,19 @@ class PluginUpdateChecker(private val listener: UpdateCheckResultListener, priva
             if (!buildIsRelease && resultData.devBranch != null) {
                 // Running Dev Release
                 // If not provided by parameter, try getting Dev Branch Recommended Release, then Dev Branch Latest
-                val recommendedDevReleaseString: String =
-                    recommendedDevRelease ?: resultData.devBranch.recommendedRelease
+                val recommendedDevReleaseString: String = recommendedDevRelease
+                    ?: resultData.devBranch.recommendedRelease
                     ?: resultData.devBranch.latestRelease
 
                 if (recommendedDevReleaseString != currentReleaseVersionString) {
                     // Strings don't match
                     val recommendedDevReleaseSemVer = SemVer.parse(recommendedDevReleaseString)
-
                     // Check New Version is higher
                     if (currentReleaseSemVer < recommendedDevReleaseSemVer) {
                         // Recommended Main Release SemVer is newer then current
                         LOGGER.debug { "onUpdateCheckResult - Current Dev Version ($currentReleaseVersionString) Is Older than Recommended Dev ($recommendedDevReleaseSemVer)" }
-
                         calculateNextUpdateDev(
-                            updateData,
-                            currentReleaseSemVer,
+                            updateData, currentReleaseSemVer,
                             recommendedMainReleaseSemVer,
                             recommendedDevReleaseSemVer,
                             resultData,
@@ -97,12 +86,9 @@ class PluginUpdateChecker(private val listener: UpdateCheckResultListener, priva
 
 
         fun calculateNextUpdateRelease(
-            updateData: UpdateReleaseData,
-            currentRelease: SemVer,
-            recommendedBranchRelease: SemVer,
-            updateCheckResult: UpdateCheckResult
+            updateData: UpdateReleaseData, currentRelease: SemVer,
+            recommendedBranchRelease: SemVer, updateCheckResult: UpdateCheckResult
         ) {
-
             val currentReleaseMajorVer = currentRelease.major
             val currentRecommendedIsSameMajorVer =
                 currentReleaseMajorVer == recommendedBranchRelease.major
@@ -169,19 +155,15 @@ class PluginUpdateChecker(private val listener: UpdateCheckResultListener, priva
         }
 
         fun calculateNextUpdateDev(
-            updateData: UpdateReleaseData,
-            currentRelease: SemVer,
-            recommendedMainBranchRelease: SemVer?,
-            recommendedDevBranchRelease: SemVer?,
+            updateData: UpdateReleaseData, currentRelease: SemVer,
+            recommendedMainBranchRelease: SemVer?, recommendedDevBranchRelease: SemVer?,
             updateCheckResult: UpdateCheckResult
         ) {
             // If recommended releases are the same, return null (Main Ver check returns same)
             if (recommendedMainBranchRelease == recommendedDevBranchRelease) return
 
-
             // If null, we can't find any recommended updates (Also smart casts to non-nullable)
             if (updateCheckResult.devBranch == null) return
-
 
             val currentReleaseMajorVer = currentRelease.major
 
@@ -209,7 +191,6 @@ class PluginUpdateChecker(private val listener: UpdateCheckResultListener, priva
                     }
                 }
             // Continues if Current Release doesn't have Recommended Next Release or version info not found
-
 
             val versionListGroupMap = updateCheckResult.devBranch.releaseListGroupMap
             var recommendedVersionString: String? = null
@@ -247,7 +228,6 @@ class PluginUpdateChecker(private val listener: UpdateCheckResultListener, priva
                 }
             }
 
-
             // Ver string - check if pre-release, then try and find the version and return
             recommendedVersionString?.let { recommendedVerString ->
                 updateData.devBranchReleaseData =
@@ -272,9 +252,7 @@ class PluginUpdateChecker(private val listener: UpdateCheckResultListener, priva
          * If no match found, returns null
          */
         fun getMainOrPreReleaseByVersionString(
-            semVerString: String,
-            mainBranchData: ReleaseBranchData,
-            devBranchData: ReleaseBranchData
+            semVerString: String, mainBranchData: ReleaseBranchData, devBranchData: ReleaseBranchData
         ): ReleaseData? {
             return if (semVerStringIsPreRelease(semVerString))
                 devBranchData.releaseMapByVersionString[semVerString]
@@ -293,11 +271,8 @@ class PluginUpdateChecker(private val listener: UpdateCheckResultListener, priva
         fun semVerStringIsPreRelease(semVerString: String): Boolean {
             val dashPos = semVerString.indexOf('-')
             if (dashPos > 0) {
-                // If String contains dash, could be a pre-release
-                val plusPos = semVerString.indexOf('+')
-
-                // Plus also exists, and isn't after first dash - definitely pre-release
-                return (plusPos < 0 || dashPos < plusPos)
+                val plusPos = semVerString.indexOf('+') // If String contains dash, could be a pre-release
+                return (plusPos < 0 || dashPos < plusPos) // Plus also exists, and isn't after first dash - definitely pre-release
             }
             return false
         }
@@ -342,7 +317,6 @@ class PluginUpdateChecker(private val listener: UpdateCheckResultListener, priva
                 exponentialDelay()
             }
         }
-
 
         try {
             // Get Releases JSON
@@ -390,21 +364,17 @@ class PluginUpdateChecker(private val listener: UpdateCheckResultListener, priva
                         throw exception
                     }
 
-
                 // Calculate Update Version(s)
                 val updateData = calculateUpdates(convertedMessage)
 
-                // Send to Listener
-                listener.onUpdateCheckResult(updateData)
+                listener.onUpdateCheckResult(updateData) // Send to Listener
             }
 
         } catch (ex: Exception) {
-            // Send error to Listener
-            listener.onUpdateCheckError(ex)
+            listener.onUpdateCheckError(ex) // Send error to Listener
         } finally {
             httpClient.close()
         }
-
     }
 
     fun close() {

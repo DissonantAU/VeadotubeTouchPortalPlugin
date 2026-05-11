@@ -17,11 +17,8 @@ class VeadoState
     thumbHash: String? = null
 ) {
     // Construct from a State
-    constructor(state: State) : this(
-        id = state.id,
-        name = state.name,
-        thumbHash = state.thumbHash
-    )
+    constructor(state: State)
+            : this(id = state.id, name = state.name, thumbHash = state.thumbHash)
 
     // Construct from Peek - Use if Peek is received and State doesn't exist.
     // Name should be checked and list requested at some point.
@@ -97,7 +94,6 @@ class VeadoState
                 this._thumbnail = WeakReference(it)
                 return true
             }
-
             else -> {
                 // Update Existing Thumbnail
                 return thumb.updateThumbnail(newThumbnail)
