@@ -8,7 +8,8 @@ import io.github.dissonantau.bleatkan.message.ResultPayload.ResultPayloadStateLi
 import io.github.dissonantau.bleatkan.message.ResultPayload.ResultPayloadPng as BleatkanStateThumbnail
 
 @Suppress("unused")
-class VeadoMiniConnectionData(connection: Connection) : VeadoConnectionData(connection) {
+class VeadoMiniConnectionData(connection: Connection, instanceNumber: Int) :
+    VeadoConnectionData(connection, instanceNumber) {
 
     /** Instance title used during past refresh - used for comparisons */
     private var instanceTitle = ""
@@ -24,6 +25,16 @@ class VeadoMiniConnectionData(connection: Connection) : VeadoConnectionData(conn
     var stateIDTitledCurrentAvatarThumbnail: InstanceStateIdDescription = InstanceStateIdDescription("", "")
         private set
 
+    /**
+     * Generated State ID for veadotube mini's Push To Talk
+     *
+     * Excludes base section, used for updating State
+     *
+     * e.g. myTitle.pushToTalk
+     */
+    @Suppress("MemberVisibilityCanBePrivate")
+    var stateIDTitledPushToTalk: InstanceStateIdDescription = InstanceStateIdDescription("", "")
+        private set
 
     /**
      * All Generated State ID for veadotube's Nodes and relevant data
@@ -58,6 +69,11 @@ class VeadoMiniConnectionData(connection: Connection) : VeadoConnectionData(conn
     var stateIDTitledInstanceTitle: InstanceStateIdDescription = InstanceStateIdDescription("", "")
         private set
 
+    /** Default Mini Avatars Node */
+    val nodeAvatars = VeadoStateNodeData("mini", "avatar state", "stateEvents")
+
+    /** Default Mini push-to-talk/mic Node */
+    val nodePushToTalk = VeadoBooleanNodeData("mini", "push-to-talk", "boolean")
 
     init {
         _currentInstanceTitleStateIDs = mutableSetOf()
@@ -65,13 +81,8 @@ class VeadoMiniConnectionData(connection: Connection) : VeadoConnectionData(conn
 
         /** Generate Instance Titles */
         refreshInstanceTitle()
+        refreshInstanceNumber()
     }
-
-    /** Default Mini Avatars Node */
-    val nodeAvatars = VeadoStateNodeData("mini", "avatar state", "stateEvents")
-
-    /** Default Mini push-to-talk/mic Node */
-    val nodePushToTalk = VeadoBooleanNodeData("mini", "push-to-talk", "boolean")
 
     /**
      * ArrayList of all [VeadoState] available
@@ -118,6 +129,9 @@ class VeadoMiniConnectionData(connection: Connection) : VeadoConnectionData(conn
      */
     private val currentStateThumbnail: VeadoThumbnail?; get() = nodeAvatars.currentStateThumbnail
 
+    /** Thumbnail Requests for Instance */
+    var thumbnailRequestEnabled: Boolean = false
+
     /** Default Size of LRU Map - Hard References */
     private val lruHardMapSize = 4
 
@@ -143,8 +157,7 @@ class VeadoMiniConnectionData(connection: Connection) : VeadoConnectionData(conn
      * e.g. io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.MiniInstances.state.myTitle.title
      */
     @Suppress("MemberVisibilityCanBePrivate")
-    val stateIDTitledInstanceTitleLong
-        get() = "${baseStateID}.$stateIDTitledInstanceTitle"
+    val stateIDTitledInstanceTitleLong; get() = "${baseStateID}.${stateIDTitledInstanceTitle.stateId}"
 
     /**
      * Generated State ID for veadotube mini's Current Avatar Name
@@ -154,8 +167,7 @@ class VeadoMiniConnectionData(connection: Connection) : VeadoConnectionData(conn
      * e.g. io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.MiniInstances.state.myTitle.currentAvatarStateName
      */
     @Suppress("MemberVisibilityCanBePrivate")
-    val stateIDTitledCurrentAvatarNameLong
-        get() = "${baseStateID}.$stateIDTitledCurrentAvatarName"
+    val stateIDTitledCurrentAvatarNameLong; get() = "${baseStateID}.${stateIDTitledCurrentAvatarName.stateId}"
 
     /**
      * Generated State ID for veadotube mini's Current Avatar Name
@@ -176,9 +188,7 @@ class VeadoMiniConnectionData(connection: Connection) : VeadoConnectionData(conn
      * e.g. io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.MiniInstances.state.myTitle.currentAvatarStateThumbnail
      */
     @Suppress("MemberVisibilityCanBePrivate")
-    val stateIDTitledCurrentAvatarThumbnailLong
-        get() = "${baseStateID}.$stateIDTitledCurrentAvatarThumbnail"
-
+    val stateIDTitledCurrentAvatarThumbnailLong; get() = "${baseStateID}.${stateIDTitledCurrentAvatarThumbnail.stateId}"
 
     /**
      * Checks if Instance Title matches last processed, updates Title Cleaned & Simplified.
@@ -224,23 +234,41 @@ class VeadoMiniConnectionData(connection: Connection) : VeadoConnectionData(conn
         val tpIdPrefix = instanceTitleSimplified
         val tpLabelPrefix = "Instance $instanceTitleCleaned (#$instanceNumber)"
 
-        val listOldIDs: MutableSet<InstanceStateIdDescription> = currentInstanceTitleStateIDs.toMutableSet()
+        // List to put new IDs
         val listNewIDs: MutableSet<InstanceStateIdDescription> = mutableSetOf()
 
-        // TODO - avatar state/nodeAvatars nodeAvatars
+        stateIDTitledInstanceTitle = InstanceStateIdDescription("$tpIdPrefix.title", "$tpLabelPrefix: Title")
+        listNewIDs.add(stateIDTitledInstanceTitle)
+
+        stateIDTitledCurrentAvatarName =
+            InstanceStateIdDescription("$tpIdPrefix.currentAvatarStateName", "$tpLabelPrefix: Current Avatar Name")
+        listNewIDs.add(stateIDTitledCurrentAvatarName)
+        stateIDTitledCurrentAvatarThumbnail =
+            InstanceStateIdDescription(
+                "$tpIdPrefix.currentAvatarStateThumbnail", "$tpLabelPrefix: Current Avatar Thumbnail"
+            )
+        listNewIDs.add(stateIDTitledCurrentAvatarThumbnail)
+        stateIDTitledPushToTalk =
+            InstanceStateIdDescription(
+                "$tpIdPrefix.currentPushToTalkMicInput", "$tpLabelPrefix: Push-to-Talk Mic Input"
+            )
+        listNewIDs.add(stateIDTitledPushToTalk)
+
+        // avatar state/nodeAvatars
         nodeAvatars.also { node ->
             generateNodeDataStateIds(tpIdPrefix, tpLabelPrefix, node)
-            { listNewIDs.add(it); listOldIDs.remove(it) }
+            { listNewIDs.add(it); }
         }
 
-        // TODO - push-to-talk/mic nodePushToTalk
+        // push-to-talk/mic nodePushToTalk
         nodePushToTalk.also { node ->
             generateNodeDataStateIds(tpIdPrefix, tpLabelPrefix, node)
-            { listNewIDs.add(it); listOldIDs.remove(it) }
+            { listNewIDs.add(it); }
         }
 
-        val removedIds = listOldIDs.subtract(listNewIDs)
-        val addedIds = listNewIDs.subtract(listOldIDs)
+        val currentIds = _currentInstanceTitleStateIDs
+        val addedIds = listNewIDs.subtract(currentIds)
+        val removedIds = currentIds.subtract(listNewIDs)
 
         _currentInstanceTitleStateIDs = listNewIDs
 
@@ -258,26 +286,45 @@ class VeadoMiniConnectionData(connection: Connection) : VeadoConnectionData(conn
         check(instanceNumber > 0) { "Instance Number has not been set" }
 
         val tpIdPrefix = instanceNumber.toString()
-        val tpLabelPrefix = "Instance #$instanceNumber"
+        val tpLabelPrefix = "Instance Mini #$instanceNumber"
 
         // List old IDs and Generate new ones
-        val listOldIDs: MutableSet<InstanceStateIdDescription> = currentInstanceNumberedStateIDs.toMutableSet()
         val listNewIDs: MutableSet<InstanceStateIdDescription> = mutableSetOf()
 
-        // TODO - avatar state/nodeAvatars nodeAvatars
+        stateIDNumberedInstanceTitle = InstanceStateIdDescription("$tpIdPrefix.title", "$tpLabelPrefix: Title")
+        listNewIDs.add(stateIDNumberedInstanceTitle)
+
+        stateIDNumberedCurrentAvatarName =
+            InstanceStateIdDescription("$tpIdPrefix.currentAvatarStateName", "$tpLabelPrefix: Current Avatar Name")
+        listNewIDs.add(stateIDNumberedCurrentAvatarName)
+        stateIDNumberedCurrentAvatarThumbnail =
+            InstanceStateIdDescription(
+                "$tpIdPrefix.currentAvatarStateThumbnail", "$tpLabelPrefix: Current Avatar Thumbnail"
+            )
+        listNewIDs.add(stateIDNumberedCurrentAvatarThumbnail)
+        stateIDNumberedPushToTalk =
+            InstanceStateIdDescription(
+                "$tpIdPrefix.currentPushToTalkMicInput", "$tpLabelPrefix: Push-to-Talk Mic Input"
+            )
+        listNewIDs.add(stateIDNumberedPushToTalk)
+
+        // avatar state/nodeAvatars
         nodeAvatars.also { node ->
             generateNodeDataStateIds(tpIdPrefix, tpLabelPrefix, node)
-            { listNewIDs.add(it); listOldIDs.remove(it) }
+            { listNewIDs.add(it); }
         }
 
-        // TODO - push-to-talk/mic nodePushToTalk
+        // push-to-talk/mic nodePushToTalk
         nodePushToTalk.also { node ->
             generateNodeDataStateIds(tpIdPrefix, tpLabelPrefix, node)
-            { listNewIDs.add(it); listOldIDs.remove(it) }
+            { listNewIDs.add(it); }
         }
 
-        val removedIds = listOldIDs.subtract(listNewIDs)
-        val addedIds = listNewIDs.subtract(listOldIDs)
+        val currentIds = _currentInstanceNumberedStateIDs
+        val addedIds = listNewIDs.subtract(currentIds)
+        val removedIds = currentIds.subtract(listNewIDs)
+
+        _currentInstanceNumberedStateIDs = listNewIDs
 
         return Pair(removedIds, addedIds)
     }
@@ -313,16 +360,28 @@ class VeadoMiniConnectionData(connection: Connection) : VeadoConnectionData(conn
     }
 
     override fun getInstanceNodePropertyNumberValues(map: MutableMap<String, String>): Map<String, String> {
+        val tpIdPrefix = instanceNumber.toString()
+        map["$tpIdPrefix.title"] = instanceTitleCleaned
+        map["$tpIdPrefix.currentAvatarStateName"] = currentState?.name ?: ""
+        map["$tpIdPrefix.currentAvatarStateThumbnail"] = currentState?.thumbnail?.png ?: ""
+        map["$tpIdPrefix.currentPushToTalkMicInput"] = getPushToTalkString()
+
         allNodes { node ->
-            generateNodePropertyIdValue(nodePrefix = instanceNumber.toString(), node = node)
+            generateNodePropertyIdValue(nodePrefix = tpIdPrefix, node = node)
             { id, value -> map[id] = value }
         }
         return map
     }
 
     override fun getInstanceNodePropertyTitleValues(map: MutableMap<String, String>): Map<String, String> {
+        val tpIdPrefix = instanceTitleSimplified
+        map["$tpIdPrefix.title"] = instanceTitleCleaned
+        map["$tpIdPrefix.currentAvatarStateName"] = currentState?.name ?: ""
+        map["$tpIdPrefix.currentAvatarStateThumbnail"] = currentState?.thumbnail?.png ?: ""
+        map["$tpIdPrefix.currentPushToTalkMicInput"] = getPushToTalkString()
+
         allNodes { node ->
-            generateNodePropertyIdValue(nodePrefix = instanceTitleSimplified, node = node)
+            generateNodePropertyIdValue(nodePrefix = tpIdPrefix, node = node)
             { id, value -> map[id] = value }
         }
         return map
@@ -379,8 +438,18 @@ class VeadoMiniConnectionData(connection: Connection) : VeadoConnectionData(conn
      * e.g. io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.MiniInstances.state.1.currentAvatarStateThumbnail
      */
     @Suppress("MemberVisibilityCanBePrivate")
-    val stateIDNumberedCurrentAvatarThumbnailLong
-        get() = "${baseStateID}.${stateIDNumberedCurrentAvatarThumbnail.stateId}"
+    val stateIDNumberedCurrentAvatarThumbnailLong; get() = "${baseStateID}.${stateIDNumberedCurrentAvatarThumbnail.stateId}"
+
+    /**
+     * Generated State ID for veadotube mini's Push To Talk
+     *
+     * Excludes base section, used for updating State
+     *
+     * e.g. myTitle.pushToTalk
+     */
+    @Suppress("MemberVisibilityCanBePrivate")
+    var stateIDNumberedPushToTalk: InstanceStateIdDescription = InstanceStateIdDescription("", "")
+        private set
 
     /**
      * Generated State ID for mini Avatar Thumbnail
@@ -409,13 +478,11 @@ class VeadoMiniConnectionData(connection: Connection) : VeadoConnectionData(conn
      * @return Whether state was updated - false means the state is already the one provided
      */
     @Suppress("MemberVisibilityCanBePrivate")
-    fun updateCurrentState(stateID: BleatkanStatePeek): Boolean =
-        nodeAvatars.updateCurrentState(stateID)
+    fun updateCurrentState(stateID: BleatkanStatePeek): Boolean = nodeAvatars.updateCurrentState(stateID)
 
     /** Clear currentStateThumbnail, Maps, etc. */
     @Suppress("MemberVisibilityCanBePrivate")
-    fun clearedStateThumbnail(veadoState: VeadoState) =
-        nodeAvatars.clearedStateThumbnail(veadoState)
+    fun clearedStateThumbnail(veadoState: VeadoState) = nodeAvatars.clearedStateThumbnail(veadoState)
 
     /** Updates a State Thumbnail, creating the state if it doesn't exist
      *
@@ -426,23 +493,26 @@ class VeadoMiniConnectionData(connection: Connection) : VeadoConnectionData(conn
      */
     @Suppress("MemberVisibilityCanBePrivate")
     fun updateStateThumbnail(
-        payload: BleatkanStateThumbnail,
-        updateToMRU: Boolean = false
-    ): Triple<Boolean, VeadoState, VeadoThumbnail?> =
-        nodeAvatars.updateStateThumbnail(payload, updateToMRU)
+        payload: BleatkanStateThumbnail, updateToMRU: Boolean = false
+    ): Triple<Boolean, VeadoState, VeadoThumbnail?> = nodeAvatars.updateStateThumbnail(payload, updateToMRU)
 
     /** Update Push-To-Talk node value. Returns previous Node Value.
      * @see [VeadoBooleanNodeData.updateNodeValue] */
-    fun updatePushToTalk(newValue: Boolean): Boolean {
-        return nodePushToTalk.updateNodeValue(newValue)
-    }
+    fun updatePushToTalk(newValue: Boolean): Boolean = nodePushToTalk.updateNodeValue(newValue)
 
     /** Update Push-To-Talk node value. Returns previous Node Value.
      * @see [VeadoBooleanNodeData.updateNodeValue] */
     @Suppress("NOTHING_TO_INLINE")
-    inline fun updatePushToTalk(payload: ResultMessage.ResultMessageWithPayloadBoolean): Boolean {
-        return updatePushToTalk(payload.payload)
-    }
+    inline fun updatePushToTalk(payload: ResultMessage.ResultMessageWithPayloadBoolean): Boolean =
+        updatePushToTalk(payload.payload)
+
+    /** Mini PTT state as Boolean as a String - True = 'Unmuted', False = 'Muted' */
+    @Suppress("NOTHING_TO_INLINE")
+    inline fun getPushToTalkString() = if (nodePushToTalk.value) "Unmuted" else "Muted"
+
+    /** Mini PTT state as Boolean - True = Unmuted, False = Muted */
+    @Suppress("NOTHING_TO_INLINE")
+    inline fun getPushToTalk() = nodePushToTalk.value
 
     /**
      * Generates the ID and Label for a connection's Push To Talk node and passes to action lambdas

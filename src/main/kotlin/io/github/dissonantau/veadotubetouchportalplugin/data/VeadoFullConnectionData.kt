@@ -10,8 +10,9 @@ import java.util.SortedSet
 import kotlin.collections.forEach
 import kotlin.collections.toSet
 
-@Suppress("unused")
-class VeadoFullConnectionData(connection: Connection) : VeadoConnectionData(connection) {
+@Suppress("unused", "NOTHING_TO_INLINE")
+class VeadoFullConnectionData(connection: Connection, instanceNumber: Int) :
+    VeadoConnectionData(connection, instanceNumber) {
 
     /** Instance title used during past refresh - used for comparisons */
     private var instanceTitle = ""
@@ -58,7 +59,6 @@ class VeadoFullConnectionData(connection: Connection) : VeadoConnectionData(conn
     val currentInstanceNumberedStateIDs: Set<InstanceStateIdDescription>
         get() = _currentInstanceNumberedStateIDs.toSet()
 
-
     private var _currentInstanceNumberedStateIDs: MutableSet<InstanceStateIdDescription>
 
     /**
@@ -103,6 +103,7 @@ class VeadoFullConnectionData(connection: Connection) : VeadoConnectionData(conn
 
         /** Generate Instance Titles */
         refreshInstanceTitle()
+        refreshInstanceNumber()
     }
 
     /**
@@ -136,8 +137,7 @@ class VeadoFullConnectionData(connection: Connection) : VeadoConnectionData(conn
      *
      * Work with this should probably be synchronised using the connection obj
      */
-    val getAllStateEventNodes: Map<String, VeadoStateNodeData>
-        get() = nodesStateEventsMap.toMap()
+    val getAllStateEventNodes: Map<String, VeadoStateNodeData>; get() = nodesStateEventsMap.toMap()
 
     /**
      * Map of all [VeadoNumberNodeData] available
@@ -149,8 +149,7 @@ class VeadoFullConnectionData(connection: Connection) : VeadoConnectionData(conn
      *
      * Work with this should probably be synchronised using the connection obj
      */
-    val getAllNodesNumber: Map<String, VeadoNumberNodeData>
-        get() = nodesNumberMap.toMap()
+    val getAllNodesNumber: Map<String, VeadoNumberNodeData>; get() = nodesNumberMap.toMap()
 
     /**
      * Map of all [VeadoBooleanNodeData] available
@@ -162,8 +161,7 @@ class VeadoFullConnectionData(connection: Connection) : VeadoConnectionData(conn
      *
      * Work with this should probably be synchronised using the connection obj
      */
-    val getAllNodesBoolean: Map<String, VeadoBooleanNodeData>
-        get() = nodesBooleanMap.toMap()
+    val getAllNodesBoolean: Map<String, VeadoBooleanNodeData>; get() = nodesBooleanMap.toMap()
 
     /**
      * Searches Nodes by Name using Fuzzy String matching
@@ -226,14 +224,9 @@ class VeadoFullConnectionData(connection: Connection) : VeadoConnectionData(conn
      */
     override val baseStateID = "${VeadoTouchPluginConstants.FullInstances.ID}.state"
 
-
-    /** Map of State IDs */
-    val stateIDMap: MutableMap<String, String> = mutableMapOf()
+    ///** Map of State IDs */
+    //val stateIDMap: MutableMap<String, String> = mutableMapOf()
     // TODO State Generation
-
-    // TODO nodes should be Node Object ?
-    // - pretend Key is Node, Inner Key is name of Type/Name/Value val, Map Value is value of Type/Name/Value val
-
 
     ///**
     // * Generated State ID for veadotube's Window Title
@@ -290,11 +283,11 @@ class VeadoFullConnectionData(connection: Connection) : VeadoConnectionData(conn
         val tpIdPrefix = instanceTitleSimplified
         val tpLabelPrefix = "Instance $instanceTitleCleaned (#$instanceNumber)"
 
-        // List old IDs and Generate new ones
+        // List to put new IDs
         val listNewIDs: MutableSet<InstanceStateIdDescription> = mutableSetOf()
 
         stateIDTitledInstanceTitle = InstanceStateIdDescription("$tpIdPrefix.title", "$tpLabelPrefix: Title")
-        listNewIDs.add(stateIDTitledInstanceTitle)
+        //listNewIDs.add(stateIDTitledInstanceTitle)
 
         nodesList.entries.forEach { nodeType ->
             val nodeTypeName = nodeType.key
@@ -396,7 +389,7 @@ class VeadoFullConnectionData(connection: Connection) : VeadoConnectionData(conn
         val listNewIDs: MutableSet<InstanceStateIdDescription> = mutableSetOf()
 
         stateIDNumberedInstanceTitle = InstanceStateIdDescription("$tpIdPrefix.title", "$tpLabelPrefix: Title")
-        listNewIDs.add(stateIDNumberedInstanceTitle)
+        //listNewIDs.add(stateIDNumberedInstanceTitle)
 
         nodesList.entries.forEach { nodeType ->
             val nodeTypeName = nodeType.key

@@ -6,9 +6,10 @@ import io.github.dissonantau.bleatkan.instance.InstanceID
 import io.github.oshai.kotlinlogging.KotlinLogging
 import me.xdrop.fuzzywuzzy.FuzzySearch
 import java.lang.ref.WeakReference
+import java.util.Comparator
 import kotlin.jvm.Throws
 
-abstract class VeadoConnectionData(connection: Connection) {
+abstract class VeadoConnectionData(connection: Connection, instanceNumber: Int) {
 
     companion object {
         internal val LOGGER = KotlinLogging.logger {}
@@ -22,6 +23,7 @@ abstract class VeadoConnectionData(connection: Connection) {
         val COMPARE_INSTANCE_BY_NAME =
             compareByDescending<Pair<Int, VeadoNodeData>> { it.first }.thenBy { it.second.name.length }
 
+        val COMPARATOR_INSTANCE_BY_NUMBER: Comparator<VeadoConnectionData> = compareBy { it.instanceNumber }
     }
 
     /** Connection Weak Ref - used to prevent GC issues */
@@ -65,6 +67,10 @@ abstract class VeadoConnectionData(connection: Connection) {
     @Suppress("MemberVisibilityCanBePrivate")
     var instanceNumber = -1
         internal set
+
+    init {
+        this.instanceNumber = instanceNumber
+    }
 
     /** Set Stable Instance Number
      *
@@ -455,6 +461,7 @@ abstract class VeadoConnectionData(connection: Connection) {
 
 data class UpdateInstanceResult(
     var connection: Connection?,
+    var connectionData: VeadoConnectionData?,
     var oldIDs: Set<InstanceStateIdDescription>,
     var newTitleIDs: Set<InstanceStateIdDescription>,
     var newNumberIDs: Set<InstanceStateIdDescription>

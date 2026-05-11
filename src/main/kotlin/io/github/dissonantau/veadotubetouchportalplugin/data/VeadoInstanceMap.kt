@@ -21,7 +21,7 @@ class VeadoInstanceMap {
 
     private val lock = ReentrantReadWriteLock()
 
-    private val lockWrite = lock.writeLock()
+    // private val lockWrite = lock.writeLock()
 
     @Suppress("MemberVisibilityCanBePrivate")
     val lockRead: ReentrantReadWriteLock.ReadLock = lock.readLock()
@@ -44,7 +44,7 @@ class VeadoInstanceMap {
      * Executes the given [action] under the read lock of this [VeadoInstanceMap].
      * @return the return value of the action.
      */
-    fun <T> runWithReadLock(action: () -> T): T {
+    inline fun <T> runWithReadLock(action: () -> T): T {
         return lockRead.withLock { action() }
     }
 
@@ -73,8 +73,7 @@ class VeadoInstanceMap {
      * - Instance A closes > #1 is freed (null)
      * - Instance C Starts > Becomes #1
      */
-    private val instanceNumberMaps: HashMap<String, LinkedHashMap<Int, InstanceID?>> = HashMap()
-
+    private val instanceNumberMaps: HashMap<String, LinkedHashMap<Int, InstanceID?>> = HashMap(2)
 
     /**
      * Returns a copy of the 'Stable Instance Number' Map for the [instanceType] given
@@ -104,8 +103,7 @@ class VeadoInstanceMap {
      * @param instanceType the type of veadotube instance ('mini' [InstanceID.TYPE_MINI], 'veado' (full) [InstanceID.TYPE_MINI], etc.)
      */
     fun getInstanceNumberMap(instanceType: String): Map<Int, InstanceID?> {
-        require(instanceType.isNotEmpty()) { "instanceType must not be empty" }
-
+        if (instanceType.isEmpty()) return emptyMap()
         lock.read {
             val instanceNumberMap = instanceNumberMaps[instanceType] ?: return emptyMap()
             return instanceNumberMap.toMap()
@@ -120,7 +118,7 @@ class VeadoInstanceMap {
     fun getInstanceNumber(instanceID: InstanceID): Int {
         val instanceType: String = instanceID.type
         lock.read {
-            // Search map of matching value, return ley (Stable Instance Number)
+            // Search map of matching value, return key (Stable Instance Number)
             instanceNumberMaps[instanceType]?.forEach { if (it.value == instanceID) return it.key }
             return -1
         }
@@ -132,9 +130,7 @@ class VeadoInstanceMap {
      * Returns null if not found
      */
     fun getInstanceIdByNumber(instanceType: String, instanceNumber: Int): InstanceID? {
-        if (instanceNumber < 1) return null
-        if (instanceType.isBlank()) return null
-
+        if (instanceNumber < 1 || instanceType.isBlank()) return null
         lock.read {
             // Search map of matching value, return ley (Stable Instance Number)
             return instanceNumberMaps[instanceType]?.get(instanceNumber)
@@ -147,16 +143,37 @@ class VeadoInstanceMap {
      * Returns null if not found
      */
     fun getConnectionByNumber(instanceType: String, instanceNumber: Int): Connection? {
-        if (instanceNumber < 1) return null
-        if (instanceType.isBlank()) return null
-
+        if (instanceNumber < 1 || instanceType.isBlank()) return null
         lock.read {
-            // Search map of matching value, return ley (Stable Instance Number)
+            // Search map for matching value by ID (Stable Instance Number)
             val instance = instanceNumberMaps[instanceType]?.get(instanceNumber)
             return instance?.let { internalGetConnectionByInstanceID(instance) }
         }
     }
 
+    /** Get an Instance by Title - returns 1st containing  */
+    fun getConnectionByTitle(instanceType: String, title: String): Connection? {
+        lock.read {
+            collConnectionData.keys.forEach { connection ->
+                if (connection.isConnected && connection.instance.id.type == instanceType &&
+                    connection.instance.title.contains(title)
+                ) return connection
+            }
+            return null
+        }
+    }
+
+    /** Get an Instance by Title - returns 1st containing  */
+    fun findInstanceByTitle(instanceType: String, title: String): VeadoConnectionData? {
+        lock.read {
+            collConnectionData.forEach { (connection, data) ->
+                if (connection.isConnected && connection.instance.id.type == instanceType &&
+                    connection.instance.title.contains(title)
+                ) return data
+            }
+            return null
+        }
+    }
 
     /**
      * Returns a map of Stable Instance Numbers and related Connections
@@ -166,8 +183,7 @@ class VeadoInstanceMap {
      * @see getInstanceNumberMap
      */
     fun getInstanceConnectionNumberMap(instanceType: String): Map<Int, Connection> {
-        require(instanceType.isNotEmpty()) { "instanceType must not be empty" }
-
+        if (instanceType.isEmpty()) return emptyMap()
         lock.read {
             val instanceNumberMap = instanceNumberMaps[instanceType] ?: return emptyMap()
             val connectionMap = LinkedHashMap<Int, Connection>()
@@ -188,12 +204,11 @@ class VeadoInstanceMap {
      * @see getInstanceNumberMap
      */
     fun getInstanceConnectionNumberMapAll(instanceType: String): Map<Int, Connection?> {
-        require(instanceType.isNotEmpty()) { "instanceType must not be empty" }
-
+        if (instanceType.isEmpty()) return emptyMap()
         lock.read {
             val instanceNumberMap = instanceNumberMaps[instanceType] ?: return emptyMap()
 
-            val connectionMap = LinkedHashMap<Int, Connection?>()
+            val connectionMap = LinkedHashMap<Int, Connection?>(instanceNumberMap.count())
             instanceNumberMap.forEach { mapEntry ->
                 connectionMap[mapEntry.key] = mapEntry.value
                     .let { collInstConnections[it.toString()]?.values?.lastOrNull() }
@@ -213,10 +228,9 @@ class VeadoInstanceMap {
      * Returns Number Assigned to Instance
      */
     private fun addInstanceNumberMap(instanceID: InstanceID): Int {
-        val instanceNumberMap = instanceNumberMaps.getOrPut(instanceID.type) { LinkedHashMap() }
+        val instanceNumberMap = instanceNumberMaps.getOrPut(instanceID.type) { LinkedHashMap(5) }
         if (instanceNumberMap.isEmpty()) {
-            instanceNumberMap[1] = instanceID
-            return 1
+            instanceNumberMap[1] = instanceID; return 1
         } else {
             var rowNum = 1
             var firstEmptyRow = -1
@@ -224,26 +238,18 @@ class VeadoInstanceMap {
             for (row in instanceNumberMap.iterator()) {
                 // If first empty not already found, and row is null, we'll use it as the number for the new instanceID
                 // If row key doesn't match rowNum, a row must have been deleted - treat it as null
-                if (firstEmptyRow <= 0 && (row.value == null || row.key != rowNum)) {
-                    firstEmptyRow = rowNum
-                }
+                if (firstEmptyRow <= 0 && (row.value == null || row.key != rowNum)) firstEmptyRow = rowNum
 
-                // If a match of instance is found, return
-                if (row.value == instanceID) return rowNum
-
+                if (row.value == instanceID) return rowNum // If a match of instance is found, return
                 rowNum++
             }
 
             // Add instanceID to map
             if (firstEmptyRow > 0) {
-                // Set using firstEmpty as key
-                instanceNumberMap[firstEmptyRow] = instanceID
-                return firstEmptyRow
-            } else {
-                // If first empty is not found, use rowNum for new entry
-                instanceNumberMap[rowNum] = instanceID
-                return rowNum
-            }
+                instanceNumberMap[firstEmptyRow] = instanceID; return firstEmptyRow // Set using firstEmpty as key
+            } else
+                instanceNumberMap[rowNum] =
+                    instanceID; return rowNum // If first empty is not found, use rowNum for new entry
         }
     }
 
@@ -279,8 +285,7 @@ class VeadoInstanceMap {
      *
      * Is sorted by Instance Start Timestamp
      */
-    private var instanceMiniSortedSet: SortedSet<Instance> = TreeSet(Instance.COMPARATOR_INSTANCE_BY_ID)
-
+    private val instanceMiniSortedSet: SortedSet<Instance> = TreeSet(Instance.COMPARATOR_INSTANCE_BY_ID)
 
     /** Gets Copy of Instances in Order (by Age, oldest first) */
     fun getMiniInstanceList(): Set<Instance> = lock.read { instanceMiniSortedSet.toSet() }
@@ -293,6 +298,16 @@ class VeadoInstanceMap {
         instanceMiniSortedSet.mapNotNullTo(mutableSetOf()) { collInstConnections[it.id.toString()]?.values?.last() }
     }
 
+    /** Gets Set of [VeadoMiniConnectionData]s, ordered by Instance Number */
+    fun getMiniInstanceDataList(): Set<VeadoMiniConnectionData> = lock.read {
+        if (collConnectionData.isEmpty() || instanceMiniSortedSet.isEmpty()) return emptySet()
+        val dataSet = sortedSetOf<VeadoMiniConnectionData>(VeadoConnectionData.COMPARATOR_INSTANCE_BY_NUMBER)
+        collConnectionData.values.forEach {
+            if (it is VeadoMiniConnectionData && it.instanceNumber > 0 && it.connection?.isConnected == true)
+                dataSet.add(it)
+        }
+        return dataSet
+    }
 
     /**
      * Veadotube Full Sorted Set
@@ -320,6 +335,16 @@ class VeadoInstanceMap {
         instanceFullSortedSet.mapNotNullTo(mutableSetOf()) { collInstConnections[it.id.toString()]?.values?.last() }
     }
 
+    /** Gets Set of [VeadoFullConnectionData]s, ordered by Instance Number */
+    fun getFullInstanceDataList(): Set<VeadoFullConnectionData> = lock.read {
+        if (collConnectionData.isEmpty() || instanceFullSortedSet.isEmpty()) return emptySet()
+        val dataSet = sortedSetOf<VeadoFullConnectionData>(VeadoConnectionData.COMPARATOR_INSTANCE_BY_NUMBER)
+        collConnectionData.values.forEach {
+            if (it is VeadoFullConnectionData && it.instanceNumber > 0 && it.connection?.isConnected == true)
+                dataSet.add(it)
+        }
+        return dataSet
+    }
 
     /**
      * Veadotube Connection Collection
@@ -351,15 +376,13 @@ class VeadoInstanceMap {
         collInstConnections[id.toString()]?.values?.first()
     }
 
-    fun getMiniConnectionOldestByInstanceID(id: InstanceID): Connection? =
-        lock.read {
-            instanceMiniSortedSet.firstOrNull()?.let { collInstConnections[it.id.toString()]?.values?.last() }
-        }
+    fun getMiniConnectionOldestByInstanceID(id: InstanceID): Connection? = lock.read {
+        collInstConnections[id.toString()]?.values?.first()
+    }
 
-    fun getMiniConnectionNewestByInstanceID(id: InstanceID): Connection? =
-        lock.read {
-            instanceMiniSortedSet.lastOrNull()?.let { collInstConnections[it.id.toString()]?.values?.last() }
-        }
+    fun getMiniConnectionNewestByInstanceID(id: InstanceID): Connection? = lock.read {
+        collInstConnections[id.toString()]?.values?.last()
+    }
 
     /** Returns Count of all Connections */
     fun getConnectionCount(): Int = lock.read {
@@ -373,7 +396,7 @@ class VeadoInstanceMap {
      *
      * Work on held objects with should be synchronized with the [Connection] to prevent issues.
      */
-    private val collConnectionData = HashMap<Connection, VeadoConnectionData>()
+    private val collConnectionData = HashMap<Connection, VeadoConnectionData>(5)
 
     /**
      * Veadotube Instance Collection
@@ -591,14 +614,15 @@ class VeadoInstanceMap {
 
         LOGGER.trace { "cleanupConnectionStates: Cleanup and remove $instanceID $instanceConnectionID" }
         lock.write {
+            var removedConnData: VeadoConnectionData? = null
+
             // Remove Connection
             collInstConnections[instanceID]?.remove(instanceTitle)
 
             // Cleanup States Info
             removedConnData = collConnectionData.remove(connection)
+            return removedConnData
         }
-
-        return removedConnData
     }
 
     /** Returns Oldest Mini Instance or null if it's empty */
@@ -637,6 +661,7 @@ class VeadoInstanceMap {
             var listNewTitleIDs: Set<InstanceStateIdDescription> = emptySet()
             var listNewNumberIDs: Set<InstanceStateIdDescription> = emptySet()
 
+            var connData: VeadoConnectionData? = null
             if (connection != null) {
                 // Re-add connection to map with new title
                 connMap[instance.title] = connection
@@ -644,14 +669,14 @@ class VeadoInstanceMap {
                 collInstanceIDTitle[instanceID] = connection.instance.title
 
                 // Trigger Title Refresh and get results
-                collConnectionData[connection]?.also { connData ->
+                connData = collConnectionData[connection]
+                connData?.also { connData ->
                     connData.refreshInstanceTitle().also { listOldIDs.addAll(it.first); listNewTitleIDs = it.second }
                     connData.refreshInstanceNumber().also { listOldIDs.addAll(it.first); listNewNumberIDs = it.second }
                 }
-
             }
 
-            return UpdateInstanceResult(connection, listOldIDs, listNewTitleIDs, listNewNumberIDs)
+            return UpdateInstanceResult(connection, connData, listOldIDs, listNewTitleIDs, listNewNumberIDs)
         }
     }
 
@@ -695,43 +720,41 @@ class VeadoInstanceMap {
             perInstanceTypeAction(
                 instanceType,
                 miniAction = {
-                    val connData = collConnectionData.getOrPut(connection) { VeadoMiniConnectionData(connection) }
-
-                    connData.setInstanceNumber(putNumberResult)
+                    val connData = collConnectionData.getOrPut(connection)
+                    { VeadoMiniConnectionData(connection, putNumberResult) }
+                    //connData.setInstanceNumber(putNumberResult)
                     connData.refreshInstanceNumber()
+                    connData.refreshInstanceTitle()
                     return connData
                 },
                 fullAction = {
-                    //TODO Veado
-                    val connData = collConnectionData.getOrPut(connection) { VeadoFullConnectionData(connection) }
-
-                    connData.setInstanceNumber(putNumberResult)
+                    val connData = collConnectionData.getOrPut(connection)
+                    { VeadoFullConnectionData(connection, putNumberResult) }
+                    //connData.setInstanceNumber(putNumberResult)
                     connData.refreshInstanceNumber()
+                    connData.refreshInstanceTitle()
                     return connData
                 },
                 otherAction = {
                     LOGGER.warn { "onConnectionActivate: Unknown Instance Type: '$instanceType'" }
                 }
             )
-
+            return null
         }
-        return null
     }
 
     /** Updates Instance IDs - returns list of connections with updated Numbers */
     private fun updateMiniInstanceNumbers(): List<VeadoMiniConnectionData> {
         val updated = mutableListOf<VeadoMiniConnectionData>()
         lock.write {
-            getMiniInstanceConnectionList().forEach { connection ->
-                collConnectionData[connection]?.let { connData ->
-                    if (connData is VeadoMiniConnectionData) {
-                        // Get current number, if it doesn't match expected, update and add to 'update' list
-                        if (connData.instanceNumber < 0) {
-                            // Set Instance Number, then refresh automatically if no number was assigned previously
-                            addInstanceNumberMap(connection.instance.id)
-                            connData.refreshInstanceNumber()
-                            updated.add(connData)
-                        }
+            collConnectionData.forEach { (connection, connData) ->
+                if (connData is VeadoMiniConnectionData) {
+                    // Get current number, if it doesn't match expected, update and add to 'update' list
+                    if (connData.instanceNumber < 0) {
+                        // Set Instance Number, then refresh automatically if no number was assigned previously
+                        addInstanceNumberMap(connection.instance.id)
+                        connData.refreshInstanceNumber()
+                        updated.add(connData)
                     }
                 }
             }
@@ -754,14 +777,14 @@ class VeadoInstanceMap {
         otherAction: () -> T = { throw IllegalArgumentException("Unknown Instance Type: $instanceType") }
     ): T {
         return when (instanceType) {
-            "mini" -> miniAction()
-            "veado" -> fullAction()
+            InstanceID.TYPE_MINI -> miniAction(); InstanceID.TYPE_FULL -> fullAction()
             else -> otherAction()
         }
     }
 }
 
 
+@Suppress("unused")
 enum class VeadoInstanceMapTypes(lowercase: String) {
     MINI(InstanceID.TYPE_MINI), FULL(InstanceID.TYPE_FULL);
 

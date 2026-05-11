@@ -23,7 +23,7 @@ class PluginUpdateChecker(private val listener: UpdateCheckResultListener, priva
             KotlinLogging.logger { PluginUpdateChecker::class.java.name }
 
         /** Calculate and return Update Values for Update Notification */
-        @JvmOverloads
+        @JvmStatic
         fun calculateUpdates(
             resultData: UpdateCheckResult,
             currentReleaseVersionString: String = BuildConfig.VERSION_NAME_FULL, // Current Release String (SemVer Format)
