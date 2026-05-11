@@ -31,7 +31,7 @@ class VeadoBooleanNodeData(id: String, name: String, type: String = "boolean") :
         inline val tpStateNodeDescriptionValue; get() = "Value"
     }
 
-    /** Value of Boolean Node*/
+    /** Value of Boolean Node */
     var value: Boolean = false
         private set
 

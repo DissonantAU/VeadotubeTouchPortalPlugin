@@ -5,9 +5,7 @@ import io.github.dissonantau.bleatkan.message.ResultPayload.ResultPayloadState
 import io.github.dissonantau.bleatkan.message.State
 import java.lang.ref.WeakReference
 
-/**
- * Object to store collected Avatar State info
- */
+/** Object to store collected Avatar State info */
 @Suppress("unused")
 class VeadoState
 @JvmOverloads constructor(
@@ -123,17 +121,14 @@ class VeadoState
     /**
      * State Thumbnail backing var
      *
-     * Weak Ref to allow cleanup if removed from Cache and Cleaned up
+     * Weak Ref to allow cleanup if removed from Cache and Garbage Collected
      */
     private var _thumbnail: WeakReference<VeadoThumbnail>? = null
 
     /**
-     * State Thumbnail
+     * State Thumbnail as Base64 PNG
      *
-     * Base64 PNG
-     *
-     * May be `null` even if previously fetched and removed from Cache and cleaned up by GC
-     *
+     * May be `null` if previously fetched but removed from Cache and Garbage Collected
      */
     val thumbnail: VeadoThumbnail?
         get() = _thumbnail?.get()

@@ -1,6 +1,5 @@
 package io.github.dissonantau.veadotubetouchportalplugin.updatechecker
 
-
 import io.github.dissonantau.veadotubetouchportalplugin.BuildConfig
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlin.coroutines.CoroutineContext
@@ -15,9 +14,7 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import net.swiftzer.semver.SemVer
 
-
 class PluginUpdateChecker(private val listener: UpdateCheckResultListener, private val updateCheckReleasesUri: String) {
-
 
     companion object {
         /* Start of functions for Update Checks */
@@ -25,9 +22,7 @@ class PluginUpdateChecker(private val listener: UpdateCheckResultListener, priva
         private val LOGGER =
             KotlinLogging.logger { PluginUpdateChecker::class.java.name }
 
-        /**
-         * Calculate and return Update Values for Update Notification
-         */
+        /** Calculate and return Update Values for Update Notification */
         @JvmOverloads
         fun calculateUpdates(
             resultData: UpdateCheckResult,
@@ -134,7 +129,6 @@ class PluginUpdateChecker(private val listener: UpdateCheckResultListener, priva
             }
             // Continues if Current Release doesn't have Recommended Next Release or version info not found
 
-
             // Go through update list and look for next recommended updates
             // the same major version track
             versionListGroupMap[currentReleaseMajorVer]?.listIterator()?.let { listIterator ->
@@ -173,7 +167,6 @@ class PluginUpdateChecker(private val listener: UpdateCheckResultListener, priva
                 updateData.mainBranchData = updateCheckResult.mainBranch
             }
         }
-
 
         fun calculateNextUpdateDev(
             updateData: UpdateReleaseData,
@@ -296,7 +289,6 @@ class PluginUpdateChecker(private val listener: UpdateCheckResultListener, priva
          * - 1.2.3-beta -> IS Pre-Release
          * - 1.2.3+abc-123 -> IS ***NOT*** Pre-Release
          * - 1.2.3-beta+abc-123 -> IS Pre-Release
-         *
          */
         fun semVerStringIsPreRelease(semVerString: String): Boolean {
             val dashPos = semVerString.indexOf('-')
@@ -314,30 +306,21 @@ class PluginUpdateChecker(private val listener: UpdateCheckResultListener, priva
 
     }
 
-    /**
-     * JSON De/serializer
-     */
+    /** JSON De/serializer */
     private val jsonDeserializer = Json {
         ignoreUnknownKeys = true
         useAlternativeNames = false
     }
 
-    /**
-     * Update Checker Job - Coroutine Job launched to check for updates
-     */
+    /** Update Checker Job - Coroutine Job launched to check for updates */
     private var checkerJob: Job
 
-    /**
-     * Context for this Update Checker
-     */
+    /** Context for this Update Checker */
     private val checkerCoroutineContext: CoroutineContext =
         CoroutineName(name = "pluginUpdateCheck-cor") + Dispatchers.IO
 
-    /**
-     * Scope for this Update Checker, used to launch Jobs
-     */
+    /** Scope for this Update Checker, used to launch Jobs */
     private val checkerCoroutineScope: CoroutineScope = CoroutineScope(checkerCoroutineContext)
-
 
     init {
         checkerJob = checkerCoroutineScope.launch {
@@ -346,10 +329,7 @@ class PluginUpdateChecker(private val listener: UpdateCheckResultListener, priva
         }
     }
 
-
-    /**
-     * Check for newer Plugin Versions
-     */
+    /** Check for newer Plugin Versions */
     private suspend fun runUpdateCheck() {
         val httpClient = HttpClient(CIO) {
             install(Logging) {
@@ -426,7 +406,6 @@ class PluginUpdateChecker(private val listener: UpdateCheckResultListener, priva
         }
 
     }
-
 
     fun close() {
         checkerJob.cancel()

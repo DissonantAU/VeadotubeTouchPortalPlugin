@@ -26,16 +26,21 @@ import io.github.dissonantau.veadotubetouchportalplugin.updatechecker.UpdateRele
 import io.github.oshai.kotlinlogging.KotlinLogging
 import me.xdrop.fuzzywuzzy.FuzzySearch
 import org.apache.commons.lang3.SystemUtils
+import java.net.SocketException
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.locks.ReentrantLock
+import kotlin.Suppress
 import kotlin.concurrent.withLock
 import io.github.dissonantau.bleatkan.message.ResultPayload.ResultPayloadPng as BleatkanStateThumbnail
 import io.github.dissonantau.bleatkan.message.ResultPayload.ResultPayloadState as BleatkanStatePeek
 import io.github.dissonantau.bleatkan.message.ResultPayload.ResultPayloadStateList as BleatkanStateList
 
-
-@Suppress("unused", "NOTHING_TO_INLINE")
+@Suppress(
+    "unused",
+    "NOTHING_TO_INLINE",
+    "CanUnescapeDollarLiteral"
+)
 @Plugin(
     name = BuildConfig.NAME_SHORT, version = BuildConfig.VERSION_CODE,
     colorDark = "#5c1c1c", colorLight = "#822727"
@@ -43,7 +48,6 @@ import io.github.dissonantau.bleatkan.message.ResultPayload.ResultPayloadStateLi
 class VeadoTouchPlugin(parallelizeActions: Boolean) :
     TouchPortalPlugin(parallelizeActions), TouchPortalPlugin.TouchPortalPluginListener,
     InstancesListener, ConnectionListener, UpdateCheckResultListener {
-
 
     companion object {
         /** Class Logger */
@@ -59,7 +63,6 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
          */
         @JvmStatic
         private val avatarStateRegex = """(?<name>.*?)?\s*\((?<id>\w+)\)""".toRegex()
-
 
         /**
          * Avatar State String RegEx
@@ -87,11 +90,8 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         fun main(args: Array<String>) {
             LOGGER.debug { "${BuildConfig.NAME} Launched with ${args.size} args: ${args.toList()}" }
 
-            // Log Debug Info
-            VeadoTouchPluginHelper.logDebugOsJvmDetails()
-
+            VeadoTouchPluginHelper.logDebugOsJvmDetails() // Log Debug Info
             if (args.size == 1) {
-
                 if (PluginHelper.COMMAND_START == args[0]) {
                     LOGGER.info {
                         "${BuildConfig.NAME_SHORT} Starting - Plugin Version: ${
@@ -100,16 +100,12 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
                     }
 
                     veadotubePlugin = VeadoTouchPlugin(true)
-
                     setUpShutdownHook()
 
-                    // Initialize the Plugin
+                    // Initialize the veado Plugin
                     veadotubePlugin.initializePlugin()
-
                 }
-
             }
-
         }
 
         @JvmStatic
@@ -117,27 +113,37 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
             Runtime.getRuntime().addShutdownHook(object : Thread() {
                 override fun run() {
                     LOGGER.info { "Plugin Shutting Down" }
-                    // Start Shutdown
-                    veadotubePlugin.shutdown()
+                    veadotubePlugin.shutdown() // Start Shutdown
                 }
             })
-
         }
 
+        const val STATE_CHOICE_SET = "Set"
+        const val STATE_CHOICE_PUSH = "Push"
+        const val STATE_CHOICE_POP = "Pop"
+        const val STATE_CHOICE_TOGGLE = "Toggle"
 
+        const val BOOL_CHOICE_TRUE = "Set True"
+        const val BOOL_CHOICE_FALSE = "Set False"
+        const val BOOL_CHOICE_TOGGLE = "Toggle"
+
+        const val MIC_CHOICE_MUTE = "Mute"
+        const val MIC_CHOICE_UNMUTE = "Unmute"
+        const val MIC_CHOICE_TOGGLE = "Toggle"
+
+        const val NUM_CHOICE_SET = "Set to"
+        const val NUM_CHOICE_ADD = "Add"
+        const val NUM_CHOICE_SUB = "Subtract"
+        const val NUM_CHOICE_CLEAR = "Clear"
     }
-
 
     private fun initializePlugin() {
         LOGGER.trace { "initializePlugin: Start" }
-
         // Initiate the connection with the Touch Portal Plugin System
         val connectedPairedAndListening = connectThenPairAndListen(this)
 
-
         if (connectedPairedAndListening) {
             LOGGER.info { "Plugin with ID[${VeadoTouchPluginConstants.ID}] Connected and Paired!" }
-
         } else {
             LOGGER.error { "Failed to Connect and Pair with Touch Portal" }
             throw IllegalStateException("Failed to Connect and Pair with Touch Portal")
@@ -151,23 +157,26 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
 
     @Suppress("unused")
     enum class Categories {
-        @Category(
-            name = "veadotube Mini Primary Instance", id = "PrimaryInstance",
-            imagePath = "images/icon-24.png"
-        )
+        @Category(name = "veadotube Mini Primary Instance", id = "PrimaryInstance", imagePath = "images/icon-24.png")
         PrimaryInstance,
 
-        @Category(
-            name = "veadotube Mini", id = "MiniInstance",
-            imagePath = "images/icon-24.png"
-        )
+        @Category(name = "veadotube Mini", id = "MiniInstance", imagePath = "images/icon-24.png")
         MiniInstance,
 
-        @Category(
-            name = "veadotube Full", id = "FullInstance",
-            imagePath = "images/icon-24.png"
-        )
+        @Category(name = "veadotube Mini Number", id = "MiniInstanceNum", imagePath = "images/icon-24.png")
+        MiniInstanceNum,
+
+        @Category(name = "veadotube Mini Title", id = "MiniInstanceTitle", imagePath = "images/icon-24.png")
+        MiniInstanceTitle,
+
+        @Category(name = "veadotube Full", id = "FullInstance", imagePath = "images/icon-24.png")
         FullInstance,
+
+        @Category(name = "veadotube Full Number", id = "FullInstanceNum", imagePath = "images/icon-24.png")
+        FullInstanceNum,
+
+        @Category(name = "veadotube Full Title", id = "FullInstanceTitle", imagePath = "images/icon-24.png")
+        FullInstanceTitle,
 
         /* Submenu Categories*/
         @Category(name = "Mini Primary Instance", id = "MiniPrimaryInstance")
@@ -176,7 +185,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         @Category(name = "Mini Instances", id = "MiniInstances")
         MiniInstances,
 
-        @Category(name = "veadotube Mini by (Number)", id = "MiniInstancesNum")
+        @Category(name = "Mini (Number)", id = "MiniInstancesNum")
         MiniInstancesNum,
 
         @Category(name = "Mini (Title)", id = "MiniInstancesTitle")
@@ -194,27 +203,19 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
 
 
     /* Touch Portal Settings Panel */
-    /**
-     * Setting - Show # of connected instances
-     */
+    /** Setting - Show # of connected instances */
     @Setting(name = "# of Connected Instances", defaultValue = "0", isReadOnly = true)
     private var settingVeadoInstanceCount: String = "0"
 
-    /**
-     * Setting - Show Primary Instance Address
-     */
+    /** Setting - Show Primary Instance Address */
     @Setting(name = "Primary Instance Address", defaultValue = "Plugin Starting", isReadOnly = true)
     private var settingVeadoPrimaryInstanceServer: String = "Plugin Starting"
 
-    /**
-     * Setting - Show Primary Instance Name
-     */
+    /** Setting - Show Primary Instance Name */
     @Setting(name = "Primary Instance Name", defaultValue = "Plugin Starting", isReadOnly = true)
     private var settingVeadoPrimaryInstanceName: String = "Plugin Starting"
 
-    /**
-     * Setting - Primary Instance Name Overwrite
-     */
+    /** Setting - Primary Instance Name Overwrite */
     @Setting(name = "Mini Primary Instance Name Override (Leave Blank to Disable)", defaultValue = "")
     private var settingVeadoPrimaryInstanceNameOverride: String = ""
 
@@ -234,7 +235,6 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
     @Setting(name = "Auto Request Current State Thumbnail (Enabled/Disabled)", defaultValue = "disabled")
     private var settingVeadoAutoRequestThumbnail: String = "disabled"
 
-
     /**
      * Setting - Auto Request Current State Thumbnail Existing Value
      *
@@ -251,147 +251,114 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
 
 
     /* Touch Portal States, Events, etc. */
-    /**
-     * Current Avatar State - Name
-     */
+    /* States */
+    /** Current Avatar State - Name */
     @State(
         desc = "Current Mini Avatar State - Name",
-        defaultValue = "Not Connected",
-        categoryId = "MiniPrimaryInstance",
-        id = "currentAvatarStateName"
+        categoryId = "MiniPrimaryInstance", id = "currentAvatarStateName", defaultValue = "Not Connected",
     )
     private var statePrimaryMiniCurrentAvatarStateName: String = "Not Connected"
-    // Prev: PrimaryInstance ; currentAvatarStateName
 
-    /**
-     * Current Avatar State - Thumbnail
-     */
+    /** Current Avatar State - Thumbnail */
     @State(
         desc = "Current Mini Avatar State - Thumbnail",
-        defaultValue = "",
-        categoryId = "MiniPrimaryInstance",
-        id = "currentAvatarStateThumbnail"
+        categoryId = "MiniPrimaryInstance", id = "currentAvatarStateThumbnail", defaultValue = "",
     )
     private var statePrimaryMiniCurrentAvatarStateThumbnail: String = ""
-    // Prev: PrimaryInstance ; currentAvatarStateThumbnail
 
-
-    /**
-     * Current Avatar State - Thumbnail
-     * "Unmuted", "Muted"
-     */
+    /** Current Avatar State - Thumbnail ("Unmuted", "Muted") */
     @State(
         desc = "Current Mini Push-to-Talk Mic Input",
-        defaultValue = "",
-        categoryId = "MiniPrimaryInstance",
-        id = "currentPushToTalkMicInput"
+        categoryId = "MiniPrimaryInstance", id = "currentPushToTalkMicInput", defaultValue = "",
     )
     private var statePrimaryMiniCurrentPushToTalkMicInput: String = ""
 
-    /** @see statePrimaryMiniCurrentPushToTalkMicInput
-     *  false = "Unmuted", true = "Muted"
+    /** Primary Mini Toggle Tracker (false = "Unmuted", true = "Muted")
+     * @see statePrimaryMiniCurrentPushToTalkMicInput
      */
     private var statePrimaryMiniCurrentPushToTalkMicInputMuted: Boolean = false
 
 
-    /**
-     * Set Current Avatar State with State ID String in 'Name (ID)' Format (Mini 2.0) or just Name (Mini 2.1+)
-     */
+    /** Mini Instance List */
+    @State(
+        desc = "Active Mini Instances",
+        categoryId = "MiniInstances", id = "instanceList", defaultValue = "",
+    )
+    private var stateMiniInstanceList: String = ""
+
+    /** Full Instance List */
+    @State(
+        desc = "Active Full Instances",
+        categoryId = "FullInstances", id = "instanceList", defaultValue = "",
+    )
+    private var stateFullInstanceList: String = ""
+
+    /* Actions */
+    /** Set Current Avatar State with State ID String in 'Name (ID)' Format (Mini 2.0) or just Name (Mini 2.1+) */
     @Action(
-        name = "Set Mini Avatar State from List",
-        format = "Set Mini Avatar State to {\$choices\$}",
-        categoryId = "PrimaryInstance",
-        prefix = "Veadotube Mini",
+        categoryId = "PrimaryInstance", name = "Set Mini Avatar State from List",
+        format = "Set Mini Avatar State to {\$choices\$}", prefix = "Veadotube Mini",
         id = "setAvatarStateFromList"
     )
     private fun actionPrimaryMiniSetAvatarFromList(@Data(valueChoices = [""]) choices: Array<String>) {
         val currentMiniConnection = primaryMiniConnection
-        if (currentMiniConnection != null) {
-            //Get State Object ID from String
-            try {
-                val newState = miniFindAvatarFromStateString(currentMiniConnection, choices[0])
-
-                if (newState != null) {
-                    currentMiniConnection.send(channelNodes, VeadoRequest.createSetStateMini(newState.id))
-                    LOGGER.debug { "actionPrimaryMiniSetAvatarFromList: Set to '${choices[0]}'" }
-                } else {
-                    LOGGER.warn { "Avatar Choice not Found: ${choices[0]}" }
-                }
-            } catch (ex: Exception) {
-                LOGGER.warn { "Failed to send Set Avatar State From List: ${ex.message}" }
+            ?: return LOGGER.warn { "Set Mini Avatar State from List: No connection, can't set Set Avatar to '${choices[0]}'" }
+        //Get State Object ID from String
+        try {
+            val newState = miniFindAvatarFromStateString(currentMiniConnection, choices[0])
+            if (newState != null) {
+                currentMiniConnection.send(channelNodes, VeadoRequest.createSetStateMini(newState.id))
+                LOGGER.debug { "actionPrimaryMiniSetAvatarFromList: Set to '${choices[0]}'" }
+            } else {
+                LOGGER.warn { "Avatar Choice not Found: ${choices[0]}" }
             }
-        } else {
-            LOGGER.warn { "Set Mini Avatar State from List: No connection, can't set Set Avatar to '${choices[0]}'" }
+        } catch (ex: Exception) {
+            LOGGER.warn { "Failed to send Set Avatar State From List: ${ex.message}" }
         }
+
     }
 
-
-    /**
-     * Modify Primary Mini Instance Avatar State by Name
-     */
+    /** Modify Primary Mini Instance Avatar State by Name */
     @Action(
-        name = "Change Primary Mini Avatar State",
-        format = "{\$choices\$} Primary Mini Avatar with Name {\$text\$}",
-        categoryId = "PrimaryInstance",
-        prefix = "Veadotube Mini",
+        categoryId = "PrimaryInstance", name = "Change Primary Mini Avatar State",
+        format = "{\$choices\$} Primary Mini Avatar with Name {\$text\$}", prefix = "Veadotube Mini",
         id = "changeAvatarStateByName"
     )
     private fun actionPrimaryMiniChangeAvatarByName(
-        @Data(valueChoices = ["Set", "Push", "Pop", "Toggle"], defaultValue = "Set") choices: Array<String>,
+        @Data(
+            valueChoices = [STATE_CHOICE_SET, STATE_CHOICE_PUSH, STATE_CHOICE_POP, STATE_CHOICE_TOGGLE],
+            defaultValue = STATE_CHOICE_SET
+        ) choices: Array<String>,
         @Data text: String
     ) {
         val connection = primaryMiniConnection
-        if (connection != null) {
-            val modifyChoice = choices[0]
-
-            miniChangeAvatarByName(modifyChoice, connection, text)
-        } else {
-            LOGGER.warn { "No connection, can't ${choices[0]} '$text' Mini Avatar State by Name" }
-        }
+            ?: return LOGGER.warn { "No connection, can't ${choices[0]} '$text' Mini Avatar State by Name" }
+        miniChangeAvatarByName(choices[0], connection, text)
     }
 
-
-    /**
-     * Set Primary Mini Instance Avatar State by Name
-     */
+    /** Set Primary Mini Instance Avatar State by Name */
     @Action(
-        name = "Set Primary Mini Avatar State by Name",
-        format = "Set Primary Mini Avatar State to {\$text\$}",
-        categoryId = "PrimaryInstance",
-        prefix = "Veadotube Mini",
+        categoryId = "PrimaryInstance", name = "Set Primary Mini Avatar State by Name",
+        format = "Set Primary Mini Avatar State to {\$text\$}", prefix = "Veadotube Mini",
         id = "setAvatarStateByName"
     )
     private fun actionPrimaryMiniSetAvatarByName(@Data text: String) {
         //TODO
-        val connection = primaryMiniConnection
-        if (connection != null) {
-            miniSetAvatarByName(connection, text)
-        } else {
-            LOGGER.warn { "No connection, can't Set '$text' Mini Avatar State by Name" }
-        }
+        val connection =
+            primaryMiniConnection ?: return LOGGER.warn { "No connection, can't Set '$text' Mini Avatar State by Name" }
+        miniSetAvatarByName(connection, text)
     }
 
-
-    /**
-     * Clear Primary Mini Instance Avatar State by Name
-     */
+    /** Clear Primary Mini Instance Avatar State by Name */
     @Action(
-        name = "Clear Primary Mini Avatar State",
-        format = "Clear Primary Mini Avatar State",
-        categoryId = "PrimaryInstance",
-        prefix = "Veadotube Mini",
+        categoryId = "PrimaryInstance", name = "Clear Primary Mini Avatar State",
+        format = "Clear Primary Mini Avatar State", prefix = "Veadotube Mini",
         id = "clearAvatarState"
     )
     private fun actionPrimaryMiniClearAvatar() {
-        val connection = primaryMiniConnection
-        if (connection != null) {
-            miniClearAvatar(connection)
-            return
-        } else {
-            LOGGER.warn { "No connection, can't Clear Mini Avatar State" }
-        }
+        val connection = primaryMiniConnection ?: return LOGGER.warn { "No connection, can't Clear Mini Avatar State" }
+        miniClearAvatar(connection)
     }
-
 
     /**
      * Set Current Avatar State ID
@@ -399,26 +366,21 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
      * Deprecated from Mini 2.1
      */
     @Action(
-        name = "Set Avatar State by ID (Deprecated)",
+        categoryId = "PrimaryInstance", name = "Set Avatar State by ID (Deprecated)",
         format = "Set Avatar to State with ID {\$text\$} (Deprecated, only works for Mini 2.0)",
-        categoryId = "PrimaryInstance",
         prefix = "Veadotube Mini",
         id = "setAvatarStateByID"
     )
     private fun actionPrimaryMiniSetAvatarByID(@Data text: String) {
         val connection = primaryMiniConnection
-        if (connection != null) {
-            try {
-                connection.send(channelNodes, VeadoRequest.createSetStateMini(text.trim()))
-                LOGGER.debug { "actionPrimaryMiniSetAvatarByID: Set ${connection.server} Avatar to $text" }
-            } catch (ex: Exception) {
-                LOGGER.warn { "Failed to send Set Avatar State By ID for ${connection.connUri}: ${ex.message}" }
-            }
-        } else {
-            LOGGER.warn { "Set Avatar State by ID: No connection, can't set Set Avatar to '$text'" }
+            ?: return LOGGER.warn { "Set Avatar State by ID: No connection, can't set Set Avatar to '$text'" }
+        try {
+            connection.send(channelNodes, VeadoRequest.createSetStateMini(text.trim()))
+            LOGGER.debug { "actionPrimaryMiniSetAvatarByID: Set ${connection.server} Avatar to $text" }
+        } catch (ex: Exception) {
+            LOGGER.warn { "Failed to send Set Avatar State By ID for ${connection.connUri}: ${ex.message}" }
         }
     }
-
 
     /**
      * Set Primary Mini Instance Push To Talk/Mute input
@@ -426,73 +388,303 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
      * Enabling Push to Talk Mutes until the PTT Hotkey is pressed
      */
     @Action(
-        name = "Change Primary Mini Push-to-Talk Mic Input",
-        format = "{\$choices\$} Primary Mini Push-to-Talk Microphone Input",
-        categoryId = "PrimaryInstance",
-        prefix = "Veadotube Mini",
+        categoryId = "PrimaryInstance", name = "Change Primary Mini Push-to-Talk Mic Input",
+        format = "veado Mini Primary Push-to-Talk Microphone Input", prefix = "Veadotube Mini",
         id = "setPushToTalkMicInput"
     )
     private fun actionPrimaryMiniSetPushToTalkMicInput(
         @Data(
-            valueChoices = ["Toggle", "Unmute", "Mute"],
-            defaultValue = "Toggle"
+            valueChoices = [MIC_CHOICE_TOGGLE, MIC_CHOICE_UNMUTE, MIC_CHOICE_MUTE],
+            defaultValue = MIC_CHOICE_TOGGLE
         ) choices: Array<String>
     ) {
         LOGGER.debug { "actionPrimaryMiniSetPushToTalkMicInput: Set to '${choices[0]}'" }
-        val connection = primaryMiniConnection
-        if (connection != null) {
-            miniSetPushToTalkMicInput(choices, connection)
-        } else {
-            LOGGER.warn { "No connection, can't Change Primary Mini Push-to-Talk Mic Input" }
-        }
+        connectionAction(
+            { primaryMiniConnection },
+            { miniSetPushToTalkMicInput(it, choices) },
+            { LOGGER.warn { "No connection, can't Change Primary Mini Push-to-Talk Mic Input" } }
+        )
     }
 
-
-    /**
-     * Send Custom JSON Request
-     *
-     */
+    /** Send Custom JSON Request */
     @Action(
-        name = "Send Primary Mini Custom JSON Request",
-        format = "Send JSON Request to Primary Mini - Channel:{\$channel\$}\nJSON:{\$json\$}",
-        categoryId = "PrimaryInstance",
-        prefix = "Veadotube Mini",
-        id = "actionPrimaryMiniSendCustomJsonRequest"
+        categoryId = "PrimaryInstance", name = "Send Primary Mini Custom JSON Request",
+        format = "veado Mini Primary Send JSON Request - Channel:{\$channel\$}\nJSON:{\$json\$}",
+        prefix = "veadotube", id = "actionPrimaryMiniSendCustomJsonRequest"
     )
     private fun actionPrimaryMiniSendCustomJsonRequest(
-        @Data(defaultValue = "nodes") channel: String,
-        @Data json: String
+        @Data(defaultValue = "nodes") channel: String, @Data json: String
     ) {
-        val connection = primaryMiniConnection
-        if (connection != null) {
-            sharedSendCustomJsonRequest(connection, channel, json) { "actionPrimaryMiniSendCustomJsonRequest" }
-        } else {
-            LOGGER.warn { "No Primary Mini Connection, can't Send Custom JSON Request: '$channel:$json'" }
-        }
+        connectionAction(
+            { primaryMiniConnection },
+            { sharedSendCustomJsonRequest(it, channel, json) { "actionPrimaryMiniSendCustomJsonRequest" } },
+            { LOGGER.warn { "No Primary Mini Connection, can't Send Custom JSON Request: '$channel:$json'" } }
+        )
     }
 
 
-    /**
-     * Modify Mini Instance Avatar State by Name
-     */
-    private inline fun miniChangeAvatarByName(
-        modifyChoice: String,
-        connection: Connection,
-        text: String
+    @Action(
+        categoryId = "MiniInstance", name = "Refresh Mini Avatar State List",
+        prefix = "veadotube Mini", id = "refreshStateListAll"
+    )
+    fun refreshMiniStateListAll() {
+        LOGGER.debug { "refreshMiniStateListAll triggered" }
+        //request update from all channels
+        veadoInstanceMaps.getConnectionsList().forEach {
+            try {
+                it.send(channel = channelNodes, VeadoRequest.getListStateMini)
+                it.send(channel = channelNodes, VeadoRequest.getPeekStateMini)
+            } catch (ex: Exception) {
+                LOGGER.warn { "Failed to Refresh Avatar State List for ${it.connUri}: ${ex.message}" }
+            }
+        }
+    }
+
+    @Action(
+        categoryId = "MiniInstance", name = "Refresh Current Mini Avatar State",
+        prefix = "Veadotube Mini", id = "getAvatarStateAll"
+    )
+    fun refreshMiniAvatarStateAll() {
+        LOGGER.debug { "refreshMiniAvatarStateAll triggered" }
+        //request update from all channels
+        veadoInstanceMaps.getConnectionsList().forEach {
+            LOGGER.debug { "refreshMiniAvatarStateAll: send request triggered - channel $channelNodes; request ${VeadoRequest.getPeekStateMini}" }
+            try {
+                it.send(channel = channelNodes, VeadoRequest.getPeekStateMini)
+            } catch (ex: Exception) {
+                LOGGER.warn { "Failed to Refresh Current Avatar State for ${it.connUri}: ${ex.message}" }
+            }
+        }
+    }
+
+    /* End Actions */
+
+    /* veadotube Full Actions */
+    /** Change veado Full Instance # State Node (ID) by State ID */
+    @Action(
+        categoryId = "FullInstanceNum", name = "Instance #: Change State Node by ID",
+        format = "veadotube #{\$instanceNumber\$} State Node ID {\$nodeId\$} - {\$choices\$} {\$stateId\$}",
+        prefix = "veadotube", id = "changeVeadoNumNodeIDStateID"
+    )
+    private fun actionFullNumChangeStateNodeIDStateID(
+        @Data(minValue = 1.0, defaultValue = "1") instanceNumber: Int, @Data nodeId: String,
+        @Data(
+            valueChoices = [STATE_CHOICE_SET, STATE_CHOICE_PUSH, STATE_CHOICE_POP, STATE_CHOICE_TOGGLE],
+            defaultValue = STATE_CHOICE_SET
+        ) choices: Array<String>, @Data stateId: String
     ) {
+        LOGGER.debug { "actionFullChangeStateNodeIDStateID: veado Full #$instanceNumber; ${choices[0]} Node ID '$nodeId' to State ID '$stateId'" }
+        connectionAction(
+            { veadoInstanceMaps.getConnectionByNumber(InstanceID.TYPE_FULL, instanceNumber) },
+            { fullChangeStateById(it, choices[0], nodeId, stateId) },
+            { LOGGER.warn { "Can't find Connection for veadotube #$instanceNumber; can't ${choices[0]} Node ID '$nodeId' to State ID '$stateId'" } }
+        )
+    }
+
+    /** veado Full Instance Title State Node (ID) by State ID */
+    @Action(
+        categoryId = "FullInstancesTitle", name = "Instance Title: Change State Node by ID",
+        format = "veadotube {\$instanceTitle\$} State Node ID {\$nodeId\$} - {\$choices\$} {\$stateId\$}",
+        prefix = "veadotube", id = "changeVeadoTitleNodeIDStateID"
+    )
+    private fun actionFullTitleChangeStateNodeIDStateID(
+        @Data(defaultValue = "veadotube") instanceTitle: String, @Data nodeId: String,
+        @Data(
+            valueChoices = [STATE_CHOICE_SET, STATE_CHOICE_PUSH, STATE_CHOICE_POP, STATE_CHOICE_TOGGLE],
+            defaultValue = STATE_CHOICE_SET
+        ) choices: Array<String>, @Data stateId: String
+    ) {
+        LOGGER.debug { "actionFullTitleChangeStateNodeIDStateID: veado Full '$instanceTitle'; ${choices[0]} Node ID '$nodeId' to State ID '$stateId'" }
+        connectionAction(
+            { veadoInstanceMaps.getConnectionByTitle(InstanceID.TYPE_FULL, instanceTitle) },
+            { fullChangeStateById(it, choices[0], nodeId, stateId) },
+            { LOGGER.warn { "Can't find Connection for veadotube '$instanceTitle; can't ${choices[0]} Node ID '$nodeId' to State ID '$stateId'" } }
+        )
+    }
+
+    ///**
+    // * Set Current Avatar State with State ID String in 'Name (ID)' Format (Mini 2.0) or just Name (Mini 2.1+)
+    // */
+    //@Action(
+    //    name = "Set Avatar State from List",
+    //    format = "Set Veado Instance {\$instanceChoices\$} nodeChoices {\$nodeChoices\$} stateChoices {\$stateChoices\$}",
+    //    categoryId = "FullInstance", prefix = "veadotube",
+    //    id = "changeVeadoNumNodeListStateList"
+    //)
+    //private fun actionFullSetStateFromList(
+    //    @Data(valueChoices = ["1 - Instance A", "2 - Instance B"]) instanceChoices: Array<String>,
+    //    @Data(valueChoices = ["a358e - node 1", "be34 - node 2"]) nodeChoices: Array<String>,
+    //    @Data(valueChoices = ["6nfr4 - state 1", "7brr4 - state 2"]) stateChoices: Array<String>
+    //) {
+    //    LOGGER.warn { "Set Veado Avatar State from List:  Set Veado '${instanceChoices[0]}' State Node '${nodeChoices[0]}' to State '${stateChoices[0]}'" }
+    //    connectionAction(
+    //        { veadoInstanceMaps.getConnectionByNumber("veado", instanceNumber) },
+    //        {
+    //            try { //Get State Object ID from String
+    //                fullChangeStateByName()
+    //                val newState = fullFindStateFromString(currentMiniConnection, choices[0])
+    //
+    //                if (newState != null) {
+    //                    currentMiniConnection.send(channelNodes, VeadoRequest.createSetStateMini(newState.id))
+    //                    LOGGER.debug { "actionPrimaryMiniSetAvatarFromList: Set to '${choices[0]}'" }
+    //                } else {
+    //                    LOGGER.warn { "Avatar Choice not Found: ${choices[0]}" }
+    //                }
+    //            } catch (ex: Exception) {
+    //                LOGGER.warn { "Failed to send Set Avatar State From List: ${ex.message}" }
+    //            }
+    //        },
+    //        { LOGGER.warn { "Set Avatar State from List: No connection, can't set Set Avatar to '${choices[0]}'" } }
+    //    )
+    //}
+
+    ///**
+    // * veadotube Full - Change State By ID
+    // *
+    // * Node ID & State ID
+    // */
+    //private inline fun fullChangeStateByName(
+    //    connection: Connection, modifyChoice: String, nodeId: String, stateName: String
+    //) {
+    //    val payloadChoice = payloadChoiceFromString(modifyChoice) {
+    //        return LOGGER.warn { "Change Full State by Name: Action '${modifyChoice}' not recognised" }
+    //    }
+    //
+    //    // Get connection Instance Data
+    //    val instanceData = veadoInstanceMaps.getFullConnectionInstanceData(connection)
+    //        ?: return LOGGER.warn { "Change Full State by Name: Can't Instance Data for connection '${connection.instance.title}' at '${connection.connUri}'" }
+    //
+    //    // Get Node by ID
+    //    val node = instanceData.getAllStateEventNodes[nodeId]
+    //        ?: return LOGGER.warn { "Change Full State by Name: Can't find Node with ID '$nodeId' on Instance '${connection.instance.title}' at '${connection.connUri}'" }
+    //
+    //    // Get State by ID
+    //    val stateChange = node.getStateByNameContains(stateName)
+    //        ?: return LOGGER.warn { "Change Full State by Name: Can't find State with Name '$stateName' in Node '$nodeId' on Instance '${connection.instance.title}' at '${connection.connUri}'" }
+    //
+    //    val stateChangeId = stateChange.id
+    //    LOGGER.debug { "Change Full State by Name: Found State with Name '$stateName', ID = $stateChangeId" }
+    //
+    //    try {
+    //        val request = RequestMessageNodeEvent(
+    //            event = MessageEvent.PAYLOAD, type = MessagePayloadType.STATE_EVENTS,
+    //            id = nodeId, payload = RequestPayload.RequestPayloadEventStateString(
+    //                event = payloadChoice, state = stateChangeId
+    //            )
+    //        )
+    //
+    //        connection.send(channelNodes, request)
+    //        LOGGER.trace { "fullChangeStateByName: Sent Request to Instance '${connection.instance.title}' at '${connection.connUri}': \"${request.toJsonString()}\"" }
+    //    } catch (ex: Exception) {
+    //        LOGGER.warn { "Failed to send Set Avatar State By Name for ${connection.connUri}: ${ex.message}" }
+    //        LOGGER.debug { "Failed to send Set Avatar State By Name for ${connection.connUri}: ${ex.message}; ${ex.stackTraceToString()}" }
+    //    }
+    //}
+
+    /**
+     * Set Primary Mini Instance Push To Talk/Mute input
+     *
+     * Enabling Push to Talk Mutes until the PTT Hotkey is pressed
+     */
+    @Action(
+        categoryId = "FullInstanceNum", name = "Instance #: Change Boolean Node by ID",
+        format = "veadotube #{\$instanceNumber\$} Boolean Node {\$nodeId\$} - {\$choices\$}",
+        prefix = "veadotube", id = "changeVeadoNumBooleanNodeId"
+    )
+    private fun actionFullNumChangeBooleanNodeId(
+        @Data(minValue = 1.0, defaultValue = "1") instanceNumber: Int, @Data nodeId: String,
+        @Data(
+            valueChoices = [BOOL_CHOICE_TOGGLE, BOOL_CHOICE_TRUE, BOOL_CHOICE_FALSE],
+            defaultValue = BOOL_CHOICE_TOGGLE
+        ) choices: Array<String>
+    ) {
+        LOGGER.debug { "actionFullChangeBooleanNode: Set Instance #$instanceNumber to '${choices[0]}'" }
+        connectionAction(
+            { veadoInstanceMaps.getConnectionByNumber(InstanceID.TYPE_FULL, instanceNumber) },
+            { fullChangeBooleanNode(it, nodeId, choices[0]) },
+            { LOGGER.warn { "Can't find Connection for veadotube #$instanceNumber; can't ${choices[0]} Node ID '$nodeId'" } }
+        )
+    }
+
+    /** Set veadotube Full Instance Number Node Value */
+    @Action(
+        categoryId = "FullInstanceNum", name = "Instance #: Change Number Node by ID",
+        format = "veadotube #{\$instanceNumber\$} Number Node {\$nodeId\$} - {\$choices\$} {\$amount\$}",
+        prefix = "veadotube", id = "changeVeadoNumNumberNodeId"
+    )
+    private fun actionFullChangeNumberNodeId(
+        @Data(minValue = 1.0, defaultValue = "1") instanceNumber: Int, @Data nodeId: String,
+        @Data(
+            valueChoices = [NUM_CHOICE_SET, NUM_CHOICE_ADD, NUM_CHOICE_SUB],
+            defaultValue = NUM_CHOICE_SET
+        ) choices: Array<String>, @Data amount: Double
+    ) {
+        LOGGER.debug { "actionFullChangeBooleanNode: Set Instance #$instanceNumber to '${choices[0]}'" }
+        connectionAction(
+            { veadoInstanceMaps.getConnectionByNumber(InstanceID.TYPE_FULL, instanceNumber) },
+            { fullSetNumberNode(it, nodeId, choices[0], numberVal = amount) },
+            { LOGGER.warn { "Can't find Connection for veadotube #$instanceNumber; can't ${choices[0]} Node ID '$nodeId'" } }
+        )
+    }
+
+    /** Set veadotube Full Instance Number Node Value */
+    @Action(
+        categoryId = "FullInstanceNum", name = "Instance #: Clear Number Node by ID",
+        format = "veadotube #{\$instanceNumber\$} Number Node {\$nodeId\$} - Clear",
+        prefix = "veadotube", id = "clearVeadoNumNumberNodeId"
+    )
+    private fun actionFullClearNumberNodeId(
+        @Data(minValue = 1.0, defaultValue = "1") instanceNumber: Int, @Data nodeId: String
+    ) {
+        LOGGER.debug { "actionFullChangeBooleanNode: Clear Instance #$instanceNumber" }
+        connectionAction(
+            { veadoInstanceMaps.getConnectionByNumber(InstanceID.TYPE_FULL, instanceNumber) },
+            { fullClearNumberNode(it, nodeId) },
+            { LOGGER.warn { "Can't find Connection for veadotube #$instanceNumber; can't Clear Node ID '$nodeId'" } }
+        )
+    }
+
+    /** Send Custom JSON Request */
+    @Action(
+        categoryId = "FullInstanceNum", name = "Instance #: Send Custom JSON Request",
+        format = "veadotube #{\$instanceNumber\$} Send Request - Channel:{\$channel\$}\nJSON:{\$json\$}",
+        prefix = "veadotube", id = "actionVeadoNumSendCustomJsonRequest"
+    )
+    private fun actionFullSendCustomJsonRequestId(
+        @Data(minValue = 1.0, defaultValue = "1") instanceNumber: Int,
+        @Data(defaultValue = "nodes") channel: String, @Data json: String
+    ) {
+        connectionAction(
+            { veadoInstanceMaps.getConnectionByNumber(InstanceID.TYPE_FULL, instanceNumber) },
+            { sharedSendCustomJsonRequest(it, channel, json) { "actionFullSendCustomJsonRequest" } },
+            { LOGGER.warn { "Can't find Connection for veadotube #$instanceNumber; can't send Custom JSON Request: '$channel:$json'" } }
+        )
+    }
+
+
+    /* Action Related Functions*/
+    private inline fun connectionAction(
+        getConnectionAction: () -> Connection?,
+        connectionFoundAction: (connection: Connection) -> Unit, notFoundAction: () -> Unit
+    ) {
+        val connection = getConnectionAction()
+        if (connection != null) return connectionFoundAction(connection)
+        notFoundAction()
+    }
+
+    /** Modify Mini Instance Avatar State by Name */
+    private inline fun miniChangeAvatarByName(modifyChoice: String, connection: Connection, text: String) {
         val payloadChoice = payloadChoiceFromString(modifyChoice) {
-            LOGGER.warn { "Failed to send Change Avatar State ${connection.connUri}: Action '${modifyChoice}' not recognised" }
-            return
+            return LOGGER.warn { "Failed to send Change Avatar State ${connection.connUri}: Action '${modifyChoice}' not recognised" }
         }
 
-        val stateChange =
-            if (connection.compatibilityFlagMiniPre2dot1) {
-                // Get connection states, find name
-                veadoInstanceMaps.getMiniConnectionInstanceData(connection)
-                    ?.getStateByNameContains(text.trim())?.name
-            } else {
-                text.trim()
-            }
+        val stateChange = if (connection.compatibilityFlagMiniPre2dot1) {
+            // Get connection states, find name
+            veadoInstanceMaps.getMiniConnectionInstanceData(connection)
+                ?.getStateByNameContains(text.trim())?.name
+        } else {
+            text.trim()
+        }
 
         if (stateChange == null) {
             LOGGER.warn { "Change Avatar State by Name: Can't find Name match for '$text'" }
@@ -511,13 +703,10 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
     }
 
 
-    /**
-     * Set Mini Avatar State by Name
-     */
+    /** Set Mini Avatar State by Name */
     private inline fun miniSetAvatarByName(connection: Connection, text: String) {
         val stateChange =
-            if (connection.compatibilityFlagMiniPre2dot1) {
-                // Get connection states, find name
+            if (connection.compatibilityFlagMiniPre2dot1) { // Get connection states, find name
                 veadoInstanceMaps.getMiniConnectionInstanceData(connection)
                     ?.getStateByNameContains(text.trim())?.name
             } else {
@@ -525,24 +714,19 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
             }
 
         if (stateChange == null) {
-            LOGGER.warn { "Set Avatar State by Name: Can't find Name match for '$text'" }
-            return
-        } else {
-            try {
-                connection.send(channelNodes, VeadoRequest.createSetStateMini(stateChange))
-                LOGGER.debug { "actionPrimaryMiniSetAvatarByName: Set ${connection.server} Avatar to '$text'" }
-            } catch (ex: Exception) {
-                LOGGER.warn { "Failed to send Set Avatar State By Name for ${connection.connUri}: ${ex.message}" }
-                LOGGER.debug { "Failed to send Set Avatar State By Name for ${connection.connUri}: ${ex.message}; ${ex.stackTraceToString()}" }
-            }
-            return
+            return LOGGER.warn { "Set Avatar State by Name: Can't find Name match for '$text'" }
+        }
+        try {
+            connection.send(channelNodes, VeadoRequest.createSetStateMini(stateChange))
+            LOGGER.debug { "actionPrimaryMiniSetAvatarByName: Set ${connection.server} Avatar to '$text'" }
+        } catch (ex: Exception) {
+            LOGGER.warn { "Failed to send Set Avatar State By Name for ${connection.connUri}: ${ex.message}" }
+            LOGGER.debug { "Failed to send Set Avatar State By Name for ${connection.connUri}: ${ex.message}; ${ex.stackTraceToString()}" }
         }
     }
 
 
-    /**
-     * Clear Mini Avatar State by Name
-     */
+    /** Clear Mini Avatar State by Name */
     private inline fun miniClearAvatar(connection: Connection) {
         try {
             connection.send(channelNodes, VeadoRequest.createClearStateMini())
@@ -551,248 +735,41 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
             LOGGER.warn { "Failed to send Clear Avatar State By Name for ${connection.connUri}: ${ex.message}" }
             LOGGER.debug { "Failed to send Clear Avatar State By Name for ${connection.connUri}: ${ex.message}; ${ex.stackTraceToString()}" }
         }
-        return
     }
 
 
-    private inline fun miniSetPushToTalkMicInput(
-        choices: Array<String>,
-        connection: Connection
-    ) {
+    private inline fun miniSetPushToTalkMicInput(connection: Connection, choices: Array<String>) {
         try {
             when (choices[0]) {
-                "Toggle" -> sendRequestMiniPushToTalkMicInput(connection, null)
-                "Unmute" -> sendRequestMiniPushToTalkMicInput(connection, true) // Prev Enable
-                "Mute" -> sendRequestMiniPushToTalkMicInput(connection, false) // Prev Disable
+                MIC_CHOICE_TOGGLE -> sendRequestMiniPushToTalkMicInput(connection, null)
+                MIC_CHOICE_UNMUTE -> sendRequestMiniPushToTalkMicInput(connection, true) // Prev Enable
+                MIC_CHOICE_MUTE -> sendRequestMiniPushToTalkMicInput(connection, false) // Prev Disable
             }
         } catch (ex: Exception) {
             LOGGER.debug { "actionPrimaryMiniSetPushToTalkMicInput: Error sending message ${ex.message}" }
         }
     }
 
-
-    /* veadotube Full Actions */
-
-    /**
-     * Change veado Full Instance State Node (ID) by State ID
-     */
-    @Action(
-        name = "Change Instance # - Node State by ID",
-        format = "veadotube Full Instance #{\$instanceNumber\$} - {\$choices\$} Node ID {\$nodeId\$} to State ID {\$stateId\$}",
-        categoryId = "FullInstance",
-        prefix = "",
-        id = "changeVeadoNumNodeIDStateID"
-    )
-    private fun actionFullChangeStateNodeIDStateID(
-        @Data(minValue = 1.0, defaultValue = "1") instanceNumber: Int,
-        @Data(valueChoices = ["Set", "Push", "Pop", "Toggle"], defaultValue = "Set") choices: Array<String>,
-        @Data nodeId: String,
-        @Data stateId: String
-    ) {
-        // TODO
-        LOGGER.debug { "actionFullChangeStateNodeIDStateID: veado Full #$instanceNumber; ${choices[0]} Node ID '$nodeId' to State ID '$stateId'" }
-        val connection = veadoInstanceMaps.getConnectionByNumber("veado", instanceNumber)
-
-        if (connection != null) {
-            fullChangeStateById(connection, choices[0], nodeId, stateId)
-        } else {
-            LOGGER.warn { "Can't find Connection for veado Full #$instanceNumber; can't ${choices[0]} Node ID '$nodeId' to State ID '$stateId'" }
-        }
-    }
-
-
-    /**
-     * Set Primary Mini Instance Push To Talk/Mute input
-     *
-     * Enabling Push to Talk Mutes until the PTT Hotkey is pressed
-     */
-    @Action(
-        name = "Change Instance # Boolean Node",
-        format = "{\$choices\$} Change veado Full Boolean Node {\$instanceNumber\$} ",
-        categoryId = "FullInstance",
-        prefix = "",
-        id = "changeVeadoNumBooleanNodeId"
-    )
-    private fun actionFullChangeBooleanNode(
-        @Data(minValue = 1.0, defaultValue = "1") instanceNumber: Int,
-        nodeId: String,
-        @Data(
-            valueChoices = ["Toggle", "True", "False"], defaultValue = "Toggle"
-        ) choices: Array<String>
-    ) {
-        LOGGER.debug { "actionFullChangeBooleanNode: Set Instance #$instanceNumber to '${choices[0]}'" }
-        val connection = veadoInstanceMaps.getConnectionByNumber("veado", instanceNumber)
-
-        if (connection != null) {
-            fullChangeBooleanNode(connection, nodeId, choices[0])
-        } else {
-            LOGGER.warn { "Can't find Connection for veado Full #$instanceNumber; can't ${choices[0]} Node ID '$nodeId'" }
-        }
-    }
-
-
-    /**
-     * Set Primary Mini Instance Push To Talk/Mute input
-     *
-     * Enabling Push to Talk Mutes until the PTT Hotkey is pressed
-     */
-    @Action(
-        name = "Change Instance Title Boolean Node",
-        format = "veado Full Boolean Node {\$nodeId\$} ",
-        categoryId = "FullInstance",
-        prefix = "",
-        id = "changeVeadoTitleNumberNodeId"
-    )
-    private fun actionFullChangeNumberNode(
-        @Data(minValue = 1.0, defaultValue = "1") instanceNumber: Int,
-        nodeId: String,
-        @Data(
-            valueChoices = ["Set", "Add", "Subtract", "Clear"], defaultValue = "Set"
-        ) choices: Array<String>,
-        amount: Double
-    ) {
-        LOGGER.debug { "actionFullChangeBooleanNode: Set Instance #$instanceNumber to '${choices[0]}'" }
-        val connection = veadoInstanceMaps.getConnectionByNumber("veado", instanceNumber)
-
-        if (connection != null) {
-            fullChangeBooleanNode(connection, nodeId, choices[0])
-        } else {
-            LOGGER.warn { "Can't find Connection for veado Full #$instanceNumber; can't ${choices[0]} Node ID '$nodeId'" }
-        }
-    }
-
-    ///**
-    // * Set Primary Mini Instance Avatar State by Name
-    // */
-    //@Action(
-    //    name = "Set Primary Mini Avatar State by Name",
-    //    format = "Set Primary Mini Avatar State to {\$text\$}",
-    //    categoryId = "PrimaryInstance",
-    //    prefix = "Veadotube Mini",
-    //    id = "setAvatarStateByName"
-    //)
-    //private fun actionMiniSetAvatarByName(@Data text: String) {
-    //    //TODO
-    //    val connection = primaryMiniConnection
-    //    if (connection != null) {
-    //
-    //        miniSetAvatarByName(connection, text)
-    //        return
-    //    } else {
-    //        LOGGER.warn { "No connection, can't Set '$text' Mini Avatar State by Name" }
-    //    }
-    //}
-
-
-    ///**
-    // * Set Current Avatar State ID
-    // *
-    // * Deprecated from Mini 2.1
-    // */
-    //@Action(
-    //    name = "Set Avatar State by ID (Deprecated)",
-    //    format = "Set Avatar to State with ID {\$text\$} (Deprecated, only works for Mini 2.0)",
-    //    categoryId = "PrimaryInstance",
-    //    prefix = "Veadotube Mini",
-    //    id = "setAvatarStateByID"
-    //)
-    //private fun actionPrimaryMiniSetAvatarByID(@Data text: String) {
-    //    val connection = primaryMiniConnection
-    //    if (connection != null) {
-    //        try {
-    //            connection.send(channelNodes, VeadoRequest.createSetStateMini(text.trim()))
-    //            LOGGER.debug { "actionPrimaryMiniSetAvatarByID: Set ${connection.server} Avatar to $text" }
-    //        } catch (ex: Exception) {
-    //            LOGGER.warn { "Failed to send Set Avatar State By ID for ${connection.connUri}: ${ex.message}" }
-    //        }
-    //    } else {
-    //        LOGGER.warn { "Set Avatar State by ID: No connection, can't set Set Avatar to '$text'" }
-    //    }
-    //}
-
-
-    ///**
-    // * Set Primary Mini Instance Push To Talk/Mute input
-    // *
-    // * Enabling Push to Talk Mutes until the PTT Hotkey is pressed
-    // */
-    //@Action(
-    //    name = "Change Primary Mini Push-to-Talk Mic Input",
-    //    format = "{\$choices\$} Primary Mini Push-to-Talk Microphone Input",
-    //    categoryId = "PrimaryInstance",
-    //    prefix = "Veadotube Mini",
-    //    id = "setPushToTalkMicInput"
-    //)
-    //private fun actionPrimaryMiniSetPushToTalkMicInput(
-    //    @Data(
-    //        valueChoices = ["Toggle", "Unmute", "Mute"],
-    //        defaultValue = "Toggle"
-    //    ) choices: Array<String>
-    //) {
-    //    LOGGER.debug { "actionPrimaryMiniSetPushToTalkMicInput: Set to '${choices[0]}'" }
-    //    val connection = primaryMiniConnection
-    //    if (connection != null) {
-    //        miniSetPushToTalkMicInput(choices, connection)
-    //    } else {
-    //        LOGGER.warn { "No connection, can't Change Primary Mini Push-to-Talk Mic Input" }
-    //    }
-    //}
-
-
-    /**
-     * Send Custom JSON Request
-     *
-     */
-    @Action(
-        name = "Send veado Full Custom JSON Request",
-        format = "veado Full Instance #{\$instanceNumber\$} - Send Request to Channel:{\$channel\$}\nJSON:{\$json\$}",
-        categoryId = "FullInstance",
-        prefix = "",
-        id = "actionVeadoFullSendCustomJsonRequest"
-    )
-    private fun actionFullSendCustomJsonRequest(
-        @Data(minValue = 1.0, defaultValue = "1") instanceNumber: Int,
-        @Data(defaultValue = "nodes") channel: String,
-        @Data json: String
-    ) {
-        val connection = veadoInstanceMaps.getConnectionByNumber("veado", instanceNumber)
-
-        if (connection != null) {
-            sharedSendCustomJsonRequest(connection, channel, json) { "actionFullSendCustomJsonRequest" }
-        } else {
-            LOGGER.warn { "Can't find Connection for veado Full #$instanceNumber; can't send Custom JSON Request: '$channel:$json'" }
-        }
-    }
-
-
-    /**
-     * veadotube Full - Change State By ID
-     *
-     * Node Id & State Id
-     */
+    /** veadotube Full - Change State By ID (Node ID & State ID) */
     private inline fun fullChangeStateById(
         connection: Connection,
         modifyChoice: String, nodeId: String, stateId: String, continueWhenNotFound: Boolean = true
     ) {
         val payloadChoice = payloadChoiceFromString(modifyChoice) {
-            LOGGER.warn { "Change Full State by ID: Action '${modifyChoice}' not recognised" }
-            return
+            return LOGGER.warn { "Change Full State by ID: Action '${modifyChoice}' not recognised" }
         }
-
         // Get connection Instance Data
         val instanceData = veadoInstanceMaps.getFullConnectionInstanceData(connection)
         if (instanceData == null) {
             LOGGER.warn { "Change Full State by ID: Can't Instance Data for connection '${connection.instance.title}' at '${connection.connUri}'" }
             if (!continueWhenNotFound) return
         } else {
-            // Get Node by ID
-            val node = instanceData.getAllStateEventNodes[nodeId]
+            val node = instanceData.getAllStateEventNodes[nodeId] // Get Node by ID
             if (node == null) {
                 LOGGER.warn { "Change Full State by ID: Can't find Node with ID '$nodeId' on Instance '${connection.instance.title}' at '${connection.connUri}'" }
                 if (!continueWhenNotFound) return
             } else {
-                // Get State by ID
-                val stateChange = node.getStateByID(stateId)
+                val stateChange = node.getStateByID(stateId) // Get State by ID
                 if (stateChange == null) {
                     LOGGER.warn { "Change Full State by ID: Couldn't find State with ID '$stateId' in Node '$nodeId' on Instance '${connection.instance.title}' at '${connection.connUri}'" }
                     if (!continueWhenNotFound) return
@@ -805,8 +782,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         try {
             val request = RequestMessageNodeEvent(
                 event = MessageEvent.PAYLOAD, type = MessagePayloadType.STATE_EVENTS,
-                id = nodeId,
-                payload = RequestPayload.RequestPayloadEventStateString(
+                id = nodeId, payload = RequestPayload.RequestPayloadEventStateString(
                     event = payloadChoice, state = stateId
                 )
             )
@@ -821,139 +797,84 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
 
     /** Returns PayloadEvent from String. First Letter should be capitalised. */
     private inline fun payloadChoiceFromString(
-        choiceString: String,
-        unmatchedAction: () -> PayloadEvent
+        choiceString: String, unmatchedAction: () -> PayloadEvent
     ): PayloadEvent {
         return when (choiceString) {
-            "Set" -> PayloadEvent.SET
-            "Push" -> PayloadEvent.PUSH
-            "Pop" -> PayloadEvent.POP
-            "Toggle" -> PayloadEvent.TOGGLE
-            else -> {
-                unmatchedAction()
-            }
+            STATE_CHOICE_SET -> PayloadEvent.SET; STATE_CHOICE_TOGGLE -> PayloadEvent.TOGGLE
+            STATE_CHOICE_PUSH -> PayloadEvent.PUSH; STATE_CHOICE_POP -> PayloadEvent.POP
+            else -> unmatchedAction()
         }
     }
 
-    /**
-     * veadotube Full - Change State By ID
-     *
-     * Node ID & State ID
-     */
-    private inline fun fullChangeStateByName(
-        connection: Connection, modifyChoice: String, nodeId: String, stateName: String
-    ) {
-        val payloadChoice = payloadChoiceFromString(modifyChoice) {
-            LOGGER.warn { "Change Full State by Name: Action '${modifyChoice}' not recognised" }
-            return
-        }
-
-        // Get connection Instance Data
-        val instanceData = veadoInstanceMaps.getFullConnectionInstanceData(connection)
-        if (instanceData == null) {
-            LOGGER.warn { "Change Full State by Name: Can't Instance Data for connection '${connection.instance.title}' at '${connection.connUri}'" }
-            return
-        }
-
-        // Get Node by ID
-        val node = instanceData.getAllStateEventNodes[nodeId]
-        if (node == null) {
-            LOGGER.warn { "Change Full State by Name: Can't find Node with ID '$nodeId' on Instance '${connection.instance.title}' at '${connection.connUri}'" }
-            return
-        }
-
-        // Get State by ID
-        val stateChange = node.getStateByNameContains(stateName)
-        if (stateChange == null) {
-            LOGGER.warn { "Change Full State by Name: Can't find State with Name '$stateName' in Node '$nodeId' on Instance '${connection.instance.title}' at '${connection.connUri}'" }
-            return
-        } else {
-            val stateId = stateChange.id
-            LOGGER.debug { "Change Full State by Name: Found State with Name '$stateName', ID = ${stateChange.id}" }
-
-            try {
-                val request = RequestMessageNodeEvent(
-                    event = MessageEvent.PAYLOAD, type = MessagePayloadType.STATE_EVENTS,
-                    id = nodeId, payload = RequestPayload.RequestPayloadEventStateString(
-                        event = payloadChoice, state = stateId
-                    )
-                )
-
-                connection.send(channelNodes, request)
-                LOGGER.trace { "fullChangeStateByName: Sent Request to Instance '${connection.instance.title}' at '${connection.connUri}': \"${request.toJsonString()}\"" }
-            } catch (ex: Exception) {
-                LOGGER.warn { "Failed to send Set Avatar State By Name for ${connection.connUri}: ${ex.message}" }
-                LOGGER.debug { "Failed to send Set Avatar State By Name for ${connection.connUri}: ${ex.message}; ${ex.stackTraceToString()}" }
-            }
-        }
-    }
-
-    private inline fun fullChangeBooleanNode(
-        connection: Connection,
-        nodeId: String,
-        choice: String
-    ) {
+    private inline fun fullChangeBooleanNode(connection: Connection, nodeId: String, choice: String) {
         try {
-            when (choice.lowercase()) {
-                "toggle" -> sendRequestToggleBooleanNode(connection, nodeId)
-                "true" -> sendRequestSetBooleanNode(connection, nodeId, true)
-                "false" -> sendRequestSetBooleanNode(connection, nodeId, false)
-                else -> {
-                    LOGGER.warn { "Failed to Change Boolean, unknown option '$choice'; Node '$nodeId' in Instance '${connection.instance.title}' at '${connection.connUri}'" }
-                }
+            when (choice) {
+                BOOL_CHOICE_TOGGLE -> sendRequestToggleBooleanNode(connection, nodeId)
+                BOOL_CHOICE_TRUE -> sendRequestSetBooleanNode(connection, nodeId, true)
+                BOOL_CHOICE_FALSE -> sendRequestSetBooleanNode(connection, nodeId, false)
+                else -> LOGGER.warn { "Failed to Change Boolean, unknown option '$choice'; Node '$nodeId' in Instance '${connection.instance.title}' at '${connection.connUri}'" }
             }
         } catch (ex: Exception) {
             LOGGER.debug { "actionFullChangeBooleanNode: Error sending message ${ex.message}" }
         }
     }
 
+    /** Returns PayloadEvent from String. First Letter should be capitalised. */
+    private inline fun payloadChoiceFromStringNumber(
+        choiceString: String, actionNumberVal: Double,
+        clearAction: () -> PayloadEvent = { throw IllegalArgumentException("Unhandled Action: $NUM_CHOICE_CLEAR") },
+        unmatchedAction: () -> PayloadEvent = { throw IllegalArgumentException("Unknown Action: $choiceString") },
+        actionNumberValReturn: (Double) -> Unit
+    ): PayloadEvent {
+        return when (choiceString) {
+            NUM_CHOICE_SET -> PayloadEvent.SET
+            NUM_CHOICE_ADD -> PayloadEvent.ADD
+            NUM_CHOICE_SUB -> {
+                actionNumberValReturn(actionNumberVal.unaryMinus()); PayloadEvent.ADD
+            }
+            NUM_CHOICE_CLEAR -> {
+                clearAction(); PayloadEvent.CLEAR
+            }
+            else -> unmatchedAction()
+        }
+    }
 
     private inline fun fullSetNumberNode(
-        connection: Connection,
-        nodeId: String,
-        event: PayloadEvent = PayloadEvent.SET,
-        numberVal: Double,
-        numberMin: Double? = null,
-        numberMax: Double? = null
+        connection: Connection, nodeId: String, choice: String,
+        numberVal: Double, numberMin: Double? = null, numberMax: Double? = null
     ) {
         try {
+            var numberVal = numberVal
+            val event: PayloadEvent = payloadChoiceFromStringNumber(choice, numberVal) { numberVal = it }
 
             val payload = if (numberMin != null && numberMax != null) {
                 RequestPayload.RequestPayloadEventValueNumberMinMax(
-                    event, RequestPayloadEventNumberValueMulti(
-                        value = numberVal, min = numberMin, max = numberMax
-                    )
+                    event, RequestPayloadEventNumberValueMulti(value = numberVal, min = numberMin, max = numberMax)
                 )
             } else {
                 RequestPayload.RequestPayloadEventValueNumber(event, numberVal)
             }
 
-            connection.send(requestData = payload.toJsonString())
+            val request = createRequest(type = MessagePayloadType.NUMBER, id = nodeId, payload = payload)
 
+            connection.send(requestData = request)
         } catch (ex: Exception) {
             LOGGER.debug { "fullSetNumberNode: Error sending message ${ex.message}" }
         }
     }
 
-    private fun sendRequestChangeNodeNumberList(
-        connection: Connection, channel: String = channelNodes, nodeId: String
-    ) { //TODO
+    private inline fun fullClearNumberNode(connection: Connection, nodeId: String) {
         try {
-            connection.send(
-                channel = channel,
-                requestData = RequestMessageNodeEvent(
-                    event = MessageEvent.PAYLOAD.formattedName, type = MessagePayloadType.NUMBER.formattedName,
-                    id = nodeId, payload = getPayloadEventList
-                )
-            )
+            val payload = VeadoRequest.getPayloadEventClear
+            val request = createRequest(type = MessagePayloadType.NUMBER, id = nodeId, payload = payload)
+            connection.send(requestData = request)
         } catch (ex: Exception) {
-            LOGGER.warn { "Failed to Request State List for ${connection.connUri}; ${channel}; ${nodeId}: ${ex.message}" }
+            LOGGER.debug { "fullSetNumberNode: Error sending message ${ex.message}" }
         }
     }
 
     private inline fun sharedSendCustomJsonRequest(
-        connection: Connection,
-        channel: String, json: String,
+        connection: Connection, channel: String, json: String,
         crossinline logDebugMessagePrefix: () -> String = { "sharedSendCustomJsonRequest" }
     ) {
         try {
@@ -965,67 +886,6 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
     }
 
 
-    /* Main Vars */
-    /**
-     * Veadotube Instance Manager
-     *
-     * Reads Veadotube Instance Directory,
-     *  alerts supplied [InstancesListener] (this) of changes
-     */
-    private var instanceManager: InstancesManager? = null
-
-    /**
-     * Map of Veado Instances, Collections, and data
-     *
-     */
-    private val veadoInstanceMaps = VeadoInstanceMap()
-
-    /**
-     * Lock for work related to veadoInstanceMaps
-     */
-    private val veadoInstanceMapsLock = ReentrantLock()
-
-
-    /**
-     * Oldest instance by Launch time
-     *
-     * Used to work out Primary Connection
-     */
-    private var oldestMiniInstance: Instance? = null
-
-    /**
-     * Primary Connection
-     *
-     * Used for actions etc. that don't specify a Connection
-     *
-     * Is Connection of Oldest Instance by default, or a match
-     */
-    private var primaryMiniConnection: Connection? = null
-
-
-    /**
-     * Creates a State String from a State
-     *
-     * In the format of "`name` (`id`)"
-     *
-     * Note: Not needed 2.1 and later
-     *
-     * @param state State to Generate String from
-     */
-    private inline fun stateNameIDToString(state: VeadoState) = "${state.name} (${state.id})"
-
-
-    /**
-     * Creates a State String from a State Name and ID
-     *
-     * In the format of "`name` (`id`)"
-     *
-     * @param stateId ID to Generate String from
-     * @param stateName Name to Generate String from
-     */
-    private inline fun stateNameIDToString(stateId: String, stateName: String) = "$stateName ($stateId)"
-
-
     /**
      * Updates the Avatar States for a Connection/Veadotube Instance
      *
@@ -1035,7 +895,6 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         val choices: ArrayList<String> = ArrayList()
         //val choicesId: ArrayList<String> = ArrayList()
 
-
         val collectionsStates: ArrayList<VeadoState>? =
             veadoInstanceMaps.getMiniConnectionInstanceData(connection)?.statesAll
 
@@ -1043,11 +902,9 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
             for (state in collectionsStates) {
 
                 val stateString = if (connection.compatibilityFlagMiniPre2dot1) {
-                    // Generate String with Name and ID - pre 2.1
-                    stateNameIDToString(state)
+                    stateNameIDToString(state)// Generate String with Name and ID - pre 2.1
                 } else {
-                    // ID is just name
-                    state.id
+                    state.id // ID is just name
                 }
 
                 LOGGER.trace { "updateAvatarState: Added Choice \"$stateString\"" }
@@ -1056,13 +913,35 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
             }
         }
 
-
         /* If Connection is Primary Mini, update Choices in TP */
         if (primaryMiniConnection == connection) {
             // Update State Choice for primary State Chooser
             sendChoiceUpdateCurrentAvatarState(choices)
         }
+    }
 
+    /**
+     * Updates the Node States for a Connection/Veadotube Instance
+     *
+     * @param connection Connection where List was updated
+     *
+     */
+    private fun onUpdateNodeStateList(
+        connection: Connection, connData: VeadoFullConnectionData, node: VeadoStateNodeData
+    ) {
+        //TODO nothing to do with this yet
+        //val choices: LinkedHashMap<String, VeadoState> = LinkedHashMap()
+        //
+        //val collectionsStates: ArrayList<VeadoState> = node.statesAll
+        //
+        //if (collectionsStates.isNotEmpty()) {
+        //    for (state in collectionsStates) {
+        //        val stateString = stateNameIDToString(state)
+        //
+        //        LOGGER.trace { "updateAvatarState: Added Choice \"$stateString\"" }
+        //        choices[stateString] = state
+        //    }
+        //}
     }
 
     /**
@@ -1095,7 +974,6 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         return matchedState
     }
 
-
     /**
      * Extracts the ID from an Avatar State String and returns value
      *
@@ -1103,7 +981,6 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
      */
     private fun findAvatarIDFromStatusString(avatarStateString: String): String? {
         // Default Format is "<Name> (<ID>)" where ID is the State ID
-
         val matches = avatarStateRegex.find(avatarStateString)
 
         if (matches == null)
@@ -1115,48 +992,62 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
     }
 
 
-    /* Actions */
-    @Action(
-        name = "Refresh Mini Avatar State List", categoryId = "MiniInstance", prefix = "Veadotube Mini",
-        id = "refreshStateListAll"
-    )
-    fun refreshMiniStateListAll() {
-        //TODO Make more Versions?
-        LOGGER.info { "refreshStateListAll" }
+    /* Main Vars */
+    /**
+     * Veadotube Instance Manager
+     *
+     * Reads Veadotube Instance Directory,
+     *  alerts supplied [InstancesListener] (this) of changes
+     */
+    private var instanceManager: InstancesManager? = null
 
-        //request update from all channels
-        veadoInstanceMaps.getConnectionsList().forEach {
-            try {
-                it.send(channel = channelNodes, VeadoRequest.getListStateMini)
-                it.send(channel = channelNodes, VeadoRequest.getPeekStateMini)
-            } catch (ex: Exception) {
-                LOGGER.warn { "Failed to Refresh Avatar State List for ${it.connUri}: ${ex.message}" }
-            }
-        }
-    }
+    /**
+     * Map of Veado Instances, Collections, and data
+     *
+     */
+    private val veadoInstanceMaps = VeadoInstanceMap()
 
+    /**
+     * Lock for work related to veadoInstanceMaps
+     */
+    private val veadoInstanceMapsLock = ReentrantLock()
 
-    @Action(
-        name = "Refresh Current Mini Avatar State", categoryId = "MiniInstance", prefix = "Veadotube Mini",
-        id = "getAvatarStateAll"
-    )
-    fun refreshMiniAvatarStateAll() {
-        //TODO Make more Versions?
-        LOGGER.info { "getAvatarStateAll triggered" }
+    /**
+     * Oldest instance by Launch time
+     *
+     * Used to work out Primary Connection
+     */
+    private var oldestMiniInstance: Instance? = null
 
-        //request update from all channels
-        veadoInstanceMaps.getConnectionsList().forEach {
-            LOGGER.debug { "getAvatarStateAll: send request triggered - channel $channelNodes; request ${VeadoRequest.getPeekStateMini}" }
-            try {
-                it.send(channel = channelNodes, VeadoRequest.getPeekStateMini)
-            } catch (ex: Exception) {
-                LOGGER.warn { "Failed to Refresh Current Avatar State for ${it.connUri}: ${ex.message}" }
-            }
-        }
-    }
+    /**
+     * Primary Connection
+     *
+     * Used for actions etc. that don't specify a Connection
+     *
+     * Is Connection of Oldest Instance by default, or a match
+     */
+    private var primaryMiniConnection: Connection? = null
 
+    /**
+     * Creates a State String from a State
+     *
+     * In the format of "`name` (`id`)"
+     *
+     * Note: Not needed 2.1 and later
+     *
+     * @param state State to Generate String from
+     */
+    private inline fun stateNameIDToString(state: VeadoState) = "${state.name} (${state.id})"
 
-    /* End Actions */
+    /**
+     * Creates a State String from a State Name and ID
+     *
+     * In the format of "`name` (`id`)"
+     *
+     * @param stateId ID to Generate String from
+     * @param stateName Name to Generate String from
+     */
+    private inline fun stateNameIDToString(stateId: String, stateName: String) = "$stateName ($stateId)"
 
 
     /**
@@ -1181,7 +1072,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         when (exception) {
             null -> LOGGER.debug { "onDisconnected received null" }
 
-            is java.net.SocketException -> {
+            is SocketException -> {
                 if (exception.message == "Close Message Received") LOGGER.info { "Close Message from Touch Poral Received, Exiting" }
                 LOGGER.debug { "onDisconnected received: $exception" }
             }
@@ -1403,39 +1294,36 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         }
     }
 
-
     override fun onBroadcast(tpBroadcastMessage: TPBroadcastMessage) {
         LOGGER.trace { "onBroadcast ${tpBroadcastMessage.event}; ${tpBroadcastMessage.type}; ${tpBroadcastMessage.pageName}" }
     }
-
 
     override fun onSettings(tpSettingsMessage: TPSettingsMessage) {
         LOGGER.debug { "onSettings ${tpSettingsMessage.settings}" }
 
         if (settingVeadoPrimaryInstanceNameOverrideExisting != settingVeadoPrimaryInstanceNameOverride) {
             settingVeadoPrimaryInstanceNameOverrideExisting = settingVeadoPrimaryInstanceNameOverride
-
             updatePrimaryConnection(true)
         }
-
 
         if (settingVeadoAutoRequestThumbnailExisting != settingVeadoAutoRequestThumbnail) {
             settingVeadoAutoRequestThumbnailExisting = settingVeadoAutoRequestThumbnail
 
-            if (
-                settingVeadoAutoRequestThumbnail.isNotBlank() && (
+            if (settingVeadoAutoRequestThumbnail.isNotBlank() && (
                         settingVeadoAutoRequestThumbnail.contains("en", ignoreCase = true) ||
                                 settingVeadoAutoRequestThumbnail.contains("y", ignoreCase = true) ||
                                 settingVeadoAutoRequestThumbnail.contains("tr", ignoreCase = true)
                         )
             ) {
-
                 if (!settingVeadoAutoRequestThumbnailEnabled) {
                     settingVeadoAutoRequestThumbnailEnabled = true
                     // Send Peek request - when the reply is received, png will be checked, etc.
                     val primaryMiniConnection = primaryMiniConnection
 
-                    primaryMiniConnection?.let { sendRequestMiniAvatarStatePeek(it) }
+                    primaryMiniConnection?.let {
+                        sendRequestMiniAvatarStatePeek(it)
+                        sendRequestMiniPushToTalkMicGet(it)
+                    }
 
                     veadoInstanceMaps.getMiniInstanceConnectionList().forEach {
                         if (it.isConnected && it != primaryMiniConnection) sendRequestMiniAvatarStatePeek(it)
@@ -1462,7 +1350,6 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         }
     }
 
-
     override fun onNotificationOptionClicked(tpNotificationOptionClickedMessage: TPNotificationOptionClickedMessage) {
         LOGGER.debug { "onNotificationOptionClicked - Received Notification: ID = ${tpNotificationOptionClickedMessage.notificationId} - Option ID = ${tpNotificationOptionClickedMessage.optionId}" }
         //TODO setup notifications
@@ -1472,7 +1359,6 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
             LOGGER.debug { "onNotificationOptionClicked - received matches plugin Notification ID" }
 
             processUpdateNotification(tpNotificationOptionClickedMessage, updateReleaseData)
-
         }
     }
 
@@ -1519,17 +1405,18 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
             // Add to new maps collection
             veadoInstanceMaps.onConnectionStart(newConnection)
 
-            if (oldestMiniInstance == null ||
-                instance.id.timestamp < (oldestMiniInstance?.id?.timestamp ?: Long.MIN_VALUE)
-            ) {
-                // Set with this instance of oldestInstance if null or current inst is older than current
-                oldestMiniInstance = instance
-            }
+            if (instance.id.type == InstanceID.TYPE_MINI) {
+                if (oldestMiniInstance == null ||
+                    instance.id.timestamp < (oldestMiniInstance?.id?.timestamp ?: Long.MIN_VALUE)
+                ) {
+                    // Set with this instance of oldestInstance if null or current inst is older than current
+                    oldestMiniInstance = instance
+                }
 
-            updatePrimaryConnection()
+                updatePrimaryConnection()
+            }
         }
     }
-
 
     /**
      * Instance Manager Event - Existing Instance Websocket Server Updated
@@ -1538,6 +1425,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
      */
     override fun onInstanceChangeMajor(instance: Instance, oldInstance: Instance) {
         veadoInstanceMapsLock.withLock {
+            LOGGER.debug { "onInstanceChangeMajor: Updated ${instance.server} '${instance.hashCode()}' vs '${oldInstance.hashCode()}'" }
             if (oldInstance.server != instance.server) {
                 // IP changed
                 LOGGER.debug { "onInstanceChangeMajor: run instanceRemoveConnection with ${oldInstance.server} ${oldInstance.title}" }
@@ -1547,11 +1435,9 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
                 onInstanceServerStart(instance)
                 veadoInstanceMaps.onInstanceStart(instance)
             }
-
-            updatePrimaryConnection()
+            if (instance.id.type == InstanceID.TYPE_MINI) updatePrimaryConnection()
         }
     }
-
 
     /**
      * Instance Manager Event - Existing Instance Websocket Server Updated
@@ -1560,6 +1446,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
      */
     override fun onInstanceChangeMinor(instance: Instance, change: InstanceChange, oldValue: String) {
         veadoInstanceMapsLock.withLock {
+            @Suppress("REDUNDANT_ELSE_IN_WHEN")
             when (change) {
                 InstanceChange.TITLE -> {
                     //Just Name changed
@@ -1573,7 +1460,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
                     // Remove old dynamic states, create new ones and apply values
                     try {
                         instance.perInstanceTypeAction(
-                            miniAction = { removeStatesMini(removedIdList) },
+                            miniAction = { removeStatesMini(removedIdList); },
                             fullAction = { removeStatesFull(removedIdList) }
                         )
                     } catch (ex: Exception) {
@@ -1581,15 +1468,17 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
                     }
 
                     if (connection != null) {
-
                         try {
                             instance.perInstanceTypeAction(
                                 miniAction = {
                                     veadoInstanceMaps.getMiniConnectionInstanceData(connection)?.let { connData ->
+                                        removeStatesMiniTitled(connData) //TODO Rework to be handled by removeStatesMini
                                         setUpStatesMiniTitled(connData)
                                         //setUpStatesMiniNumbered(connData) // Not Needed on title change
                                         sendStateUpdateMiniTitledInstanceTitle(connData)
                                         sendStateUpdateMiniNumberedInstanceTitle(connData)
+                                        sendStateUpdateMiniTitledPushToTalk(connData, connData.getPushToTalkString())
+                                        sendStateUpdateMiniNumberedPushToTalk(connData, connData.getPushToTalkString())
 
                                         createStatesMini(addedTitleIdList, addedNumberIdList)
 
@@ -1616,9 +1505,8 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
                         if (connection == primaryMiniConnection) updatePrimaryConnection(true)
                     }
                 }
-
                 else -> {
-                    if (instance.id.type == "mini") updatePrimaryConnection()
+                    if (instance.id.type == InstanceID.TYPE_MINI) updatePrimaryConnection()
                 }
             }
 
@@ -1635,7 +1523,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         veadoInstanceMapsLock.withLock {
             LOGGER.trace { "onInstanceServerStop: Stop ${instance.server}" }
             instanceConnectionCloseAndCleanup(instance)
-            updatePrimaryConnection()
+            if (instance.id.type == InstanceID.TYPE_MINI) updatePrimaryConnection()
         }
     }
 
@@ -1657,16 +1545,13 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
                     sendPrimaryMiniChoiceClearCurrentAvatarState()
                     sendStateClearCurrentPushToTalkMicInput()
                 }
-
                 connectionToEnd.close()
             }
 
             //Check if oldest instance is Ended
             if (oldestMiniInstance?.id == id) {
                 oldestMiniInstance = null
-                //If oldest removed, try and find a replacement
-
-                updateOldestMiniInstance()
+                updateOldestMiniInstance()  // If oldest removed, try and find a replacement
             }
         }
     }
@@ -1688,24 +1573,12 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
                         removeStatesMiniTitled(connData)
                         removeStatesMiniNumbered(connData)
                     }
-
                     is VeadoFullConnectionData -> {
-                        //Todo
-
                         // Remove any states from connection nodes
                         connData.clearInstanceTitle().also { removeStatesFull(it) }
                         connData.clearInstanceNumber().also { removeStatesFull(it) }
-
-                        //connData.nodesAll.forEach { nodesByType ->
-                        //    nodesByType.value.forEach { node ->
-                        //        removeStatesFull(node.value.getNodeDataStateIds())
-                        //    }
-                        //}
                     }
-
-                    else -> {
-                        LOGGER.debug { "instanceCloseAndCleanup: ${connData.instance.title}/${connData.instance.server} - Unknown Connection Type: ${connData.type}" }
-                    }
+                    else -> LOGGER.debug { "instanceCloseAndCleanup: ${connData.instance.title}/${connData.instance.server} - Unknown Connection Type: ${connData.type}" }
                 }
             }
 
@@ -1726,9 +1599,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
             //Check if oldest instance is Ended
             if (oldestMiniInstance?.id == instance.id) {
                 oldestMiniInstance = null
-                //If oldest removed, try and find a replacement
-
-                updateOldestMiniInstance()
+                updateOldestMiniInstance() //If oldest removed, try and find a replacement
             }
         }
     }
@@ -1742,8 +1613,8 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
                 if (oldInst == null ||
                     inst.id.timestamp < oldInst.id.timestamp
                 ) {
-                    // Set with this instance of oldestInstance if null or current inst is older than current
-                    oldestMiniInstance = inst
+                    oldestMiniInstance =
+                        inst // Set with this instance of oldestInstance if null or current inst is older than current
                 }
                 return
             }
@@ -1800,39 +1671,29 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         var returnCancelConnection = false
 
         veadoInstanceMapsLock.withLock {
-
             when (error) {
-                ConnectionError.FailedToConnect -> {
-                    // Failed to connect
+                ConnectionError.FailedToConnect -> { // Failed to connect
                     LOGGER.debug { "onConnectionError: Connection ${connection.server} ${connection.name}, Failed to Connect: ${exception?.message}" }
                     returnCancelConnection = true
                     instanceManager?.markInstanceFailed(connection.instance.id)
                 }
-
-                ConnectionError.IllegalState -> {
-                    // Illegal State - Failed to connect or send message, usually Already Closed
+                ConnectionError.IllegalState -> { // Illegal State - Failed to connect or send message, usually Already Closed
                     LOGGER.debug { "onConnectionError: Connection ${connection.server} ${connection.name}, Failed to Connect: ${exception?.message}" }
                     returnCancelConnection = true
                     instanceManager?.markInstanceFailed(connection.instance.id)
                 }
-
-                ConnectionError.MiniV2DotOneConnectionError -> {
-                    // Terminal, tell Manager to clear from known list
+                ConnectionError.MiniV2DotOneConnectionError -> { // Terminal, tell Manager to clear from known list
                     LOGGER.debug { "onConnectionError: Connection ${connection.server} ${connection.name}, Mini pre 2.1 Closed Abnormally and hasn't been cleaned" }
                     returnCancelConnection = true // Ignored
                     connection.close()
                     instanceManager?.markInstanceFailed(connection.instance.id)
                 }
-
-                ConnectionError.InvalidServerOrName -> {
-                    /* Terminal */
+                ConnectionError.InvalidServerOrName -> { /* Terminal */
                     LOGGER.debug { "onConnectionError: Connection ${connection.server} ${connection.name}, Invalid Server Or Name" }
                     returnCancelConnection = true // Ignored in constructor
                     instanceManager?.markInstanceFailed(connection.instance.id)
                 }
-
-                ConnectionError.Unknown -> {
-                    /* Log but let Connection continue */
+                ConnectionError.Unknown -> { /* Log but let Connection continue */
                     LOGGER.debug { "onConnectionError: Connection ${connection.server} ${connection.name}, Error: ${exception?.message}" }
                 }
             }
@@ -1851,50 +1712,50 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
     override fun onConnectionChange(connection: Connection, active: Boolean) {
         LOGGER.debug { "onConnectionChange: Connection ${connection.connUri}, Active $active" }
         veadoInstanceMapsLock.withLock {
-            // Veadotube Connection Activated/Up or Deactivated/Down
             if (active) {
                 /* Connection Marked active */
                 val updatedConnectionData = veadoInstanceMaps.onConnectionActivate(connection)
 
                 // Add Dynamic States
                 updatedConnectionData?.let { connData ->
+                    LOGGER.debug { "onConnectionChange: Connection ${connection.connUri}, Set up TP States" }
                     when (connData) {
                         is VeadoMiniConnectionData -> {
                             setUpStatesMiniNumbered(connData) // Add/Update Dynamic States - Stable Numbered
                             setUpStatesMiniTitled(connData) // Add/Update Dynamic States - Titled
-                            //sendStateUpdateMiniNumberedInstanceTitle(connData)
-                            //sendStateUpdateMiniTitledInstanceTitle(connData)
+                            sendStateUpdateMiniNumberedInstanceTitle(connData)
+                            sendStateUpdateMiniTitledInstanceTitle(connData)
+                            sendStateUpdateMiniTitledPushToTalk(connData, connData.getPushToTalkString())
+                            sendStateUpdateMiniNumberedPushToTalk(connData, connData.getPushToTalkString())
 
                             createStatesMini(
                                 connData.currentInstanceNumberedStateIDs,
                                 connData.currentInstanceTitleStateIDs
                             )
                         }
-
                         is VeadoFullConnectionData -> {
                             sendStateCreateFullNumberedInstanceTitle(connData)
                             sendStateCreateFullTitledInstanceTitle(connData)
-                            //sendStateUpdateFullNumberedInstanceTitle(connData)
-                            //sendStateUpdateFullTitledInstanceTitle(connData)
+                            sendStateUpdateFullNumberedInstanceTitle(connData)
+                            sendStateUpdateFullTitledInstanceTitle(connData)
 
                             createStatesFull(
                                 connData.currentInstanceTitleStateIDs,
                                 connData.currentInstanceNumberedStateIDs
                             )
                         }
-
-                        else -> {
-                            LOGGER.debug { "onConnectionChange: ${connData.instance.title}/${connData.instance.server} - Unknown Connection Type: ${connData.type}" }
-                        }
+                        else -> LOGGER.debug { "onConnectionChange: ${connData.instance.title}/${connData.instance.server} - Unknown Connection Type: ${connData.type}" }
                     }
                 }
 
                 try {
+                    LOGGER.debug { "onConnectionChange: Connection ${connection.connUri}, Setup Listeners, Request Info" }
                     connection.instance.perInstanceTypeAction(
                         miniAction = {
                             sendRequestMiniStartListener(connection) // Start State Listener
                             sendRequestMiniAvatarStateList(connection) // Request list of possible States
                             sendRequestMiniAvatarStatePeek(connection) // Request Current State
+                            sendRequestMiniPushToTalkMicGet(connection)
                         },
                         fullAction = {
                             sendChannelListenerEnable(connection)  // Start Nodes Listener - Notify on New/Changed Nodes
@@ -1912,6 +1773,8 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
                     connData.clearInstanceNumber().also { removeStatesFull(it) }
                 }
             }
+
+            updateConnectionList(connection) // Update Connection Lists in Touch Portal
         }
     }
 
@@ -1928,10 +1791,8 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
                     LOGGER.trace { "Message -> Title:   ${message.title}" }
                     LOGGER.trace { "Message -> Server:  ${message.server}" }
                     LOGGER.trace { "Message -> Version: ${message.version}" }
-
                     onConnectionReceiveInstanceInfo(connection, message)
                 }
-
                 is ResultMessage.ResultMessageWithNodeEntryList -> {
                     // Result from request: `nodes:{"event": "list"}`
                     // This returns the entries - e.g. stateEvents - avatar state.
@@ -1939,26 +1800,28 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
                     // like id = mini and type = stateEvents instead of requesting them first.
                     // Full has custom Nodes and needs to request them
                     LOGGER.debug { "onConnectionReceive ${message.hashCode()}: Message List -> Entry List (${message.entries.count()} Items)" }
-
                     if (LOGGER.isTraceEnabled()) {
                         message.entries.forEach { entry ->
                             LOGGER.trace { "onConnectionReceive ${message.hashCode()}: Message -> Entry > Type: ${entry.type}; ID: ${entry.id}; Name: ${entry.name}" }
                         }
                     }
-
                     onConnectionReceiveNodeEntryList(connection, message)
                 }
-
+                is ResultMessage.ResultMessageWithPayload -> {
+                    LOGGER.debug { "onConnectionReceive ${message.hashCode()}: Message Payload" }
+                    LOGGER.trace { "Message -> ID:   ${message.id}" }
+                    LOGGER.trace { "Message -> Type: ${message.type}" }
+                    LOGGER.trace { "Message -> Name: ${message.name}" }
+                    onConnectionReceiveState(connection, message)
+                }
                 is ResultMessage.ResultMessageWithPayloadBoolean -> {
                     LOGGER.debug { "onConnectionReceive ${message.hashCode()}: Message Payload Boolean" }
                     LOGGER.trace { "Message -> ID:      ${message.id}" }
                     LOGGER.trace { "Message -> Type:    ${message.type}" }
                     LOGGER.trace { "Message -> Name:    ${message.name}" }
                     LOGGER.trace { "Message -> Payload: ${message.payload}" }
-
                     onConnectionReceiveBoolean(connection, message)
                 }
-
                 is ResultMessage.ResultMessageWithPayloadNumber -> {
                     LOGGER.debug { "onConnectionReceive ${message.hashCode()}: Message Payload Number" }
                     LOGGER.debug { "Message -> ID:          ${message.id}" }
@@ -1967,22 +1830,10 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
                     LOGGER.debug { "Message -> Payload Val: ${message.payload.value}" }
                     if (message.payload.isMinSet) LOGGER.debug { "Message -> Payload Min: ${message.payload.min}" }
                     else LOGGER.trace { "Message -> Payload Min: Not Set" }
-
                     if (message.payload.isMaxSet) LOGGER.debug { "Message -> Payload Max: ${message.payload.max}" }
                     else LOGGER.trace { "Message -> Payload Max: Not Set" }
-
                     onConnectionReceiveNumber(connection, message)
                 }
-
-                is ResultMessage.ResultMessageWithPayload -> {
-                    LOGGER.debug { "onConnectionReceive ${message.hashCode()}: Message Payload" }
-                    LOGGER.trace { "Message -> ID:   ${message.id}" }
-                    LOGGER.trace { "Message -> Type: ${message.type}" }
-                    LOGGER.trace { "Message -> Name: ${message.name}" }
-
-                    onConnectionReceiveState(connection, message)
-                }
-
                 else -> {
                     LOGGER.error { "onConnectionReceive: Unknown Message Payload" }
                     LOGGER.error { "Message -> Channel: ${message.channel}" }
@@ -1993,10 +1844,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         }
     }
 
-    private fun onConnectionReceiveState(
-        connection: Connection,
-        message: ResultMessage.ResultMessageWithPayload
-    ) {
+    private fun onConnectionReceiveState(connection: Connection, message: ResultMessage.ResultMessageWithPayload) {
         val connData = veadoInstanceMaps.getConnectionInstanceData(connection)
         if (connData == null) {
             LOGGER.debug { "onConnectionReceive ${message.hashCode()}: Error - couldn't find collConnectionData for ${connection.connUri}" }
@@ -2006,7 +1854,6 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         connection.instance.perInstanceTypeAction(
             miniAction = {
                 LOGGER.trace { "onConnectionReceive ${message.hashCode()}: Instance Type is Mini, processing payload" }
-
                 if (connData is VeadoMiniConnectionData) {
                     when (val payload = message.payload) {
                         is BleatkanStatePeek -> {
@@ -2014,13 +1861,11 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
                             LOGGER.debug { "onConnectionReceive ${message.hashCode()}: Message Payload -> Peek (${payload.state})" }
                             processReceivedMiniPayloadPeek(connection, connData, payload)
                         }
-
                         is BleatkanStateList -> {
                             // List of States - Received in order that they appear in Program
                             LOGGER.debug { "onConnectionReceive ${message.hashCode()}: Message Payload -> State List (${payload.states.count()} Items)" }
                             processReceivedMiniPayloadAvatarStateList(connection, connData, payload)
                         }
-
                         is BleatkanStateThumbnail -> {
                             // Thumb result - thumbnail for an Avatar State
                             LOGGER.debug { "onConnectionReceive ${message.hashCode()}: Message Payload -> Thumbnail" }
@@ -2032,7 +1877,6 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
             },
             fullAction = {
                 LOGGER.trace { "onConnectionReceive ${message.hashCode()}: Instance Type is Full, passing" }
-
                 if (connData is VeadoFullConnectionData) {
                     when (val payload = message.payload) {
                         is BleatkanStatePeek -> {
@@ -2040,13 +1884,11 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
                             LOGGER.debug { "onConnectionReceive ${message.hashCode()}: Message Payload -> Peek (${payload.state})" }
                             processReceivedFullPayloadPeek(connection, connData, message, payload)
                         }
-
                         is BleatkanStateList -> {
                             // List of States - Received in order that they appear in Program
                             LOGGER.debug { "onConnectionReceive ${message.hashCode()}: Message Payload -> State List (${payload.states.count()} Items)" }
                             processReceivedFullPayloadStateList(connection, connData, message, payload)
                         }
-
                         is BleatkanStateThumbnail -> {
                             // Thumb result - thumbnail for an Avatar State
                             LOGGER.debug { "onConnectionReceive ${message.hashCode()}: Message Payload -> Thumbnail" }
@@ -2060,26 +1902,20 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
     }
 
     private fun onConnectionReceiveNumber(
-        connection: Connection,
-        message: ResultMessage.ResultMessageWithPayloadNumber
+        connection: Connection, message: ResultMessage.ResultMessageWithPayloadNumber
     ) {
         val connData = veadoInstanceMaps.getConnectionInstanceData(connection)
-        if (connData == null) {
-            LOGGER.debug { "onConnectionReceiveNumber ${message.hashCode()}: Error - couldn't find collConnectionData for ${connection.connUri}" }
-            return
-        }
+            ?: return LOGGER.debug { "onConnectionReceiveNumber ${message.hashCode()}: Error - couldn't find collConnectionData for ${connection.connUri}" }
 
         when (connData) {
             is VeadoFullConnectionData -> {
                 LOGGER.trace { "onConnectionReceiveNumber ${message.hashCode()}: Instance Type is Full" }
                 processReceivedFullPayloadNumber(connection, connData, message)
             }
-
             is VeadoMiniConnectionData -> {
                 LOGGER.warn { "Received data for Number node ${message.name} from instance ${connection.name}, but isn't handled." }
                 LOGGER.debug { "onConnectionReceiveNumber ${message.hashCode()}: Received data for Number node ${message.name} from instance ${connection.name}, but isn't handled." }
             }
-
             else -> {
                 LOGGER.debug { "onConnectionReceiveNumber ${message.hashCode()}: Error - Connection Data Type of ResultMessageWithPayloadNumber is not handled" }
             }
@@ -2088,26 +1924,20 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
     }
 
     private fun onConnectionReceiveBoolean(
-        connection: Connection,
-        message: ResultMessage.ResultMessageWithPayloadBoolean
+        connection: Connection, message: ResultMessage.ResultMessageWithPayloadBoolean
     ) {
         val connData = veadoInstanceMaps.getConnectionInstanceData(connection)
-        if (connData == null) {
-            LOGGER.debug { "onConnectionReceiveBoolean ${message.hashCode()}: Error - couldn't find collConnectionData for ${connection.connUri}" }
-            return
-        }
+            ?: return LOGGER.debug { "onConnectionReceiveBoolean ${message.hashCode()}: Error - couldn't find collConnectionData for ${connection.connUri}" }
 
         when (connData) {
-            is VeadoFullConnectionData -> {
-                LOGGER.trace { "onConnectionReceiveBoolean ${message.hashCode()}: Instance Type is Full" }
-                processReceivedFullPayloadBoolean(connection, connData, message)
-            }
-
             is VeadoMiniConnectionData -> {
                 LOGGER.trace { "onConnectionReceiveBoolean ${message.hashCode()}: Instance Type is Mini" }
                 processReceivedMiniPayloadBoolean(connection, connData, message)
             }
-
+            is VeadoFullConnectionData -> {
+                LOGGER.trace { "onConnectionReceiveBoolean ${message.hashCode()}: Instance Type is Full" }
+                processReceivedFullPayloadBoolean(connection, connData, message)
+            }
             else -> {
                 LOGGER.debug { "onConnectionReceiveBoolean ${message.hashCode()}: Error - Connection Data Type of ResultMessageWithPayloadBoolean is not handled" }
             }
@@ -2115,8 +1945,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
     }
 
     private fun onConnectionReceiveNodeEntryList(
-        connection: Connection,
-        message: ResultMessage.ResultMessageWithNodeEntryList
+        connection: Connection, message: ResultMessage.ResultMessageWithNodeEntryList
     ) {
         val connData = veadoInstanceMaps.getConnectionInstanceData(connection)
         if (connData == null) {
@@ -2142,14 +1971,11 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
                     sendRequestFullStateList(connection, nodeType = node.type, nodeId = node.id)
                     sendRequestFullStatePeek(connection, nodeType = node.type, nodeId = node.id)
                 }
-
             }
-
             is VeadoMiniConnectionData -> {
                 LOGGER.trace { "onConnectionReceiveNodeEntryList ${message.hashCode()}: Instance Type is Mini" }
                 regenerateVeadoMiniTouchPortalIds(connData)
             }
-
             else -> {
                 LOGGER.debug { "onConnectionReceiveNodeEntryList ${message.hashCode()}: Error - Connection Data Type of ResultMessageWithNodeEntryList is not handled" }
             }
@@ -2157,8 +1983,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
     }
 
     private fun onConnectionReceiveInstanceInfo(
-        connection: Connection,
-        message: ResultMessage.ResultMessageWithInstanceInfo
+        connection: Connection, message: ResultMessage.ResultMessageWithInstanceInfo
     ) {
         if (connection.instance.title != message.title) {
             // Title Changed
@@ -2173,17 +1998,13 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
      *
      * TODO This runs the full instance id update/fetch, not per-node. Fine for now, but probably inefficient
      */
-    private fun regenerateVeadoFullTouchPortalIds(
-        connData: VeadoFullConnectionData
-    ) {
+    private fun regenerateVeadoFullTouchPortalIds(connData: VeadoFullConnectionData) {
         val listOldIDs: MutableSet<InstanceStateIdDescription> = mutableSetOf()
         var listNewTitleIDs: Set<InstanceStateIdDescription> = emptySet()
         var listNewNumberIDs: Set<InstanceStateIdDescription> = emptySet()
 
-        connData.refreshInstanceTitle()
-            .also { listOldIDs.addAll(it.first); listNewTitleIDs = it.second }
-        connData.refreshInstanceNumber()
-            .also { listOldIDs.addAll(it.first); listNewNumberIDs = it.second }
+        connData.refreshInstanceTitle().also { listOldIDs.addAll(it.first); listNewTitleIDs = it.second }
+        connData.refreshInstanceNumber().also { listOldIDs.addAll(it.first); listNewNumberIDs = it.second }
 
         // Remove any states from removed nodes
         removeStatesFull(listOldIDs)
@@ -2194,10 +2015,44 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         connData.getInstanceNodePropertyTitleValues(newValMap)
 
         createStatesFull(
-            listNewTitleIDs,
-            listNewNumberIDs,
-            newValMap
+            listNewTitleIDs, listNewNumberIDs, newValMap
         )
+    }
+
+    /** Update Connection Lists States in TP
+     * @see stateMiniInstanceList
+     * @see stateFullInstanceList
+     */
+    private fun updateConnectionList(connection: Connection) {
+        connection.instance.perInstanceTypeAction(
+            miniAction = {
+                val listIter = veadoInstanceMaps.getMiniInstanceDataList().iterator()
+                val listString = buildConnectionList(listIter)
+                stateMiniInstanceList = listString
+                sendTPStateUpdate(
+                    stateId = VeadoTouchPluginConstants.MiniInstances.States.InstanceList.ID,
+                    value = listString, allowEmptyValue = true
+                )
+            },
+            fullAction = {
+                val listIter = veadoInstanceMaps.getFullInstanceDataList().iterator()
+                val listString = buildConnectionList(listIter)
+                stateFullInstanceList = listString
+                sendTPStateUpdate(
+                    stateId = VeadoTouchPluginConstants.FullInstances.States.InstanceList.ID,
+                    value = listString, allowEmptyValue = true
+                )
+            }
+        )
+    }
+
+    /** Build a list of Instance Numbers and Titles, with one per line. e.g. <Number>:<Title> */
+    fun buildConnectionList(listIter: Iterator<VeadoConnectionData>) = buildString {
+        while (listIter.hasNext()) {
+            val item = listIter.next()
+            append(item.instanceNumber).append(":").append(item.instance.title)
+            if (listIter.hasNext()) appendLine()
+        }
     }
 
     /**
@@ -2222,21 +2077,14 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         removeStatesMini(listOldIDs)
         //}
 
-
         // Get node values
         val newValMap = mutableMapOf<String, String>()
         connData.getInstanceNodePropertyNumberValues(newValMap)
         connData.getInstanceNodePropertyTitleValues(newValMap)
 
         // Add New states for new nodes
-        createStatesMini(
-            listNewTitleIDs,
-            listNewNumberIDs,
-            newValMap
-        )
-
+        createStatesMini(listNewTitleIDs, listNewNumberIDs, newValMap)
     }
-
 
     /**
      * Veadotube Connection Update - Message Received
@@ -2245,21 +2093,17 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
      * @param payload State List Data Received
      */
     private fun processReceivedMiniPayloadAvatarStateList(
-        connection: Connection, connData: VeadoMiniConnectionData,
-        payload: BleatkanStateList
+        connection: Connection, connData: VeadoMiniConnectionData, payload: BleatkanStateList
     ) {
         LOGGER.debug { "processReceivedMiniPayloadAvatarStateList: Update Avatar States" }
 
         synchronized(connection) {
             LOGGER.trace { "Message -> Payload -> Event: ${payload.event}, States: ${payload.states.joinToString { it.toString() }}" }
-
             // Add/Replace existing Lists/Maps
             connData.updateStates(payload)
-
             onUpdateAvatarStateList(connection)
         }
     }
-
 
     /**
      * Call when Peek Message Received - updates State ID/Name, etc. and sends to Touch Portal
@@ -2270,8 +2114,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
      * @param payload State Peek Data Received
      */
     private fun processReceivedMiniPayloadPeek(
-        connection: Connection, connData: VeadoMiniConnectionData,
-        payload: BleatkanStatePeek
+        connection: Connection, connData: VeadoMiniConnectionData, payload: BleatkanStatePeek
     ) {
         LOGGER.debug { "processReceivedMiniPayloadPeek: Update Current Avatar State" }
 
@@ -2279,15 +2122,13 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
             LOGGER.trace { "Message -> Payload -> Event: ${payload.event}, State: ${payload.state}" }
 
             // Update State, return if it nothing is updated (false)
-            if (connData.updateCurrentState(payload))
-                updateConnectionStates(connection, connData)
+            if (connData.updateCurrentState(payload)) updateConnectionStates(connection, connData)
         }
     }
 
 
     private fun processReceivedMiniPayloadThumbnail(
-        connection: Connection, connData: VeadoMiniConnectionData,
-        payload: BleatkanStateThumbnail
+        connection: Connection, connData: VeadoMiniConnectionData, payload: BleatkanStateThumbnail
     ) {
         LOGGER.debug { "processReceivedMiniPayloadThumbnail: Update Avatar Thumbnail" }
 
@@ -2334,7 +2175,6 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         }
     }
 
-
     /**
      * Call when Peek ResultMessageWithPayloadBoolean Message Received - updates State ID/Name, etc. and sends to Touch Portal
      *
@@ -2351,8 +2191,8 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         synchronized(connection) {
             LOGGER.trace { "Message ${message.hashCode()} -> Payload -> Event: ${message.event}, Value: ${message.payload}" }
 
-            val nodeName = message.name
-            val nodeId = message.id
+            //val nodeName = message.name
+            //val nodeId = message.id
 
             val result = connData.updateNodeCurrentBooleanValue(message)
 
@@ -2411,8 +2251,11 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
                     sendStateUpdatePrimaryMiniPushToTalkMicInput(newValue)
                 }
 
+                val pttString = connData.getPushToTalkString()
                 // Update Dynamic state Thumbnails in Touch Portal
                 sendStateUpdateMiniPushToTalk(connData, newValue)
+                sendStateUpdateMiniTitledPushToTalk(connData, pttString)
+                sendStateUpdateMiniNumberedPushToTalk(connData, pttString)
             } else {
                 LOGGER.debug { "processReceivedMiniPayloadBoolean ${message.hashCode()}: No change to ${message.id} / ${message.name}" }
             }
@@ -2602,21 +2445,16 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
 
     }
 
-
-    private fun updateConnectionStates(
-        connection: Connection, connData: VeadoMiniConnectionData
-    ): Boolean {
-
-        if (connection.instance.id.type != "mini") {
+    private fun updateConnectionStates(connection: Connection, connData: VeadoMiniConnectionData): Boolean {
+        if (connection.instance.id.type != InstanceID.TYPE_MINI) {
             LOGGER.error { "updateConnectionStates: Instance Type not mini" }; return false
         }
-        if (connData.instance != connection.instance) {
+        if (connection.instance != connData.instance) {
             LOGGER.error { "updateConnectionStates: Instance Mismatch" }; return false
         }
 
         try {
             val stateCurrent = connData.currentState ?: return false
-
             // Send update to Touch Portal
             // Mini Pre 2.1 has separate name, we may need to fetch it
             val stateCurrentName =
@@ -2624,8 +2462,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
                 else stateCurrent.id
 
             try {
-                if (stateCurrentName.isNullOrEmpty()) {
-                    // If we don't have the name, send request for fresh state list and return
+                if (stateCurrentName.isNullOrEmpty()) { // If we don't have the name, send request for fresh state list and return
                     sendRequestMiniAvatarStateList(connection); return true
                 }
 
@@ -2634,7 +2471,6 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
 
                 // If connection is for Primary Mini instance
                 if (connectionIsPrimary) sendStateUpdatePrimaryMiniCurrentAvatar(stateCurrentName)
-
                 // Standard mini actions
                 sendStateUpdateMiniTitledCurrentAvatarName(connData, stateCurrentName)
                 sendStateUpdateMiniNumberedCurrentAvatarName(connData, stateCurrentName)
@@ -2645,7 +2481,6 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
                         else -> {
                             // If connection is Primary Mini instance
                             if (connectionIsPrimary) sendStateUpdatePrimaryMiniCurrentThumbnail(png)
-
                             // Standard mini actions
                             sendStateUpdateMiniTitledCurrentThumbnail(connData, png)
                             sendStateUpdateMiniNumberedCurrentThumbnail(connData, png)
@@ -3256,8 +3091,6 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
     /**
      * Action for updating the Current Push To Talk State in Touch Portal etc.
      *
-     * State Thumbnail Only
-     *
      * @see statePrimaryMiniCurrentAvatarStateName
      */
     private fun sendStateUpdatePrimaryMiniPushToTalkMicInput(pttMutedValue: Boolean) {
@@ -3274,8 +3107,6 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
 
     /**
      * Action for updating the Current Avatar State Thumbnail in Touch Portal etc.
-     *
-     * State Thumbnail Only
      *
      * @see statePrimaryMiniCurrentAvatarStateName
      */
@@ -3354,6 +3185,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         sendStateCreateMiniTitledInstanceTitle(veadoMiniConnectionData)
         sendStateCreateMiniTitledCurrentAvatarName(veadoMiniConnectionData)
         sendStateCreateMiniTitledCurrentAvatarThumbnail(veadoMiniConnectionData)
+        sendStateCreateMiniTitledPushToTalk(veadoMiniConnectionData)
     }
 
     /** Action for Removing Mini States in Touch Portal */
@@ -3361,6 +3193,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         sendStateRemoveMiniTitledInstanceTitle(veadoMiniConnectionData)
         sendStateRemoveMiniTitledCurrentAvatarName(veadoMiniConnectionData)
         sendStateRemoveMiniTitledCurrentAvatarThumbnail(veadoMiniConnectionData)
+        sendStateRemoveMiniTitledPushToTalk(veadoMiniConnectionData)
     }
 
     /** Action for Setting Up Mini States in Touch Portal */
@@ -3368,6 +3201,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         sendStateCreateMiniNumberedInstanceTitle(veadoMiniConnectionData)
         sendStateCreateMiniNumberedCurrentAvatarName(veadoMiniConnectionData)
         sendStateCreateMiniNumberedCurrentAvatarThumbnail(veadoMiniConnectionData)
+        sendStateCreateMiniNumberedPushToTalk(veadoMiniConnectionData)
     }
 
     /** Action for Removing Mini States in Touch Portal */
@@ -3375,6 +3209,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         sendStateRemoveMiniNumberedInstanceTitle(veadoMiniConnectionData)
         sendStateRemoveMiniNumberedCurrentAvatarName(veadoMiniConnectionData)
         sendStateRemoveMiniNumberedCurrentAvatarThumbnail(veadoMiniConnectionData)
+        sendStateRemoveMiniNumberedPushToTalk(veadoMiniConnectionData)
     }
 
     /** Action for Creating veado Mini States in Touch Portal from List */
@@ -3382,13 +3217,12 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         titleIdList: Collection<InstanceStateIdDescription>, titleNumberList: Collection<InstanceStateIdDescription>,
         valueMap: Map<String, String> = emptyMap()
     ) {
-        LOGGER.debug { "createStatesMini: ID - ${titleIdList.count()}, Number - ${titleNumberList.count()}" }
+        LOGGER.debug { "createStatesMini: Title - ${titleIdList.count()}, Number - ${titleNumberList.count()}" }
         titleIdList.forEach { item ->
             sendStateMiniInstancesCreate(
                 stateId = item.stateId, description = item.stateLabel, value = valueMap[item.stateId] ?: ""
             )
         }
-
         titleNumberList.forEach { item ->
             sendStateMiniInstancesCreate(
                 stateId = item.stateId, description = item.stateLabel, value = valueMap[item.stateId] ?: ""
@@ -3396,26 +3230,23 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         }
     }
 
-
     /** Action for Creating veado Full States in Touch Portal from List */
     private inline fun createStatesFull(
         titleIdList: Collection<InstanceStateIdDescription>, numberIdList: Collection<InstanceStateIdDescription>,
         valueMap: Map<String, String> = emptyMap()
     ) {
-        LOGGER.debug { "createStatesFull: ID - ${titleIdList.count()}, Number - ${numberIdList.count()}" }
+        LOGGER.debug { "createStatesFull: Title - ${titleIdList.count()}, Number - ${numberIdList.count()}" }
         titleIdList.forEach { item ->
             sendStateFullInstancesCreate(
                 stateId = item.stateId, description = item.stateLabel, value = valueMap[item.stateId] ?: ""
             )
         }
-
         numberIdList.forEach { item ->
             sendStateFullInstancesCreate(
                 stateId = item.stateId, description = item.stateLabel, value = valueMap[item.stateId] ?: ""
             )
         }
     }
-
 
     /** Action for Removing veado Mini States in Touch Portal from List */
     private inline fun removeStatesMini(list: Collection<InstanceStateIdDescription>) {
@@ -3431,8 +3262,6 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
 
     /**
      * Action for updating the Window Title in Touch Portal etc.
-     *
-     * Pass [stateTitle] = "" (Blank), and [allowEmptyValue] = true to clear value
      *
      * @see statePrimaryMiniCurrentAvatarStateName
      */
@@ -3450,7 +3279,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
     private fun sendStateCreateMiniTitledInstanceTitle(veadoMiniConnectionData: VeadoMiniConnectionData) =
         sendStateMiniInstancesCreate(
             stateId = veadoMiniConnectionData.stateIDTitledInstanceTitle.stateId,
-            description = "${veadoMiniConnectionData.instanceTitleCleaned} ${veadoMiniConnectionData.stateIDTitledInstanceTitle.stateLabel}",
+            description = veadoMiniConnectionData.stateIDTitledInstanceTitle.stateLabel,
             value = "", allowEmptyValue = true
         )
 
@@ -3460,8 +3289,6 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
 
     /**
      * Action for updating the Window Title in Touch Portal etc.
-     *
-     * Pass [stateTitle] = "" (Blank), and [allowEmptyValue] = true to clear value
      *
      * @see statePrimaryMiniCurrentAvatarStateName
      */
@@ -3479,7 +3306,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
     private fun sendStateCreateMiniNumberedInstanceTitle(veadoMiniConnectionData: VeadoMiniConnectionData) =
         sendStateMiniInstancesCreate(
             stateId = veadoMiniConnectionData.stateIDNumberedInstanceTitle.stateId,
-            description = "Instance #${veadoMiniConnectionData.instanceNumber} (${veadoMiniConnectionData.instanceTitleCleaned}): Title",
+            description = veadoMiniConnectionData.stateIDNumberedInstanceTitle.stateLabel,
             value = "", allowEmptyValue = true
         )
 
@@ -3487,11 +3314,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
     private fun sendStateRemoveMiniNumberedInstanceTitle(veadoMiniConnectionData: VeadoMiniConnectionData) =
         sendStateMiniInstancesRemove(stateId = veadoMiniConnectionData.stateIDNumberedInstanceTitle.stateId)
 
-    /**
-     * Action for updating the Current Avatar State Name in Touch Portal
-     *
-     * Pass [stateName] = "" (Blank), and [allowEmptyValue] = true to clear value
-     */
+    /** Action for updating the Current Avatar State Name in Touch Portal */
     private fun sendStateUpdateMiniTitledCurrentAvatarName(
         veadoMiniConnectionData: VeadoMiniConnectionData, stateName: String,
         allowEmptyValue: Boolean = false, forceUpdate: Boolean = false
@@ -3505,7 +3328,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
     private fun sendStateCreateMiniTitledCurrentAvatarName(veadoMiniConnectionData: VeadoMiniConnectionData) =
         sendStateMiniInstancesCreate(
             stateId = veadoMiniConnectionData.stateIDTitledCurrentAvatarName.stateId,
-            description = "${veadoMiniConnectionData.instanceTitleCleaned} - Avatar Name",
+            description = veadoMiniConnectionData.stateIDTitledCurrentAvatarName.stateLabel,
             value = "", allowEmptyValue = true
         )
 
@@ -3531,7 +3354,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
     private fun sendStateCreateMiniNumberedCurrentAvatarName(veadoMiniConnectionData: VeadoMiniConnectionData) =
         sendStateMiniInstancesCreate(
             stateId = veadoMiniConnectionData.stateIDNumberedCurrentAvatarName.stateId,
-            description = "Instance #${veadoMiniConnectionData.instanceNumber} (${veadoMiniConnectionData.instanceTitleCleaned}): ${veadoMiniConnectionData.stateIDNumberedCurrentAvatarName.stateLabel}",
+            description = veadoMiniConnectionData.stateIDNumberedCurrentAvatarName.stateLabel,
             value = "", allowEmptyValue = true
         )
 
@@ -3555,12 +3378,23 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
             value = stateThumbnail, allowEmptyValue = allowEmptyValue, forceUpdate = forceUpdate
         )
 
-    /**
-     * Action for updating the Current Push to Talk State in Touch Portal
-     */
+
+    /** Action for creating the Current Avatar State Name in Touch Portal */
+    private fun sendStateCreateMiniTitledCurrentAvatarThumbnail(veadoMiniConnectionData: VeadoMiniConnectionData) =
+        sendStateMiniInstancesCreate(
+            stateId = veadoMiniConnectionData.stateIDTitledCurrentAvatarThumbnail.stateId,
+            description = veadoMiniConnectionData.stateIDTitledCurrentAvatarThumbnail.stateLabel,
+            value = "", allowEmptyValue = true
+        )
+
+
+    /** Action for Removing the Current Avatar State Name in Touch Portal */
+    private fun sendStateRemoveMiniTitledCurrentAvatarThumbnail(veadoMiniConnectionData: VeadoMiniConnectionData) =
+        sendStateMiniInstancesRemove(stateId = veadoMiniConnectionData.stateIDTitledCurrentAvatarThumbnail.stateId)
+
+    /** Action for updating the Current Push to Talk State in Touch Portal */
     private fun sendStateUpdateMiniPushToTalk(
-        veadoMiniConnectionData: VeadoMiniConnectionData, statePtt: Boolean,
-        allowEmptyValue: Boolean = false, forceUpdate: Boolean = false
+        veadoMiniConnectionData: VeadoMiniConnectionData, statePtt: Boolean
     ) {
         val sendValue = pttMuteString(statePtt)
         veadoMiniConnectionData.getTPStateIdLabelPushToTalkValue(
@@ -3574,22 +3408,30 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
     }
 
     /**
-     * Action for creating the Current Avatar State Name in Touch Portal
+     * Action for updating the Current Avatar Push-To-Talk State in Touch Portal etc.
+     *
+     * Pass [statePushToTalk] = "" (Blank), and [allowEmptyValue] = true to clear value
      */
-    private fun sendStateCreateMiniTitledCurrentAvatarThumbnail(veadoMiniConnectionData: VeadoMiniConnectionData) =
+    private fun sendStateUpdateMiniTitledPushToTalk(
+        veadoMiniConnectionData: VeadoMiniConnectionData, statePushToTalk: String,
+        allowEmptyValue: Boolean = false, forceUpdate: Boolean = false
+    ) =
+        this.sendStateMiniInstancesUpdate(
+            stateId = veadoMiniConnectionData.stateIDTitledPushToTalk.stateId,
+            value = statePushToTalk, allowEmptyValue = allowEmptyValue, forceUpdate = forceUpdate
+        )
+
+    /** Action for creating the Current Push-To-Talk State in Touch Portal */
+    private fun sendStateCreateMiniTitledPushToTalk(veadoMiniConnectionData: VeadoMiniConnectionData) =
         sendStateMiniInstancesCreate(
-            stateId = veadoMiniConnectionData.stateIDTitledCurrentAvatarThumbnail.stateId,
-            description = "${veadoMiniConnectionData.instanceTitleCleaned}: Avatar ${veadoMiniConnectionData.stateIDTitledCurrentAvatarThumbnail.stateLabel}",
+            stateId = veadoMiniConnectionData.stateIDTitledPushToTalk.stateId,
+            description = veadoMiniConnectionData.stateIDTitledPushToTalk.stateLabel,
             value = "", allowEmptyValue = true
         )
 
-
-    /**
-     * Action for Removing the Current Avatar State Name in Touch Portal
-     */
-    private fun sendStateRemoveMiniTitledCurrentAvatarThumbnail(veadoMiniConnectionData: VeadoMiniConnectionData) =
-        sendStateMiniInstancesRemove(stateId = veadoMiniConnectionData.stateIDTitledCurrentAvatarThumbnail.stateId)
-
+    /** Action for Removing the Current Push-To-Talk State in Touch Portal */
+    private fun sendStateRemoveMiniTitledPushToTalk(veadoMiniConnectionData: VeadoMiniConnectionData) =
+        sendStateMiniInstancesRemove(stateId = veadoMiniConnectionData.stateIDTitledPushToTalk.stateId)
 
     /**
      * Action for updating the Current Avatar State Thumbnail in Touch Portal etc.
@@ -3607,26 +3449,47 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
             value = stateThumbnail, allowEmptyValue = allowEmptyValue, forceUpdate = forceUpdate
         )
 
-
-    /**
-     * Action for creating the Current Avatar State Name in Touch Portal
-     */
+    /** Action for creating the Current Avatar State Name in Touch Portal */
     private fun sendStateCreateMiniNumberedCurrentAvatarThumbnail(veadoMiniConnectionData: VeadoMiniConnectionData) =
         sendStateMiniInstancesCreate(
             stateId = veadoMiniConnectionData.stateIDNumberedCurrentAvatarThumbnail.stateId,
-            description = "Instance #${veadoMiniConnectionData.instanceNumber} (${veadoMiniConnectionData.instanceTitleCleaned}): Avatar Thumbnail",
+            description = veadoMiniConnectionData.stateIDNumberedCurrentAvatarThumbnail.stateLabel,
             value = "", allowEmptyValue = true
         )
 
-    /**
-     * Action for Removing the Current Avatar State Name in Touch Portal
-     */
+    /** Action for Removing the Current Avatar State Name in Touch Portal */
     private fun sendStateRemoveMiniNumberedCurrentAvatarThumbnail(veadoMiniConnectionData: VeadoMiniConnectionData) =
         sendStateMiniInstancesRemove(stateId = veadoMiniConnectionData.stateIDNumberedCurrentAvatarThumbnail.stateId)
 
     /**
-     * Action for updating the Instance Window Title in Touch Portal etc.
+     * Action for updating the Current Avatar Push-To-Talk State in Touch Portal etc.
+     *
+     * Pass [statePushToTalk] = "" (Blank), and [allowEmptyValue] = true to clear value
+     *
+     * @see statePrimaryMiniCurrentAvatarStateName
      */
+    private fun sendStateUpdateMiniNumberedPushToTalk(
+        veadoMiniConnectionData: VeadoMiniConnectionData, statePushToTalk: String,
+        allowEmptyValue: Boolean = false, forceUpdate: Boolean = false
+    ) =
+        this.sendStateMiniInstancesUpdate(
+            stateId = veadoMiniConnectionData.stateIDNumberedPushToTalk.stateId,
+            value = statePushToTalk, allowEmptyValue = allowEmptyValue, forceUpdate = forceUpdate
+        )
+
+    /** Action for creating the Current Push-To-Talk State in Touch Portal */
+    private fun sendStateCreateMiniNumberedPushToTalk(veadoMiniConnectionData: VeadoMiniConnectionData) =
+        sendStateMiniInstancesCreate(
+            stateId = veadoMiniConnectionData.stateIDNumberedPushToTalk.stateId,
+            description = veadoMiniConnectionData.stateIDNumberedPushToTalk.stateLabel,
+            value = "", allowEmptyValue = true
+        )
+
+    /** Action for Removing the Current Push-To-Talk State in Touch Portal */
+    private fun sendStateRemoveMiniNumberedPushToTalk(veadoMiniConnectionData: VeadoMiniConnectionData) =
+        sendStateMiniInstancesRemove(stateId = veadoMiniConnectionData.stateIDNumberedPushToTalk.stateId)
+
+    /** Action for updating the Instance Window Title in Touch Portal etc. */
     private inline fun sendStateUpdateFullNumberedInstanceTitle(
         veadoFullConnectionData: VeadoFullConnectionData,
         allowEmptyValue: Boolean = false, forceUpdate: Boolean = false,
@@ -3637,9 +3500,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
             allowEmptyValue = allowEmptyValue, forceUpdate = forceUpdate
         )
 
-    /**
-     * Action for creating the Current Instance Window Title in Touch Portal
-     */
+    /** Action for creating the Current Instance Window Title in Touch Portal */
     private inline fun sendStateCreateFullNumberedInstanceTitle(veadoFullConnectionData: VeadoFullConnectionData) =
         sendStateFullInstancesCreate(
             stateId = veadoFullConnectionData.stateIDNumberedInstanceTitle.stateId,
@@ -3647,16 +3508,11 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
             value = veadoFullConnectionData.instanceTitleCleaned, allowEmptyValue = true
         )
 
-    /**
-     * Action for Removing the Instance Window Title in Touch Portal
-     */
+    /** Action for Removing the Instance Window Title in Touch Portal */
     private inline fun sendStateRemoveFullNumberedInstanceTitle(veadoFullConnectionData: VeadoFullConnectionData) =
         sendStateFullInstancesRemove(stateId = veadoFullConnectionData.stateIDNumberedInstanceTitle.stateId)
 
-    /**
-     * Action for updating the Instance Window Title in Touch Portal etc.
-     *
-     */
+    /** Action for updating the Instance Window Title in Touch Portal etc. */
     private inline fun sendStateUpdateFullTitledInstanceTitle(
         veadoFullConnectionData: VeadoFullConnectionData,
         allowEmptyValue: Boolean = false, forceUpdate: Boolean = false,
@@ -3666,9 +3522,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         allowEmptyValue = allowEmptyValue, forceUpdate = forceUpdate
     )
 
-    /**
-     * Action for creating the Current Instance Window Title in Touch Portal
-     */
+    /** Action for creating the Current Instance Window Title in Touch Portal */
     private inline fun sendStateCreateFullTitledInstanceTitle(veadoFullConnectionData: VeadoFullConnectionData) =
         sendStateFullInstancesCreate(
             stateId = veadoFullConnectionData.stateIDTitledInstanceTitle.stateId,
@@ -3676,9 +3530,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
             value = veadoFullConnectionData.instanceTitleCleaned, allowEmptyValue = true
         )
 
-    /**
-     * Action for Removing the Current Instance Window Title in Touch Portal
-     */
+    /** Action for Removing the Current Instance Window Title in Touch Portal */
     private inline fun sendStateRemoveFullTitledInstanceTitle(veadoFullConnectionData: VeadoFullConnectionData) =
         sendStateFullInstancesRemove(stateId = veadoFullConnectionData.stateIDTitledInstanceTitle.stateId)
 
@@ -3690,7 +3542,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
     private fun sendStateMiniInstancesCreate(
         stateId: String, description: String, value: String = "",
         allowEmptyValue: Boolean = true, forceUpdate: Boolean = false
-    ) { //TODO Might remove parentGroup - SDK gets Category if blank/null
+    ) {
         LOGGER.debug { "sendStateMiniInstancesCreate - Dynamic State Create: ${VeadoTouchPluginConstants.MiniInstances.ID}.state.$stateId with value '$value'" }
         sendTPCreateState(
             categoryId = Categories.MiniInstances.name, stateId = stateId,
@@ -3735,7 +3587,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
     private fun sendStateFullInstancesCreate(
         stateId: String, description: String, value: String = "",
         allowEmptyValue: Boolean = true, forceUpdate: Boolean = false
-    ) { //TODO Might remove parentGroup - SDK gets Category if blank/null
+    ) {
         LOGGER.debug { "sendStateFullInstancesCreate - Dynamic State Create: ${VeadoTouchPluginConstants.FullInstances.ID}.state.$stateId with value '$value'" }
         sendTPCreateState(
             categoryId = Categories.FullInstances.name, stateId = stateId,
@@ -4000,6 +3852,14 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         }
     }
 
+    private fun sendRequestMiniPushToTalkMicGet(connection: Connection) {
+        try {
+            connection.send(channel = channelNodes, requestData = VeadoRequest.getValuePttMini)
+        } catch (ex: Exception) {
+            LOGGER.warn { "Failed to Request Current State for ${connection.connUri}: ${ex.message}" }
+        }
+    }
+
     /**
      * Send request for Push-To-Talk Mic Input
      *
@@ -4049,6 +3909,9 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
             connection.send(
                 channel = channelNodes, VeadoRequest.createListenStateMini(listenerToken)
             )
+            connection.send(
+                channel = channelNodes, VeadoRequest.createListenPttMini(listenerToken)
+            )
         } catch (ex: Exception) {
             LOGGER.debug { "Failed to Request Listener Start for ${connection.connUri}: ${ex.message}; ${ex.stackTraceToString()}" }
         }
@@ -4058,6 +3921,9 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         try {
             connection.send(
                 channel = channelNodes, VeadoRequest.createUnlistenStateMini(listenerToken)
+            )
+            connection.send(
+                channel = channelNodes, VeadoRequest.createUnlistenPttMini(listenerToken)
             )
         } catch (ex: Exception) {
             LOGGER.debug { "Failed to Request Listener Stop for ${connection.connUri}: ${ex.message}; ${ex.stackTraceToString()}" }
@@ -4147,9 +4013,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
 
 
     private fun sendRequestFullStartListener(
-        connection: Connection,
-        nodeType: String,
-        nodeId: String
+        connection: Connection, nodeType: String, nodeId: String
     ) {
         try {
             connection.send(
@@ -4166,9 +4030,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
 
 
     private fun sendRequestFullStopListener(
-        connection: Connection,
-        nodeType: String,
-        nodeId: String
+        connection: Connection, nodeType: String, nodeId: String
     ) {
         try {
             connection.send(
@@ -4249,55 +4111,38 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
                 if (updateMainBranchReleaseData != null) {
                     // Build is Main Release, and Main has update
                     notifyReleaseUpdateMain(updateMainBranchReleaseData)
-
-                } else {
+                } else
                     LOGGER.warn { "Update Check: An Update is available but release information is missing. Please check ${BuildConfig.PLUGIN_RELEASES_UPDATE_CHECK_URI} for updates. Your Version: ${BuildConfig.VERSION_NAME_FULL}" }
-                }
+
 
             } else {
                 val updateBranchReleaseDataDev = updateData.devBranchReleaseData
                 when {
-                    updateMainBranchReleaseData != null && updateBranchReleaseDataDev == null -> {
-                        // Main has update, Dev Version does not
+                    updateMainBranchReleaseData != null && updateBranchReleaseDataDev == null -> { // Main has update, Dev Version does not
                         notifyReleaseUpdateMain(updateMainBranchReleaseData)
                     }
-
-                    updateMainBranchReleaseData == null && updateBranchReleaseDataDev != null -> {
-                        // Dev Version has update, Main Version does not
+                    updateMainBranchReleaseData == null && updateBranchReleaseDataDev != null -> { // Dev Version has update, Main Version does not
                         notifyReleaseUpdateDev(updateBranchReleaseDataDev)
                     }
-
-                    updateMainBranchReleaseData != null && updateBranchReleaseDataDev != null -> {
-                        // Both Exist (Dev Version has update, Main also has update)
+                    updateMainBranchReleaseData != null && updateBranchReleaseDataDev != null -> { // Both Exist (Dev Version has update, Main also has update)
                         notifyReleaseUpdateBoth(updateMainBranchReleaseData, updateBranchReleaseDataDev)
                     }
-
-                    else -> {
-                        // Neither Exist - Shouldn't reach this
+                    else ->  // Neither Exist - Shouldn't reach this
                         LOGGER.warn { "Update Check: An Update is available but release information is missing. Please check ${BuildConfig.PLUGIN_RELEASES_UPDATE_CHECK_URI} for updates. Your Version: ${BuildConfig.VERSION_NAME_FULL}" }
-                    }
-
                 }
-
             }
 
-
-        } else {
+        } else
             LOGGER.info { "Update Check: No update available" }
-        }
 
         // Close & De-reference updateChecker
         updateChecker?.close().also { updateChecker = null }
-
     }
 
-
     /* Update Notification */
-
     private fun processUpdateNotification(
         tpNotificationOptionClickedMessage: TPNotificationOptionClickedMessage, relData: UpdateReleaseData?
     ) {
-
         if (relData == null) {
             LOGGER.debug { "onNotificationOptionClicked - Received NOTIFICATION_UPDATE_ID but updateReleaseData is null" }
             LOGGER.warn { "The update notification clicked is out of date or last check failed" }
@@ -4310,7 +4155,6 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         val notificationIdBreakdown = tpNotificationOptionClickedMessage.notificationId.split(':')
 
         val notificationId = notificationIdBreakdown[0].ifBlank { return }
-
         when (notificationId) {
             NotificationHelper.UpdateIDs.MAIN.id -> {
                 // Main Update Notification
@@ -4318,13 +4162,11 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
                 LOGGER.debug { "onNotificationOptionClicked - Notification ID: Main - Version: $version" }
 
                 val updateReleaseDataMain = updateReleaseDataMain
-
                 if (updateReleaseDataMain == null) {
                     LOGGER.debug { "onNotificationOptionClicked - Received $version but updateReleaseDataMain is null" }
                     LOGGER.warn { "The update notification clicked is out of date or last check failed" }
                     return
                 }
-
                 val versionInfo: ReleaseData =
                     if (version != updateReleaseDataMain.version) {
                         LOGGER.debug { "onNotificationOptionClicked - Received $version but updateReleaseDataMain is ${updateReleaseDataMain.version}" }
@@ -4340,17 +4182,13 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
                             LOGGER.warn { "The update notification clicked is out of date or last check failed" }
                             return
                         }
-
                         newVerRelInfo
                     } else
                         updateReleaseDataMain
 
                 // Process Notification
-                NotificationHelper.respondNotificationClickedUpdateMain(
-                    tpNotificationOptionClickedMessage, versionInfo
-                )
+                NotificationHelper.respondNotificationClickedUpdateMain(tpNotificationOptionClickedMessage, versionInfo)
             }
-
             NotificationHelper.UpdateIDs.DEV.id -> {
                 // Dev Update Notification
                 val version = notificationIdBreakdown[1]
@@ -4379,25 +4217,18 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
                             LOGGER.warn { "The update notification clicked is out of date or last check failed" }
                             return
                         }
-
                         newVerRelInfo
                     } else
                         updateReleaseDataDev
 
-
                 // Process Notification
-                NotificationHelper.respondNotificationClickedUpdateDev(
-                    tpNotificationOptionClickedMessage,
-                    versionInfo
-                )
+                NotificationHelper.respondNotificationClickedUpdateDev(tpNotificationOptionClickedMessage, versionInfo)
             }
-
             NotificationHelper.UpdateIDs.BOTH.id -> {
                 // Main and Dev Update Notification
                 val versionMain = notificationIdBreakdown[1]
                 val versionDev = notificationIdBreakdown[2]
                 LOGGER.debug { "onNotificationOptionClicked - Notification ID: Both - Main Version: $versionMain - Dev Version: $versionDev" }
-
 
                 val updateReleaseDataMain = updateReleaseDataMain
 
@@ -4422,11 +4253,9 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
                             LOGGER.warn { "The update notification clicked is out of date or last check failed" }
                             return
                         }
-
                         newVerRelInfo
                     } else
                         updateReleaseDataMain
-
 
                 val updateReleaseDataDev = updateReleaseDataDev
 
@@ -4451,21 +4280,16 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
                             LOGGER.warn { "The update notification clicked is out of date or last check failed" }
                             return
                         }
-
                         newVerRelInfo
                     } else
                         updateReleaseDataDev
 
-
                 // Process Notification
                 NotificationHelper.respondNotificationClickedUpdateBoth(
-                    tpNotificationOptionClickedMessage,
-                    versionInfoMain,
-                    versionInfo
+                    tpNotificationOptionClickedMessage, versionInfoMain, versionInfo
                 )
 
             }
-
             else -> LOGGER.warn { "Unknown Notification Received" }
         }
     }
@@ -4487,13 +4311,12 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         val notifMainPageInBrowser = NotificationHelper.UpdateOptionIDs.MAIN_PAGE_BROWSER.id
         val notifMainPageCopyLink = NotificationHelper.UpdateOptionIDs.MAIN_PAGE_COPY_LINK.id
 
-        val options: Array<TPNotificationOption> =
-            arrayOf(
-                TPNotificationOption(notifMainDownloadInBrowser, "Download in Browser"),
-                TPNotificationOption(notifMainDownloadCopyLink, "Copy Download Link"),
-                TPNotificationOption(notifMainPageInBrowser, "Open Download Page in Browser"),
-                TPNotificationOption(notifMainPageCopyLink, "Copy Download Page Link")
-            )
+        val options: Array<TPNotificationOption> = arrayOf(
+            TPNotificationOption(notifMainDownloadInBrowser, "Download in Browser"),
+            TPNotificationOption(notifMainDownloadCopyLink, "Copy Download Link"),
+            TPNotificationOption(notifMainPageInBrowser, "Open Download Page in Browser"),
+            TPNotificationOption(notifMainPageCopyLink, "Copy Download Page Link")
+        )
 
         // Assign Release Data to outer variable
         updateReleaseDataMain = mainBranchReleaseData
@@ -4524,13 +4347,12 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         val notifDevPageInBrowser = NotificationHelper.UpdateOptionIDs.DEV_PAGE_BROWSER.id
         val notifDevPageCopyLink = NotificationHelper.UpdateOptionIDs.DEV_PAGE_COPY_LINK.id
 
-        val options: Array<TPNotificationOption> =
-            arrayOf(
-                TPNotificationOption(notifDevDownloadInBrowser, "Download in Browser"),
-                TPNotificationOption(notifDevDownloadCopyLink, "Copy Download Link"),
-                TPNotificationOption(notifDevPageInBrowser, "Open Download Page in Browser"),
-                TPNotificationOption(notifDevPageCopyLink, "Copy Download Page Link")
-            )
+        val options: Array<TPNotificationOption> = arrayOf(
+            TPNotificationOption(notifDevDownloadInBrowser, "Download in Browser"),
+            TPNotificationOption(notifDevDownloadCopyLink, "Copy Download Link"),
+            TPNotificationOption(notifDevPageInBrowser, "Open Download Page in Browser"),
+            TPNotificationOption(notifDevPageCopyLink, "Copy Download Page Link")
+        )
 
         // Assign Release Data to outer variable
         updateReleaseDataDev = devBranchReleaseData
@@ -4573,48 +4395,40 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
             append("\nNewer Main version ($updtVerName) is available at\n$updtURL")
         }
 
-        val options: Array<TPNotificationOption> =
-            arrayOf(
-                TPNotificationOption(
-                    NotificationHelper.UpdateOptionIDs.MAIN_DOWNLOAD_BROWSER.id, "Download Main Version"
-                ),
-                //TPNotificationOption(
-                //    NotificationHelper.UpdateOptionIDs.MAIN_DOWNLOAD_COPY_LINK.id, "Copy Main Download Link"
-                //),
-                TPNotificationOption(
-                    NotificationHelper.UpdateOptionIDs.MAIN_PAGE_BROWSER.id, "Open Main Download Page"
-                ),
-                TPNotificationOption(
-                    NotificationHelper.UpdateOptionIDs.MAIN_PAGE_COPY_LINK.id, "Copy Main Page Link"
-                ),
-                TPNotificationOption(
-                    NotificationHelper.UpdateOptionIDs.DEV_DOWNLOAD_BROWSER.id, "Download Dev Version"
-                ),
-                //TPNotificationOption(
-                //    NotificationHelper.UpdateOptionIDs.DEV_DOWNLOAD_COPY_LINK.id, "Copy Dev Download Link"
-                //),
-                TPNotificationOption(
-                    NotificationHelper.UpdateOptionIDs.DEV_PAGE_BROWSER.id, "Open Dev Download Page"
-                ),
-                TPNotificationOption(
-                    NotificationHelper.UpdateOptionIDs.DEV_PAGE_COPY_LINK.id, "Copy Dev Page Link"
-                )
+        val options: Array<TPNotificationOption> = arrayOf(
+            TPNotificationOption(
+                NotificationHelper.UpdateOptionIDs.MAIN_DOWNLOAD_BROWSER.id, "Download Main Version"
+            ),
+            //TPNotificationOption(
+            //    NotificationHelper.UpdateOptionIDs.MAIN_DOWNLOAD_COPY_LINK.id, "Copy Main Download Link"
+            //),
+            TPNotificationOption(
+                NotificationHelper.UpdateOptionIDs.MAIN_PAGE_BROWSER.id, "Open Main Download Page"
+            ),
+            TPNotificationOption(
+                NotificationHelper.UpdateOptionIDs.MAIN_PAGE_COPY_LINK.id, "Copy Main Page Link"
+            ),
+            TPNotificationOption(
+                NotificationHelper.UpdateOptionIDs.DEV_DOWNLOAD_BROWSER.id, "Download Dev Version"
+            ),
+            //TPNotificationOption(
+            //    NotificationHelper.UpdateOptionIDs.DEV_DOWNLOAD_COPY_LINK.id, "Copy Dev Download Link"
+            //),
+            TPNotificationOption(
+                NotificationHelper.UpdateOptionIDs.DEV_PAGE_BROWSER.id, "Open Dev Download Page"
+            ),
+            TPNotificationOption(
+                NotificationHelper.UpdateOptionIDs.DEV_PAGE_COPY_LINK.id, "Copy Dev Page Link"
             )
+        )
 
-        // Assign Release Data to outer variable
-        updateReleaseDataMain = mainBranchReleaseData
-
-        // Assign Release Data to outer variable
-        updateReleaseDataDev = devBranchReleaseData
+        updateReleaseDataMain = mainBranchReleaseData // Assign Release Data to outer variable
+        updateReleaseDataDev = devBranchReleaseData // Assign Release Data to outer variable
 
         // ID is <baseBothId>:<mainVer>:<devVer>
-        val notificationID =
-            "${NotificationHelper.UpdateIDs.BOTH.id}:${updtVerName}:${updtVerNameDev}"
+        val notificationID = "${NotificationHelper.UpdateIDs.BOTH.id}:${updtVerName}:${updtVerNameDev}"
 
-        // Send Notification
-        veadotubePlugin.sendTPNotification(
-            notificationID, title, message, options
-        )
+        veadotubePlugin.sendTPNotification(notificationID, title, message, options) // Send Notification
     }
 
     /**
@@ -4627,11 +4441,9 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         // TODO Add some logic to display notification if Check fails over several runs
     }
 
-
     /* End of functions for Update Checks */
 
     /* Check Shortcuts etc. */
-
     /** Inline function for actions based on instance type
      *
      * @param instanceType [InstanceID.type] e.g. 'mini'/'veado' (Full)
@@ -4647,9 +4459,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         otherAction: () -> T = { throw IllegalArgumentException("Unknown Instance Type: $instanceType") }
     ): T {
         return when (instanceType) {
-            "mini" -> miniAction()
-            "veado" -> fullAction()
-            else -> otherAction()
+            "mini" -> miniAction(); "veado" -> fullAction(); else -> otherAction()
         }
     }
 
@@ -4667,9 +4477,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         otherAction: (instanceType: String) -> T = { throw IllegalArgumentException("Unknown Instance Type: $it") }
     ): T {
         return when (val instanceType: String = this.id.type) {
-            "mini" -> miniAction()
-            "veado" -> fullAction()
-            else -> otherAction(instanceType)
+            "mini" -> miniAction(); "veado" -> fullAction(); else -> otherAction(instanceType)
         }
     }
 

@@ -35,7 +35,6 @@ abstract class VeadoConnectionData(connection: Connection) {
     val connection: Connection?
         get() = _connection.get()
 
-
     /** Instance this data belongs to */
     val instance: Instance = connection.instance
 
@@ -46,7 +45,6 @@ abstract class VeadoConnectionData(connection: Connection) {
      * See [InstanceID.type]
      */
     val type: String = instance.id.type
-
 
     /** Updates Connection linked to Object
      *
@@ -155,25 +153,15 @@ abstract class VeadoConnectionData(connection: Connection) {
      */
     abstract fun clearInstanceTitle(): Set<InstanceStateIdDescription>
 
-
     /**
-     * UPDATE DESC
-     * Updates State IDs that use the Instance Number
+     * Get Node Properties and Values with Instance # prefix
      *
-     * @return List of the previous State IDs for Removal
      * @throws IllegalStateException If [instanceNumber] has not been set
      */
     @Throws(IllegalStateException::class)
     abstract fun getInstanceNodePropertyNumberValues(map: MutableMap<String, String> = mutableMapOf()): Map<String, String>
 
-    /**
-     * UPDATE DESC
-     * Updates State IDs that use [Instance.title][io.github.dissonantau.bleatkan.instance.Instance.title]
-     *
-     * If nothing exists after the first Dash in the Title, "[InstanceID.type][io.github.dissonantau.bleatkan.instance.InstanceID.type]-[InstanceID.process][io.github.dissonantau.bleatkan.instance.InstanceID.process]" is used
-     *
-     * @return [Pair] with 2 [Set]s - Old State IDs Removed, and New State IDs Added
-     */
+    /** Get Node Properties and Values with Instance Title prefix */
     abstract fun getInstanceNodePropertyTitleValues(map: MutableMap<String, String> = mutableMapOf()): Map<String, String>
 
     /**
@@ -414,7 +402,6 @@ abstract class VeadoConnectionData(connection: Connection) {
         }
     }
 
-
     inline fun generateNodePropertyIdValue(
         nodePrefix: String,
         node: VeadoNodeData, postProcessActions: (id: String, value: String) -> Unit = { _, _ -> }
@@ -430,9 +417,7 @@ abstract class VeadoConnectionData(connection: Connection) {
         }
     }
 
-    /**
-     * Does a Fuzzy Search on the names of a Map of Nodes
-     */
+    /** Does a Fuzzy Search on the names of a Map of Nodes */
     inline fun nodeNameFuzzySearch(
         nodeMap: Map<String, VeadoNodeData>,
         searchString: String, minimumResultRation: Int = 80,
@@ -444,7 +429,6 @@ abstract class VeadoConnectionData(connection: Connection) {
             if (resultRatio >= minimumResultRation) resultAction(resultRatio, node)
         }
     }
-
 
     /** Inline function for actions based on instance type
      *
@@ -471,7 +455,6 @@ abstract class VeadoConnectionData(connection: Connection) {
         }
     }
 
-
     /** Inline function for actions based on Class inheriting [VeadoConnectionData].
      *
      * @param miniConnectionDataAction Action when VeadoMiniConnectionData
@@ -491,7 +474,6 @@ abstract class VeadoConnectionData(connection: Connection) {
     }
 
 }
-
 
 data class UpdateInstanceResult(
     var connection: Connection?,
@@ -522,7 +504,6 @@ data class InstanceStateIdDescription(
         return result
     }
 }
-
 
 interface INodeUpdateResult {
     val nodeCreated: Boolean

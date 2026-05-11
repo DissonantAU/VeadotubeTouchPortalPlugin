@@ -27,7 +27,6 @@ class VeadoFullConnectionData(connection: Connection) : VeadoConnectionData(conn
     var stateIDTitledInstanceTitle = InstanceStateIdDescription("", "")
         private set
 
-
     /**
      * All Generated State IDs for veadotube's Nodes and relevant data
      *
@@ -50,7 +49,6 @@ class VeadoFullConnectionData(connection: Connection) : VeadoConnectionData(conn
     var stateIDNumberedInstanceTitle = InstanceStateIdDescription("", "")
         private set
 
-
     /**
      * All Generated State ID for veadotube's Nodes and relevant data
      *
@@ -62,7 +60,6 @@ class VeadoFullConnectionData(connection: Connection) : VeadoConnectionData(conn
 
 
     private var _currentInstanceNumberedStateIDs: MutableSet<InstanceStateIdDescription>
-
 
     /**
      * Inner Key = node ID
@@ -90,7 +87,6 @@ class VeadoFullConnectionData(connection: Connection) : VeadoConnectionData(conn
      */
     private val nodesList: MutableMap<String, MutableMap<String, out VeadoNodeData>>
 
-
     init {
         _currentInstanceTitleStateIDs = mutableSetOf()
         _currentInstanceNumberedStateIDs = mutableSetOf()
@@ -108,7 +104,6 @@ class VeadoFullConnectionData(connection: Connection) : VeadoConnectionData(conn
         /** Generate Instance Titles */
         refreshInstanceTitle()
     }
-
 
     /**
      * All Instance Nodes.
@@ -130,7 +125,6 @@ class VeadoFullConnectionData(connection: Connection) : VeadoConnectionData(conn
 
             return newMap
         }
-
 
     /**
      * Map of all [VeadoStateNodeData] available
@@ -158,7 +152,6 @@ class VeadoFullConnectionData(connection: Connection) : VeadoConnectionData(conn
     val getAllNodesNumber: Map<String, VeadoNumberNodeData>
         get() = nodesNumberMap.toMap()
 
-
     /**
      * Map of all [VeadoBooleanNodeData] available
      *
@@ -171,7 +164,6 @@ class VeadoFullConnectionData(connection: Connection) : VeadoConnectionData(conn
      */
     val getAllNodesBoolean: Map<String, VeadoBooleanNodeData>
         get() = nodesBooleanMap.toMap()
-
 
     /**
      * Searches Nodes by Name using Fuzzy String matching
@@ -282,7 +274,6 @@ class VeadoFullConnectionData(connection: Connection) : VeadoConnectionData(conn
         }
         return false
     }
-
 
     /**
      * Updates [instanceTitleSimplified] with latest Title and fully refreshes [currentInstanceTitleStateIDs] with current Node State IDs
@@ -460,7 +451,6 @@ class VeadoFullConnectionData(connection: Connection) : VeadoConnectionData(conn
 
     inline val tpStateIDInstanceNodePrefixTitle; get() = "$instanceTitleSimplified.nodes."
 
-
     /**
      * Update Node from Message
      *
@@ -473,7 +463,6 @@ class VeadoFullConnectionData(connection: Connection) : VeadoConnectionData(conn
      * @param message Result Message. Must **not** be [ResultMessage.ResultMessageWithNodeEntryList]. [ResultMessage.ResultMessageWithInstanceInfo] are ignored
      *
      * @return Whether state was updated - false means the state is already the one provided
-     *
      */
     @Throws(IllegalArgumentException::class)
     fun updateStateNodeCurrentState(message: ResultMessage): INodeUpdateResult? {
@@ -490,7 +479,6 @@ class VeadoFullConnectionData(connection: Connection) : VeadoConnectionData(conn
                 throw IllegalArgumentException("Message type can not be ResultMessageWithNodeEntryList")
         }
     }
-
 
     /**
      * Update Node Value
@@ -511,7 +499,6 @@ class VeadoFullConnectionData(connection: Connection) : VeadoConnectionData(conn
                 updateNodeStates(message.id, message.name, payload)
         }
     }
-
 
     /**
      * Update Current State
@@ -541,7 +528,6 @@ class VeadoFullConnectionData(connection: Connection) : VeadoConnectionData(conn
             nodeOldName = nameUpdated, nodeData = node
         )
     }
-
 
     /**
      * Replaces all states
@@ -573,7 +559,6 @@ class VeadoFullConnectionData(connection: Connection) : VeadoConnectionData(conn
         )
     }
 
-
     /**
      * Updates a State Thumbnail, creating the state if it doesn't exist
      *
@@ -602,7 +587,6 @@ class VeadoFullConnectionData(connection: Connection) : VeadoConnectionData(conn
         )
     }
 
-
     /**
      * Updates a State Thumbnail, creating the state if it doesn't exist
      *
@@ -621,7 +605,6 @@ class VeadoFullConnectionData(connection: Connection) : VeadoConnectionData(conn
 
         return Triple(thumbnailUpdated, node, updateState)
     }
-
 
     /**
      * Clears a State Thumbnail
@@ -661,7 +644,6 @@ class VeadoFullConnectionData(connection: Connection) : VeadoConnectionData(conn
             nodeOldName = nameUpdated, nodeData = node
         )
     }
-
 
     //    /**
 //     * Get Value of Boolean Node
@@ -749,7 +731,6 @@ class VeadoFullConnectionData(connection: Connection) : VeadoConnectionData(conn
             nodeOldName = nameUpdated, nodeData = node
         )
     }
-
 
     /** Update Nodes
      *

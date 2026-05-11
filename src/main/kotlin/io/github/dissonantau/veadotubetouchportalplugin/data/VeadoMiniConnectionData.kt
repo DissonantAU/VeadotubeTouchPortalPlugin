@@ -1,6 +1,5 @@
 package io.github.dissonantau.veadotubetouchportalplugin.data
 
-
 import io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPluginConstants
 import io.github.dissonantau.bleatkan.connection.Connection
 import io.github.dissonantau.bleatkan.message.ResultMessage
@@ -37,7 +36,6 @@ class VeadoMiniConnectionData(connection: Connection) : VeadoConnectionData(conn
 
     private var _currentInstanceTitleStateIDs: MutableSet<InstanceStateIdDescription>
 
-
     /**
      * All Generated State ID for veadotube's Nodes and relevant data
      *
@@ -48,7 +46,6 @@ class VeadoMiniConnectionData(connection: Connection) : VeadoConnectionData(conn
         get() = _currentInstanceNumberedStateIDs.toSet()
 
     private var _currentInstanceNumberedStateIDs: MutableSet<InstanceStateIdDescription>
-
 
     /**
      * Generated State ID for veadotube mini's Window Title
@@ -69,7 +66,6 @@ class VeadoMiniConnectionData(connection: Connection) : VeadoConnectionData(conn
         /** Generate Instance Titles */
         refreshInstanceTitle()
     }
-
 
     /** Default Mini Avatars Node */
     val nodeAvatars = VeadoStateNodeData("mini", "avatar state", "stateEvents")
@@ -122,7 +118,6 @@ class VeadoMiniConnectionData(connection: Connection) : VeadoConnectionData(conn
      * Current State Thumbnail
      *
      * Prevents deletion if several thumbnails are fetched and pushes the current state out of the LRU Maps
-     *
      */
     private val currentStateThumbnail: VeadoThumbnail?
         get() = nodeAvatars.currentStateThumbnail
@@ -154,7 +149,6 @@ class VeadoMiniConnectionData(connection: Connection) : VeadoConnectionData(conn
     @Suppress("MemberVisibilityCanBePrivate")
     val stateIDTitledInstanceTitleLong
         get() = "${baseStateID}.$stateIDTitledInstanceTitle"
-
 
     /**
      * Generated State ID for veadotube mini's Current Avatar Name
@@ -216,7 +210,6 @@ class VeadoMiniConnectionData(connection: Connection) : VeadoConnectionData(conn
         return false
     }
 
-
     /**
      * Updates [instanceTitleSimplified] with latest Title and fully refreshes [currentInstanceTitleStateIDs] with current Node State IDs
      *
@@ -258,7 +251,6 @@ class VeadoMiniConnectionData(connection: Connection) : VeadoConnectionData(conn
         return Pair(removedIds, addedIds)
     }
 
-
     /**
      * Updates State IDs that use [instanceNumber]
      *
@@ -294,7 +286,6 @@ class VeadoMiniConnectionData(connection: Connection) : VeadoConnectionData(conn
         return Pair(removedIds, addedIds)
     }
 
-
     /**
      * Clears [currentInstanceNumberedStateIDs] and returns the Node State IDs
      *
@@ -320,12 +311,10 @@ class VeadoMiniConnectionData(connection: Connection) : VeadoConnectionData(conn
         return currentIds
     }
 
-
     private inline fun allNodes(nodeActions: (VeadoNodeData) -> Unit = {}) {
         nodeActions(nodeAvatars)
         nodeActions(nodePushToTalk)
     }
-
 
     override fun getInstanceNodePropertyNumberValues(map: MutableMap<String, String>): Map<String, String> {
         allNodes { node ->
@@ -350,7 +339,6 @@ class VeadoMiniConnectionData(connection: Connection) : VeadoConnectionData(conn
         return map
     }
 
-
     /**
      * Generated State ID for mini Window Title
      *
@@ -370,7 +358,6 @@ class VeadoMiniConnectionData(connection: Connection) : VeadoConnectionData(conn
     @Suppress("MemberVisibilityCanBePrivate")
     var stateIDNumberedInstanceTitle = InstanceStateIdDescription("", "")
         private set
-
 
     /**
      * Generated State ID for mini Current Avatar Name
@@ -412,7 +399,6 @@ class VeadoMiniConnectionData(connection: Connection) : VeadoConnectionData(conn
     var stateIDNumberedCurrentAvatarThumbnail = InstanceStateIdDescription("", "")
         private set
 
-
     /**
      * Replaces all states
      *
@@ -434,12 +420,10 @@ class VeadoMiniConnectionData(connection: Connection) : VeadoConnectionData(conn
     fun updateCurrentState(stateID: BleatkanStatePeek): Boolean =
         nodeAvatars.updateCurrentState(stateID)
 
-
     /** Clear currentStateThumbnail, Maps, etc. */
     @Suppress("MemberVisibilityCanBePrivate")
     fun clearedStateThumbnail(veadoState: VeadoState) =
         nodeAvatars.clearedStateThumbnail(veadoState)
-
 
     /** Updates a State Thumbnail, creating the state if it doesn't exist
      *
