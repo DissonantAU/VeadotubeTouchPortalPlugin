@@ -90,12 +90,9 @@ class VeadoStateNodeData(id: String, name: String, type: String = "stateEvents")
 
     /**
      * ArrayList of all [VeadoState] available
-     *
-     * In order received from API, so they should be in the order they appear in Veadotube
-     *
-     * IDs are unique but Names can be duplicates.
-     *
-     * Work with this should probably be synchronised using the connection obj
+     * - In order received from API, so they should be in the order they appear in Veadotube
+     * - In mini 2.0 IDs are unique but Names can be duplicates, 2.1 and later Name = ID and should be unique
+     * - Work with this should probably be synchronised using the connection obj
      */
     var statesAll = ArrayList<VeadoState>()
         private set
@@ -108,11 +105,9 @@ class VeadoStateNodeData(id: String, name: String, type: String = "stateEvents")
     private val statesByID = HashMap<String, VeadoState>()
 
     /**
-     * Pair with the current Avatar State with `ID` and `Name`
-     *
-     * Names can be duplicates, so the Current state may not match a value in the collectionStates
-     *
-     * If there's no match, it should request a new list in case a new value was added since list was fetched
+     * Object for the current Avatar State with `ID`, `Name`, etc.
+     * - Names can be duplicates, so the current state may not match a value in the collectionStates
+     * - If there's no match, it should request a new list in case a new value was added since list was fetched
      */
     @Suppress("MemberVisibilityCanBePrivate")
     var currentState: VeadoState? = null
@@ -127,9 +122,7 @@ class VeadoStateNodeData(id: String, name: String, type: String = "stateEvents")
 
     /**
      * Current State Thumbnail
-     *
-     * Prevents deletion if several thumbnails are fetched and pushes the current state out of the LRU Maps
-     *
+     * - Prevents deletion if several thumbnails are fetched and pushes the current state out of the LRU Maps
      */
     @Suppress("MemberVisibilityCanBePrivate")
     var currentStateThumbnail: VeadoThumbnail? = null
@@ -288,8 +281,7 @@ class VeadoStateNodeData(id: String, name: String, type: String = "stateEvents")
      * @return Pair: First = Boolean, if thumbnail was Updated; Second = VeadoState Updated, Third = VeadoThumbnail?, thumbnail object if updated
      */
     fun updateStateThumbnail(
-        payload: BleatkanStateThumbnail,
-        updateToMRU: Boolean = false
+        payload: BleatkanStateThumbnail, updateToMRU: Boolean = false
     ): Triple<Boolean, VeadoState, VeadoThumbnail?> {
         // Get State, create if it doesn't exist (Thumbnail Payload is used, but Thumbnail info not used so se get accurate update response)
         val updateState: VeadoState = statesByID.getOrPut(payload.state) { VeadoState(payload) }
@@ -332,21 +324,15 @@ class VeadoStateNodeData(id: String, name: String, type: String = "stateEvents")
     }
 
 
-    /**
-     * Get [VeadoState] from this connection by State ID
-     *
-     * ID = Name from Mini 2.1
-     */
+    /** Get [VeadoState] from this connection by State ID - ID = Name from Mini 2.1 */
     fun getStateByID(stateID: String): VeadoState? = statesByID[stateID]
 
 
     /**
-     * Get [VeadoState] from this Connection/Instance by State Name
-     *
+     * Get [VeadoState] from this connection by State Name
      * - if an exact match is found, it is chosen
      * - If no exact match is found, the first result that that contains the give name is returned (ignoreCase is used here)
      * - if none are found, null is returned
-     *
      */
     fun getStateByNameContains(stateName: String, ignoreCase: Boolean = false): VeadoState? {
 

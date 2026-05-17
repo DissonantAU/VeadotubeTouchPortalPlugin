@@ -4,7 +4,6 @@ import io.github.dissonantau.bleatkan.connection.Connection
 import io.github.dissonantau.bleatkan.instance.Instance
 import io.github.dissonantau.bleatkan.instance.InstanceID
 import io.github.oshai.kotlinlogging.KotlinLogging
-import me.xdrop.fuzzywuzzy.FuzzySearch
 import java.lang.ref.WeakReference
 import java.util.Comparator
 import kotlin.jvm.Throws
@@ -65,12 +64,8 @@ abstract class VeadoConnectionData(connection: Connection, instanceNumber: Int) 
      * Related to Connection order (1st 2nd, etc.)
      */
     @Suppress("MemberVisibilityCanBePrivate")
-    var instanceNumber = -1
+    var instanceNumber = instanceNumber
         internal set
-
-    init {
-        this.instanceNumber = instanceNumber
-    }
 
     /** Set Stable Instance Number
      *
@@ -92,8 +87,8 @@ abstract class VeadoConnectionData(connection: Connection, instanceNumber: Int) 
     /** Instance Title
      *
      * Simplified Title after first Dash, if one is set
-     * * only Letters and Digits are kept - no spaces, etc. ( e.g. 'veadotube mini - my @ title 3!' becomes 'mytitle3')
-     *
+     * - only contains Letters, Digits, Dashes('-'), and Underscores ('_') from the title following the first dash after the program name.
+     * - e.g. 'veadotube mini - my @ title 3!' becomes 'mytitle3'
      * If no non-default title exists (e.g. 'veadotube mini') the Type & Process ID are used (mini123456)
      *
      * This should be updated if title changes using [refreshInstanceTitle]
@@ -105,11 +100,9 @@ abstract class VeadoConnectionData(connection: Connection, instanceNumber: Int) 
     /** Instance Title
      *
      * Cleaned Title after first Dash, if one is set
-     * * Trimmed ( e.g. 'veadotube mini - my @ title 3!' becomes 'my @ title 3!')
-     *
-     * If no non-default title exists (e.g. 'veadotube mini') the Type & Process ID are used (mini-123456)
-     *
-     * This should be updated if title changes using [refreshInstanceTitle]
+     * - Trimmed ( e.g. 'veadotube mini - my @ title 3!' becomes 'my @ title 3!')
+     * - If no non-default title exists (e.g. 'veadotube mini') the Type & Process ID are used (mini-123456)
+     * - This should be updated if title changes using [refreshInstanceTitle]
      */
     @Suppress("MemberVisibilityCanBePrivate")
     var instanceTitleCleaned: String = ""
@@ -117,16 +110,13 @@ abstract class VeadoConnectionData(connection: Connection, instanceNumber: Int) 
 
     /**
      * Base State ID used for Dynamically creating and deleting States
-     *
-     * Excludes trailing dot (.)
-     *
-     * e.g. io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.MiniInstances.state
+     * - Excludes trailing dot (.)
+     * - e.g. io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.MiniInstances.state
      */
     abstract val baseStateID: String
 
     /**
      * Updates State IDs that use the Instance Number
-     *
      * @return List of the previous State IDs for Removal
      * @throws IllegalStateException If [instanceNumber] has not been set
      */
@@ -135,16 +125,13 @@ abstract class VeadoConnectionData(connection: Connection, instanceNumber: Int) 
 
     /**
      * Updates State IDs that use [Instance.title][io.github.dissonantau.bleatkan.instance.Instance.title]
-     *
-     * If nothing exists after the first Dash in the Title, "[InstanceID.type][io.github.dissonantau.bleatkan.instance.InstanceID.type]-[InstanceID.process][io.github.dissonantau.bleatkan.instance.InstanceID.process]" is used
-     *
+     * - If nothing exists after the first Dash in the Title, "[InstanceID.type][io.github.dissonantau.bleatkan.instance.InstanceID.type]-[InstanceID.process][io.github.dissonantau.bleatkan.instance.InstanceID.process]" is used
      * @return [Pair] with 2 [Set]s - Old State IDs Removed, and New State IDs Added
      */
     abstract fun refreshInstanceTitle(): Pair<Set<InstanceStateIdDescription>, Set<InstanceStateIdDescription>>
 
     /**
      * Clears [instanceNumber] based Title IDs and returns removed IDs for processing
-     *
      * @see refreshInstanceNumber
      * @return [Set] - Old State IDs
      */
@@ -402,19 +389,6 @@ abstract class VeadoConnectionData(connection: Connection, instanceNumber: Int) 
         }
     }
 
-    /** Does a Fuzzy Search on the names of a Map of Nodes */
-    inline fun nodeNameFuzzySearch(
-        nodeMap: Map<String, VeadoNodeData>,
-        searchString: String, minimumResultRation: Int = 80,
-        resultAction: (resultRatio: Int, node: VeadoNodeData) -> Unit
-    ) {
-        nodeMap.forEach { nodeEntry ->
-            val node = nodeEntry.value
-            val resultRatio = FuzzySearch.ratio(searchString, node.name)
-            if (resultRatio >= minimumResultRation) resultAction(resultRatio, node)
-        }
-    }
-
     /** Inline function for actions based on instance type
      *
      * @param nodeType e.g. 'stateEvents'/'boolean'/'number'
@@ -446,7 +420,7 @@ abstract class VeadoConnectionData(connection: Connection, instanceNumber: Int) 
      * @param fullConnectionDataAction Action when VeadoFullConnectionData
      * @param otherAction Action when not one of the above Classes, passed as [VeadoConnectionData]
      */
-    inline fun VeadoConnectionData.perConnectionDataAction(
+    inline fun perConnectionDataType(
         miniConnectionDataAction: (VeadoMiniConnectionData) -> Unit,
         fullConnectionDataAction: (VeadoFullConnectionData) -> Unit,
         otherAction: (VeadoConnectionData) -> Unit = {}
@@ -460,11 +434,12 @@ abstract class VeadoConnectionData(connection: Connection, instanceNumber: Int) 
 }
 
 data class UpdateInstanceResult(
-    var connection: Connection?,
-    var connectionData: VeadoConnectionData?,
-    var oldIDs: Set<InstanceStateIdDescription>,
-    var newTitleIDs: Set<InstanceStateIdDescription>,
-    var newNumberIDs: Set<InstanceStateIdDescription>
+    val connection: Connection?,
+    val connectionData: VeadoConnectionData?,
+    val oldTitleIDs: Set<InstanceStateIdDescription>,
+    val oldNumberIDs: Set<InstanceStateIdDescription>,
+    val newTitleIDs: Set<InstanceStateIdDescription>,
+    val newNumberIDs: Set<InstanceStateIdDescription>
 )
 
 data class InstanceStateIdDescription(

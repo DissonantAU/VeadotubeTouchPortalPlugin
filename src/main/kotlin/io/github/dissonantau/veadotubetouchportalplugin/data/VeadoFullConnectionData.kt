@@ -4,9 +4,11 @@ import io.github.dissonantau.bleatkan.message.*
 import io.github.dissonantau.bleatkan.message.ResultPayload.ResultPayloadPng as BleatkanStateThumbnail
 import io.github.dissonantau.bleatkan.message.ResultPayload.ResultPayloadState as BleatkanStatePeek
 import io.github.dissonantau.bleatkan.message.ResultPayload.ResultPayloadStateList as BleatkanStateList
+import io.github.dissonantau.bleatkan.message.ResultMessage.ResultMessageWithPayload as BleatkanPayload
+import io.github.dissonantau.bleatkan.message.ResultMessage.ResultMessageWithPayloadBoolean as BleatkanPayloadBoolean
+import io.github.dissonantau.bleatkan.message.ResultMessage.ResultMessageWithPayloadNumber as BleatkanPayloadNumber
 import io.github.dissonantau.bleatkan.connection.Connection
 import io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPluginConstants
-import java.util.SortedSet
 import kotlin.collections.forEach
 import kotlin.collections.toSet
 
@@ -19,10 +21,8 @@ class VeadoFullConnectionData(connection: Connection, instanceNumber: Int) :
 
     /**
      * Generated State ID for veadotube's Window Title
-     *
-     * Excludes base section, used for updating State
-     *
-     * e.g. myTitle.title
+     * - Excludes base section, used for updating State
+     * - e.g. myTitle.title
      */
     @Suppress("MemberVisibilityCanBePrivate")
     var stateIDTitledInstanceTitle = InstanceStateIdDescription("", "")
@@ -30,8 +30,7 @@ class VeadoFullConnectionData(connection: Connection, instanceNumber: Int) :
 
     /**
      * All Generated State IDs for veadotube's Nodes and relevant data
-     *
-     * e.g. myTitle.title
+     * - e.g. myTitle.title
      */
     @Suppress("MemberVisibilityCanBePrivate")
     val currentInstanceTitleStateIDs: Set<InstanceStateIdDescription>
@@ -41,10 +40,8 @@ class VeadoFullConnectionData(connection: Connection, instanceNumber: Int) :
 
     /**
      * Generated State ID for mini Windows Title
-     *
-     * Excludes base section, used for updating State
-     *
-     * e.g. myTitle.title
+     * - Excludes base section, used for updating State
+     * - e.g. myTitle.title
      */
     @Suppress("MemberVisibilityCanBePrivate")
     var stateIDNumberedInstanceTitle = InstanceStateIdDescription("", "")
@@ -52,8 +49,7 @@ class VeadoFullConnectionData(connection: Connection, instanceNumber: Int) :
 
     /**
      * All Generated State ID for veadotube's Nodes and relevant data
-     *
-     * e.g. myTitle.title
+     * - e.g. myTitle.title
      */
     @Suppress("MemberVisibilityCanBePrivate")
     val currentInstanceNumberedStateIDs: Set<InstanceStateIdDescription>
@@ -62,28 +58,27 @@ class VeadoFullConnectionData(connection: Connection, instanceNumber: Int) :
     private var _currentInstanceNumberedStateIDs: MutableSet<InstanceStateIdDescription>
 
     /**
-     * Inner Key = node ID
-     * Inner Value = Node Data Object
+     * - Inner Key = node ID
+     * - Inner Value = Node Data Object
      */
     private val nodesStateEventsMap: MutableMap<String, VeadoStateNodeData>
 
     /**
-     * Inner Key = node ID
-     * Inner Value = Node Data Object
+     * - Inner Key = node ID
+     * - Inner Value = Node Data Object
      */
     private val nodesNumberMap: MutableMap<String, VeadoNumberNodeData>
 
     /**
-     * Inner Key = node ID
-     * Inner Value = Node Data Object
+     * - Inner Key = node ID
+     * - Inner Value = Node Data Object
      */
     private val nodesBooleanMap: MutableMap<String, VeadoBooleanNodeData>
 
     /**
      * Outer Key = Type ('stateEvents'/'boolean'/'number')
-     *
-     * Inner Key = node ID
-     * Inner Value = Node Data Object
+     * - Inner Key = node ID
+     * - Inner Value = Node Data Object
      */
     private val nodesList: MutableMap<String, MutableMap<String, out VeadoNodeData>>
 
@@ -108,119 +103,62 @@ class VeadoFullConnectionData(connection: Connection, instanceNumber: Int) :
 
     /**
      * All Instance Nodes.
+     * - Only returns Node Types with at least one Node
      *
-     * Only returns Node Types with at least one Node
-     *
-     * Outer Key = Type ('stateEvents'/'boolean'/'number')
-     *
-     * Inner Key = node ID
-     * Inner Value = Node Data Object
+     * - Outer Key = Type ('stateEvents'/'boolean'/'number')
+     * - Inner Key = node ID
+     * - Inner Value = Node Data Object
      */
     val nodesAll: Map<String, Map<String, VeadoNodeData>>
         get() {
             val newMap: MutableMap<String, Map<String, VeadoNodeData>> = mutableMapOf()
-
             nodesList.forEach {
                 if (it.value.isNotEmpty()) newMap[it.key] = it.value.toMap()
             }
-
             return newMap
         }
 
     /**
      * Map of all [VeadoStateNodeData] available
+     * - Inner Key = node ID
+     * - Inner Value = Node Data Object
      *
-     * Inner Key = node ID
-     * Inner Value = Node Data Object
-     *
-     * IDs are unique but Names can be duplicates.
-     *
-     * Work with this should probably be synchronised using the connection obj
+     * - IDs are unique but Names can be duplicates.
+     * - Work with this should probably be synchronised using the connection obj
      */
     val getAllStateEventNodes: Map<String, VeadoStateNodeData>; get() = nodesStateEventsMap.toMap()
 
     /**
      * Map of all [VeadoNumberNodeData] available
+     * - Inner Key = node ID
+     * - Inner Value = Node Data Object
      *
-     * Inner Key = node ID
-     * Inner Value = Node Data Object
-     *
-     * IDs are unique but Names can be duplicates.
-     *
-     * Work with this should probably be synchronised using the connection obj
+     * - IDs are unique but Names can be duplicates.
+     * - Work with this should probably be synchronised using the connection obj
      */
     val getAllNodesNumber: Map<String, VeadoNumberNodeData>; get() = nodesNumberMap.toMap()
 
     /**
      * Map of all [VeadoBooleanNodeData] available
+     * - Inner Key = node ID
+     * - Inner Value = Node Data Object
      *
-     * Inner Key = node ID
-     * Inner Value = Node Data Object
-     *
-     * IDs are unique but Names can be duplicates.
-     *
-     * Work with this should probably be synchronised using the connection obj
+     * - IDs are unique but Names can be duplicates.
+     * - Work with this should probably be synchronised using the connection obj
      */
     val getAllNodesBoolean: Map<String, VeadoBooleanNodeData>; get() = nodesBooleanMap.toMap()
 
-    /**
-     * Searches Nodes by Name using Fuzzy String matching
-     *
-     * Match Threshold of 80 (Simple Ratio, see [https://github.com/xdrop/fuzzywuzzy])
-     *
-     * @return Closest Matching [VeadoNodeData], or null if no matches exceed Threshold
-     */
-    fun findNodeByName(nodeType: String = "", searchString: String): VeadoNodeData? {
-        if (searchString.isBlank()) return null
+    /** Value used as first identifier for TP Numbered Dynamic States - i.e. ...MiniInstances.state.***1***.title */
+    inline val tpIdPrefixNumber; get() = instanceNumber.toString()
 
-        val candidates: SortedSet<Pair<Int, VeadoNodeData>> = sortedSetOf(COMPARE_INSTANCE_BY_NAME)
-
-        nodeType.perNodeTypeAction(
-            stateEventsAction = {
-                nodeNameFuzzySearch(nodesStateEventsMap, searchString) { resultRatio, node ->
-                    candidates.add(Pair(resultRatio, node))
-                }
-            },
-            booleanAction = {
-                nodeNameFuzzySearch(nodesBooleanMap, searchString) { resultRatio, node ->
-                    candidates.add(Pair(resultRatio, node))
-                }
-            },
-            numberAction = {
-                nodeNameFuzzySearch(nodesNumberMap, searchString) { resultRatio, node ->
-                    candidates.add(Pair(resultRatio, node))
-                }
-            },
-            otherAction = {
-                LOGGER.debug {
-                    if (nodeType.isBlank()) "findNodeByName: Node Type is Blank"
-                    else "findNodeByName: Unknown Node Type: '$nodeType'"
-                }
-
-                // Process All
-                nodeNameFuzzySearch(nodesStateEventsMap, searchString) { resultRatio, node ->
-                    candidates.add(Pair(resultRatio, node))
-                }
-                nodeNameFuzzySearch(nodesBooleanMap, searchString) { resultRatio, node ->
-                    candidates.add(Pair(resultRatio, node))
-                }
-                nodeNameFuzzySearch(nodesNumberMap, searchString) { resultRatio, node ->
-                    candidates.add(Pair(resultRatio, node))
-                }
-            }
-        )
-
-        return candidates.firstOrNull()?.second
-    }
-
+    /** Value used as first identifier for TP Titled Dynamic States - i.e. ...MiniInstances.state.***myTitle***.title */
+    inline val tpIdPrefixTitle; get() = instanceTitleSimplified
 
     /* StateID Strings for Full Instances */
     /**
      * Base State ID used for Dynamically creating and deleting States
-     *
-     * Excludes trailing dot (.)
-     *
-     * e.g. io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.FullInstances.state
+     * - Excludes trailing dot (.)
+     * - e.g. io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.FullInstances.state
      */
     override val baseStateID = "${VeadoTouchPluginConstants.FullInstances.ID}.state"
 
@@ -241,7 +179,6 @@ class VeadoFullConnectionData(connection: Connection, instanceNumber: Int) :
 
     /**
      * Checks if Instance Title matches last processed, updates Title Cleaned & Simplified.
-     *
      * @return true if title was updated, false if not
      */
     fun refreshInstanceTitleCalc(): Boolean {
@@ -267,27 +204,22 @@ class VeadoFullConnectionData(connection: Connection, instanceNumber: Int) :
 
     /**
      * Updates [instanceTitleSimplified] with latest Title and fully refreshes [currentInstanceTitleStateIDs] with current Node State IDs
-     *
-     * [instanceTitleCleaned], and State IDs that use [Instance.title][io.github.dissonantau.bleatkan.instance.Instance.title] are also Updated.
-     *
-     * [instanceTitleSimplified] only contains Letters, Digits, Dashes('-'), and Underscores ('_') from the title following the first dash after the program name.
-     *
-     * If nothing exists after the first Dash in the Title, "[InstanceID.type][io.github.dissonantau.bleatkan.instance.InstanceID.type]-[InstanceID.process][io.github.dissonantau.bleatkan.instance.InstanceID.process]" is used instead.
-     *
+     * - [instanceTitleCleaned], and State IDs that use [Instance.title][io.github.dissonantau.bleatkan.instance.Instance.title] are also Updated.
+     * - If nothing exists after the first Dash in the Title, "[InstanceID.type][io.github.dissonantau.bleatkan.instance.InstanceID.type]-[InstanceID.process][io.github.dissonantau.bleatkan.instance.InstanceID.process]" is used instead.
      * @return [Pair] with 2 [Set]s - Old State IDs Removed, and New State IDs Added
      */
     @Suppress("MemberVisibilityCanBePrivate")
     override fun refreshInstanceTitle(): Pair<Set<InstanceStateIdDescription>, Set<InstanceStateIdDescription>> {
         refreshInstanceTitleCalc()
 
-        val tpIdPrefix = instanceTitleSimplified
+        val tpIdPrefix = tpIdPrefixTitle
         val tpLabelPrefix = "Instance $instanceTitleCleaned (#$instanceNumber)"
 
         // List to put new IDs
         val listNewIDs: MutableSet<InstanceStateIdDescription> = mutableSetOf()
 
         stateIDTitledInstanceTitle = InstanceStateIdDescription("$tpIdPrefix.title", "$tpLabelPrefix: Title")
-        //listNewIDs.add(stateIDTitledInstanceTitle)
+        listNewIDs.add(stateIDTitledInstanceTitle)
 
         nodesList.entries.forEach { nodeType ->
             val nodeTypeName = nodeType.key
@@ -312,7 +244,6 @@ class VeadoFullConnectionData(connection: Connection, instanceNumber: Int) :
 
     /**
      * Clears [currentInstanceTitleStateIDs] and returns removed IDs for processing
-     *
      * @see refreshInstanceTitle
      * @return [Set] - Old State IDs
      */
@@ -323,7 +254,14 @@ class VeadoFullConnectionData(connection: Connection, instanceNumber: Int) :
         return currentIds
     }
 
-    override fun getInstanceNodePropertyNumberValues(map: MutableMap<String, String>): Map<String, String> {
+    override fun getInstanceNodePropertyNumberValues(map: MutableMap<String, String>): Map<String, String> =
+        getInstanceNodePropertyValues(tpIdPrefixNumber, map)
+
+    override fun getInstanceNodePropertyTitleValues(map: MutableMap<String, String>): Map<String, String> =
+        getInstanceNodePropertyValues(tpIdPrefixTitle, map)
+
+    fun getInstanceNodePropertyValues(tpIdPrefix: String, map: MutableMap<String, String>): Map<String, String> {
+        map["$tpIdPrefix.title"] = instanceTitleCleaned
         nodesList.entries.forEach { nodeType ->
             val nodeTypeName = nodeType.key
             nodeTypeName.perNodeTypeAction(
@@ -332,31 +270,10 @@ class VeadoFullConnectionData(connection: Connection, instanceNumber: Int) :
                 numberAction = { nodesNumberMap.values },
                 otherAction = { LOGGER.debug { "Unknown Node Type: $nodeTypeName" }; null /*throw IllegalStateException("Unknown Node Type: $nodeTypeName") */ }
             )?.forEach { node ->
-                generateNodePropertyIdValue(
-                    nodePrefix = instanceNumber.toString(),
-                    node = node
-                ) { id, value -> map[id] = value }
+                generateNodePropertyIdValue(nodePrefix = tpIdPrefix, node = node)
+                { id, value -> map[id] = value }
             }
         }
-
-        return map
-    }
-
-    override fun getInstanceNodePropertyTitleValues(map: MutableMap<String, String>): Map<String, String> {
-        nodesList.entries.forEach { nodeType ->
-            val nodeTypeName = nodeType.key
-            nodeTypeName.perNodeTypeAction(
-                stateEventsAction = { nodesStateEventsMap.values },
-                booleanAction = { nodesBooleanMap.values },
-                numberAction = { nodesNumberMap.values },
-                otherAction = { LOGGER.debug { "Unknown Node Type: $nodeTypeName" }; null /*throw IllegalStateException("Unknown Node Type: $nodeTypeName") */ }
-            )?.forEach { node ->
-                generateNodePropertyIdValue(nodePrefix = instanceTitleSimplified, node = node) { id, value ->
-                    map[id] = value
-                }
-            }
-        }
-
         return map
     }
 
@@ -378,18 +295,17 @@ class VeadoFullConnectionData(connection: Connection, instanceNumber: Int) :
 
     /**
      * Fully refreshes [currentInstanceNumberedStateIDs] with current Node State IDs
-     *
      * @return [Pair] with 2 [Set]s - Old State IDs Removed, and New State IDs Added
      */
     override fun refreshInstanceNumber(): Pair<Set<InstanceStateIdDescription>, Set<InstanceStateIdDescription>> {
-        val tpIdPrefix = instanceNumber.toString()
+        val tpIdPrefix = tpIdPrefixNumber
         val tpLabelPrefix = "Instance #$instanceNumber"
 
         // List old IDs and Generate new ones
         val listNewIDs: MutableSet<InstanceStateIdDescription> = mutableSetOf()
 
         stateIDNumberedInstanceTitle = InstanceStateIdDescription("$tpIdPrefix.title", "$tpLabelPrefix: Title")
-        //listNewIDs.add(stateIDNumberedInstanceTitle)
+        listNewIDs.add(stateIDNumberedInstanceTitle)
 
         nodesList.entries.forEach { nodeType ->
             val nodeTypeName = nodeType.key
@@ -415,7 +331,6 @@ class VeadoFullConnectionData(connection: Connection, instanceNumber: Int) :
 
     /**
      * Clears [currentInstanceNumberedStateIDs] and returns the Node State IDs
-     *
      * @see refreshInstanceNumber
      * @return [Set] - State IDs Removed
      */
@@ -427,10 +342,8 @@ class VeadoFullConnectionData(connection: Connection, instanceNumber: Int) :
 
     /**
      * Generated State ID for mini Window Title
-     *
-     * e.g. io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.FullInstances.state.1.currentAvatarStateName
-     *
-     * Basically returns [baseStateID].[stateIDNumberedInstanceTitle]
+     * - e.g. io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.FullInstances.state.1.currentAvatarStateName
+     * - Basically returns [baseStateID].[stateIDNumberedInstanceTitle]
      */
     @Suppress("MemberVisibilityCanBePrivate")
     val stateIDNumberedInstanceTitleLong; get() = "${baseStateID}.$stateIDNumberedInstanceTitle"
@@ -442,30 +355,26 @@ class VeadoFullConnectionData(connection: Connection, instanceNumber: Int) :
     /**
      * Update Node from Message
      *
-     * Runs the following for each Type:
-     * - [ResultMessage.ResultMessageWithPayload] & [BleatkanStatePeek] - [updateStateNodeCurrentState]
-     * - [ResultMessage.ResultMessageWithPayload] & [ResultPayload.ResultPayloadPng] - [updateStateNodeThumbnail]
-     * - [ResultMessage.ResultMessageWithPayload] & [ResultPayload.ResultPayloadStateList] - [updateNodeStates]
-     * - [ResultMessage.ResultMessageWithPayloadBoolean] -
-     *
-     * @param message Result Message. Must **not** be [ResultMessage.ResultMessageWithNodeEntryList]. [ResultMessage.ResultMessageWithInstanceInfo] are ignored
-     *
+     * Runs the following for each [message] Type:
+     * - [ResultMessage.ResultMessageWithPayload] - [updateNodeState]
+     * - [ResultMessage.ResultMessageWithPayloadBoolean] - [updateNodeCurrentBooleanValue]
+     * - [ResultMessage.ResultMessageWithPayloadNumber] - [updateNodeNumberValue]
+     * - [ResultMessage.ResultMessageWithInstanceInfo] - Ignored
+     * - [ResultMessage.ResultMessageWithNodeEntryList] - **Throws [IllegalArgumentException]**
+     * @param message Result Message. Must **not** be [ResultMessage.ResultMessageWithNodeEntryList].
      * @return Whether state was updated - false means the state is already the one provided
      */
     @Throws(IllegalArgumentException::class)
-    fun updateStateNodeCurrentState(message: ResultMessage): INodeUpdateResult? {
-        return when (message) {
-            is ResultMessage.ResultMessageWithPayload -> updateNodeState(message)
-            is ResultMessage.ResultMessageWithPayloadBoolean -> updateNodeCurrentBooleanValue(message)
-            is ResultMessage.ResultMessageWithPayloadNumber -> updateNodeNumberValue(message)
-            is ResultMessage.ResultMessageWithInstanceInfo -> {
-                LOGGER.trace { "Ignoring message of type ResultMessageWithInstanceInfo: $message" }
-                null
-            }
-
-            is ResultMessage.ResultMessageWithNodeEntryList ->
-                throw IllegalArgumentException("Message type can not be ResultMessageWithNodeEntryList")
+    fun updateStateNodeCurrentState(message: ResultMessage): INodeUpdateResult? = when (message) {
+        is BleatkanPayload -> updateNodeState(message)
+        is BleatkanPayloadBoolean -> updateNodeCurrentBooleanValue(message)
+        is BleatkanPayloadNumber -> updateNodeNumberValue(message)
+        is ResultMessage.ResultMessageWithInstanceInfo -> {
+            LOGGER.trace { "Ignoring message of type ResultMessageWithInstanceInfo: $message" }
+            null
         }
+        is ResultMessage.ResultMessageWithNodeEntryList ->
+            throw IllegalArgumentException("Message type can not be ResultMessageWithNodeEntryList")
     }
 
     /**
@@ -475,13 +384,13 @@ class VeadoFullConnectionData(connection: Connection, instanceNumber: Int) :
      *
      * @return Whether state was updated - false means the state is already the one provided
      */
-    fun updateNodeState(message: ResultMessage.ResultMessageWithPayload): UpdateNodeStateResult {
+    fun updateNodeState(message: BleatkanPayload): UpdateNodeStateResult {
         return when (val payload = message.payload) {
             is BleatkanStatePeek ->
                 updateStateNodeCurrentState(message.id, message.name, payload)
-            is ResultPayload.ResultPayloadPng ->
+            is BleatkanStateThumbnail ->
                 updateStateNodeThumbnail(message.id, message.name, payload)
-            is ResultPayload.ResultPayloadStateList ->
+            is BleatkanStateList ->
                 updateNodeStates(message.id, message.name, payload)
         }
     }
@@ -608,7 +517,7 @@ class VeadoFullConnectionData(connection: Connection, instanceNumber: Int) :
      * @param message Get/Listen Result Message
      * @return Whether state was updated - false means the state is already the one provided
      */
-    fun updateNodeCurrentBooleanValue(message: ResultMessage.ResultMessageWithPayloadBoolean): UpdateNodeBooleanResult {
+    fun updateNodeCurrentBooleanValue(message: BleatkanPayloadBoolean): UpdateNodeBooleanResult {
         val typeNodes = nodesBooleanMap
         var nodeValueCreated = false
         val node = typeNodes.getOrPut(message.id) {
@@ -676,7 +585,7 @@ class VeadoFullConnectionData(connection: Connection, instanceNumber: Int) :
      *
      * @return Whether state was updated - false means the state is already the one provided
      */
-    fun updateNodeNumberValue(message: ResultMessage.ResultMessageWithPayloadNumber): UpdateNodeNumberResult {
+    fun updateNodeNumberValue(message: BleatkanPayloadNumber): UpdateNodeNumberResult {
         val nodeId: String = message.id
         val nodeName: String = message.name
         val payloadValue: ResultPayloadSpecialNumber = message.payload
@@ -828,8 +737,7 @@ class VeadoFullConnectionData(connection: Connection, instanceNumber: Int) :
      * @return `true` if node was updated
      */
     fun updateStateNodeList(
-        message: ResultMessage.ResultMessageWithPayload,
-        payload: ResultPayload.ResultPayloadStateList
+        message: BleatkanPayload, payload: BleatkanStateList
     ): Boolean {
         val nodeId = message.id
         val nodeName = message.name
@@ -838,10 +746,8 @@ class VeadoFullConnectionData(connection: Connection, instanceNumber: Int) :
 
         val node = getOrCreateStateEventsNode(nodeId, nodeName) { isNodeNew = true }
         if (isNodeNew) {
-            //TODO may not be needed
-            nodeListStale = true
-        } else {
-            // Update Node Name if different
+            nodeListStale = true // TODO may not be needed
+        } else { // Update Node Name if different
             if (node.name != nodeName) node.updateNodeName(nodeName)
         }
 
@@ -855,8 +761,7 @@ class VeadoFullConnectionData(connection: Connection, instanceNumber: Int) :
      * @return [Pair] First [Boolean] is `true` if node was updated; Second [VeadoStateNodeData] is the node that was updated
      */
     fun updateReturnStateNodeList(
-        message: ResultMessage.ResultMessageWithPayload,
-        payload: ResultPayload.ResultPayloadStateList
+        message: BleatkanPayload, payload: BleatkanStateList
     ): Pair<Boolean, VeadoStateNodeData> {
         val nodeId = message.id
         val nodeName = message.name
@@ -865,10 +770,8 @@ class VeadoFullConnectionData(connection: Connection, instanceNumber: Int) :
 
         val node = getOrCreateStateEventsNode(nodeId, nodeName) { isNodeNew = true }
         if (isNodeNew) {
-            //TODO may not be needed
-            nodeListStale = true
-        } else {
-            // Update Node Name if different
+            nodeListStale = true // TODO may not be needed
+        } else { // Update Node Name if different
             if (node.name != nodeName) node.updateNodeName(nodeName)
         }
 

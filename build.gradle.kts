@@ -182,9 +182,6 @@ dependencies {
     implementation(platform(libs.kotlinx.serialization.bom))
     implementation(libs.kotlinx.serialization.json)
 
-    // Fuzzy String matching - https://github.com/xdrop/fuzzywuzzy
-    implementation("me.xdrop:fuzzywuzzy:1.4.0")
-
     // Apache Commons Lang 3 - mainly for SystemUtils
     // https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
     implementation(libs.apache.commons.lang3)

@@ -11,15 +11,23 @@ import io.github.dissonantau.bleatkan.message.ResultPayload.ResultPayloadPng as 
 class VeadoMiniConnectionData(connection: Connection, instanceNumber: Int) :
     VeadoConnectionData(connection, instanceNumber) {
 
+    companion object {
+        /** Used to prefix Touch Portal States */
+        const val TP_STATE_BASE_ID = VeadoTouchPluginConstants.MiniInstances.ID
+
+        /** Used to prefix Touch Portal Numbered States */
+        const val TP_STATE_BASE_ID_NUM = VeadoTouchPluginConstants.MiniInstancesNum.ID
+
+        /** Used to prefix Touch Portal Titled States */
+        const val TP_STATE_BASE_ID_TITLE = VeadoTouchPluginConstants.MiniInstancesTitle.ID
+    }
+
     /** Instance title used during past refresh - used for comparisons */
     private var instanceTitle = ""
 
     /**
      * Generated State ID for veadotube mini's Current Avatar Thumbnail
-     *
-     * Excludes base section, used for updating State
-     *
-     * e.g. myTitle.currentAvatarStateThumbnail
+     * - Excludes base section, used for updating State - e.g. myTitle.currentAvatarStateThumbnail
      */
     @Suppress("MemberVisibilityCanBePrivate")
     var stateIDTitledCurrentAvatarThumbnail: InstanceStateIdDescription = InstanceStateIdDescription("", "")
@@ -27,31 +35,21 @@ class VeadoMiniConnectionData(connection: Connection, instanceNumber: Int) :
 
     /**
      * Generated State ID for veadotube mini's Push To Talk
-     *
-     * Excludes base section, used for updating State
-     *
-     * e.g. myTitle.pushToTalk
+     * - Excludes base section, used for updating State - e.g. myTitle.pushToTalk
      */
     @Suppress("MemberVisibilityCanBePrivate")
     var stateIDTitledPushToTalk: InstanceStateIdDescription = InstanceStateIdDescription("", "")
         private set
 
-    /**
-     * All Generated State ID for veadotube's Nodes and relevant data
-     *
-     * e.g. myTitle.title
-     */
+    /** All Generated State ID for veadotube's Nodes and relevant data - e.g. myTitle.title */
     @Suppress("MemberVisibilityCanBePrivate")
     val currentInstanceTitleStateIDs: Set<InstanceStateIdDescription>
         get() = _currentInstanceTitleStateIDs.toSet()
 
+    /** All Generated State ID for veadotube's Nodes and relevant data - e.g. myTitle.title */
     private var _currentInstanceTitleStateIDs: MutableSet<InstanceStateIdDescription>
 
-    /**
-     * All Generated State ID for veadotube's Nodes and relevant data
-     *
-     * e.g. myTitle.title
-     */
+    /** All Generated State ID for veadotube's Nodes and relevant data - e.g. myTitle.title */
     @Suppress("MemberVisibilityCanBePrivate")
     val currentInstanceNumberedStateIDs: Set<InstanceStateIdDescription>
         get() = _currentInstanceNumberedStateIDs.toSet()
@@ -60,10 +58,7 @@ class VeadoMiniConnectionData(connection: Connection, instanceNumber: Int) :
 
     /**
      * Generated State ID for veadotube mini's Window Title
-     *
-     * Excludes base section, used for updating State
-     *
-     * e.g. myTitle.title
+     * - Excludes base section, used for updating State - e.g. myTitle.title
      */
     @Suppress("MemberVisibilityCanBePrivate")
     var stateIDTitledInstanceTitle: InstanceStateIdDescription = InstanceStateIdDescription("", "")
@@ -79,53 +74,41 @@ class VeadoMiniConnectionData(connection: Connection, instanceNumber: Int) :
         _currentInstanceTitleStateIDs = mutableSetOf()
         _currentInstanceNumberedStateIDs = mutableSetOf()
 
-        /** Generate Instance Titles */
+        /* Generate Instance Titles */
         refreshInstanceTitle()
         refreshInstanceNumber()
     }
 
     /**
      * ArrayList of all [VeadoState] available
-     *
-     * In order received from API, so they should be in the order they appear in Veadotube
-     *
-     * IDs are unique but Names can be duplicates.
-     *
-     * Work with this should probably be synchronised using the connection obj
+     * - In order received from API, so they should be in the order they appear in Veadotube
+     * - In mini 2.0 IDs are unique but Names can be duplicates, 2.1 and later Name = ID and should be unique
+     * - Work with this should probably be synchronised using the connection obj
      */
     val statesAll: ArrayList<VeadoState>; get() = nodeAvatars.statesAll
 
-    /**
-     * Get [VeadoState] from this connection by State ID
-     *
-     * ID = Name from Mini 2.1
-     */
+    /** Get [VeadoState] from this connection by State ID - ID = Name from Mini 2.1 */
     fun getStateByID(stateID: String): VeadoState? = nodeAvatars.getStateByID(stateID)
 
     /**
      * Get [VeadoState] from this connection by State Name
-     *
      * - if an exact match is found, it is chosen
      * - If no exact match is found, the first result that that contains the give name is returned (ignoreCase is used here)
      * - if none are found, null is returned
-     *
      */
     fun getStateByNameContains(stateName: String, ignoreCase: Boolean = false): VeadoState? =
         nodeAvatars.getStateByNameContains(stateName, ignoreCase)
 
     /**
-     * Pair with the current Avatar State with `ID` and `Name`
-     *
-     * Names can be duplicates, so the Current state may not match a value in the collectionStates
-     *
-     * If there's no match, it should request a new list in case a new value was added since list was fetched
+     * Object for the current Avatar State with `ID`, `Name`, etc.
+     * - Names can be duplicates, so the current state may not match a value in the collectionStates
+     * - If there's no match, it should request a new list in case a new value was added since list was fetched
      */
     val currentState: VeadoState?; get() = nodeAvatars.currentState
 
     /**
      * Current State Thumbnail
-     *
-     * Prevents deletion if several thumbnails are fetched and pushes the current state out of the LRU Maps
+     * - Prevents deletion if several thumbnails are fetched and pushes the current state out of the LRU Maps
      */
     private val currentStateThumbnail: VeadoThumbnail?; get() = nodeAvatars.currentStateThumbnail
 
@@ -138,43 +121,40 @@ class VeadoMiniConnectionData(connection: Connection, instanceNumber: Int) :
     /** Default Size of LRU Map - Soft References*/
     private val lruSoftMapSize = lruHardMapSize + 6
 
+    /** Value used as first identifier for TP Numbered Dynamic States - i.e. ...MiniInstances.state.***1***.title */
+    inline val tpIdPrefixNumber; get() = instanceNumber.toString()
+
+    /** Value used as first identifier for TP Titled Dynamic States - i.e. ...MiniInstances.state.***myTitle***.title */
+    inline val tpIdPrefixTitle; get() = instanceTitleSimplified
 
     /* StateID Strings for Mini Instances */
     /**
      * Base State ID used for Dynamically creating and deleting States
-     *
-     * Excludes trailing dot (.)
-     *
-     * e.g. io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.MiniInstances.state
+     * - Excludes trailing dot (.)
+     * - e.g. io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.MiniInstances.state
      */
-    override val baseStateID = "${VeadoTouchPluginConstants.MiniInstances.ID}.state"
+    override val baseStateID = "${TP_STATE_BASE_ID}.state"
 
     /**
      * Generated State ID for veadotube mini's Window Title
-     *
-     * Includes Base Section, used for Dynamically creating and deleting States
-     *
-     * e.g. io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.MiniInstances.state.myTitle.title
+     * - Includes Base Section, used for Dynamically creating and deleting States
+     * - e.g. io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.MiniInstances.state.myTitle.title
      */
     @Suppress("MemberVisibilityCanBePrivate")
     val stateIDTitledInstanceTitleLong; get() = "${baseStateID}.${stateIDTitledInstanceTitle.stateId}"
 
     /**
      * Generated State ID for veadotube mini's Current Avatar Name
-     *
-     * Includes Base Section, used for Dynamically creating and deleting States
-     *
-     * e.g. io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.MiniInstances.state.myTitle.currentAvatarStateName
+     * - Includes Base Section, used for Dynamically creating and deleting States
+     * - e.g. io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.MiniInstances.state.myTitle.currentAvatarStateName
      */
     @Suppress("MemberVisibilityCanBePrivate")
     val stateIDTitledCurrentAvatarNameLong; get() = "${baseStateID}.${stateIDTitledCurrentAvatarName.stateId}"
 
     /**
      * Generated State ID for veadotube mini's Current Avatar Name
-     *
-     * Excludes base section, used for updating State
-     *
-     * e.g. myTitle.currentAvatarStateName
+     * - Excludes base section, used for updating State
+     * - e.g. myTitle.currentAvatarStateName
      */
     @Suppress("MemberVisibilityCanBePrivate")
     var stateIDTitledCurrentAvatarName: InstanceStateIdDescription = InstanceStateIdDescription("", "")
@@ -182,17 +162,14 @@ class VeadoMiniConnectionData(connection: Connection, instanceNumber: Int) :
 
     /**
      * Generated State ID for veadotube mini's Current Avatar Thumbnail
-     *
-     * Includes Base Section, used for Dynamically creating and deleting States
-     *
-     * e.g. io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.MiniInstances.state.myTitle.currentAvatarStateThumbnail
+     * - Includes Base Section, used for Dynamically creating and deleting States
+     * - e.g. io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.MiniInstances.state.myTitle.currentAvatarStateThumbnail
      */
     @Suppress("MemberVisibilityCanBePrivate")
     val stateIDTitledCurrentAvatarThumbnailLong; get() = "${baseStateID}.${stateIDTitledCurrentAvatarThumbnail.stateId}"
 
     /**
      * Checks if Instance Title matches last processed, updates Title Cleaned & Simplified.
-     *
      * @return true if title was updated, false if not
      */
     fun refreshInstanceTitleCalc(): Boolean {
@@ -218,20 +195,14 @@ class VeadoMiniConnectionData(connection: Connection, instanceNumber: Int) :
 
     /**
      * Updates [instanceTitleSimplified] with latest Title and fully refreshes [currentInstanceTitleStateIDs] with current Node State IDs
-     *
-     * [instanceTitleCleaned], and State IDs that use [Instance.title][io.github.dissonantau.bleatkan.instance.Instance.title] are also Updated.
-     *
-     * [instanceTitleSimplified] only contains Letters, Digits, Dashes('-'), and Underscores ('_') from the title following the first dash after the program name.
-     *
-     * If nothing exists after the first Dash in the Title, "[InstanceID.type][io.github.dissonantau.bleatkan.instance.InstanceID.type]-[InstanceID.process][io.github.dissonantau.bleatkan.instance.InstanceID.process]" is used instead.
-     *
+     * - [instanceTitleCleaned], and State IDs that use [Instance.title][io.github.dissonantau.bleatkan.instance.Instance.title] are also Updated.
+     * - If nothing exists after the first Dash in the Title, "[InstanceID.type][io.github.dissonantau.bleatkan.instance.InstanceID.type]-[InstanceID.process][io.github.dissonantau.bleatkan.instance.InstanceID.process]" is used instead.
      * @return [Pair] with 2 [Set]s - Old State IDs Removed, and New State IDs Added
      */
     @Suppress("MemberVisibilityCanBePrivate")
     override fun refreshInstanceTitle(): Pair<Set<InstanceStateIdDescription>, Set<InstanceStateIdDescription>> {
         refreshInstanceTitleCalc()
-
-        val tpIdPrefix = instanceTitleSimplified
+        val tpIdPrefix = tpIdPrefixTitle
         val tpLabelPrefix = "Instance $instanceTitleCleaned (#$instanceNumber)"
 
         // List to put new IDs
@@ -243,25 +214,20 @@ class VeadoMiniConnectionData(connection: Connection, instanceNumber: Int) :
         stateIDTitledCurrentAvatarName =
             InstanceStateIdDescription("$tpIdPrefix.currentAvatarStateName", "$tpLabelPrefix: Current Avatar Name")
         listNewIDs.add(stateIDTitledCurrentAvatarName)
-        stateIDTitledCurrentAvatarThumbnail =
-            InstanceStateIdDescription(
-                "$tpIdPrefix.currentAvatarStateThumbnail", "$tpLabelPrefix: Current Avatar Thumbnail"
-            )
+        stateIDTitledCurrentAvatarThumbnail = InstanceStateIdDescription(
+            "$tpIdPrefix.currentAvatarStateThumbnail", "$tpLabelPrefix: Current Avatar Thumbnail"
+        )
         listNewIDs.add(stateIDTitledCurrentAvatarThumbnail)
-        stateIDTitledPushToTalk =
-            InstanceStateIdDescription(
-                "$tpIdPrefix.currentPushToTalkMicInput", "$tpLabelPrefix: Push-to-Talk Mic Input"
-            )
+        stateIDTitledPushToTalk = InstanceStateIdDescription(
+            "$tpIdPrefix.currentPushToTalkMicInput", "$tpLabelPrefix: Mic Input/Push-to-Talk"
+        )
         listNewIDs.add(stateIDTitledPushToTalk)
 
-        // avatar state/nodeAvatars
-        nodeAvatars.also { node ->
+        nodeAvatars.also { node -> // avatar state/nodeAvatars
             generateNodeDataStateIds(tpIdPrefix, tpLabelPrefix, node)
             { listNewIDs.add(it); }
         }
-
-        // push-to-talk/mic nodePushToTalk
-        nodePushToTalk.also { node ->
+        nodePushToTalk.also { node -> // push-to-talk/mic nodePushToTalk
             generateNodeDataStateIds(tpIdPrefix, tpLabelPrefix, node)
             { listNewIDs.add(it); }
         }
@@ -277,15 +243,13 @@ class VeadoMiniConnectionData(connection: Connection, instanceNumber: Int) :
 
     /**
      * Updates State IDs that use [instanceNumber]
-     *
      * @return List of the previous State IDs for Removal
      * @throws IllegalStateException If [instanceNumber] has not been set
      */
     @Suppress("MemberVisibilityCanBePrivate")
     override fun refreshInstanceNumber(): Pair<Set<InstanceStateIdDescription>, Set<InstanceStateIdDescription>> {
         check(instanceNumber > 0) { "Instance Number has not been set" }
-
-        val tpIdPrefix = instanceNumber.toString()
+        val tpIdPrefix = tpIdPrefixNumber
         val tpLabelPrefix = "Instance Mini #$instanceNumber"
 
         // List old IDs and Generate new ones
@@ -297,25 +261,20 @@ class VeadoMiniConnectionData(connection: Connection, instanceNumber: Int) :
         stateIDNumberedCurrentAvatarName =
             InstanceStateIdDescription("$tpIdPrefix.currentAvatarStateName", "$tpLabelPrefix: Current Avatar Name")
         listNewIDs.add(stateIDNumberedCurrentAvatarName)
-        stateIDNumberedCurrentAvatarThumbnail =
-            InstanceStateIdDescription(
-                "$tpIdPrefix.currentAvatarStateThumbnail", "$tpLabelPrefix: Current Avatar Thumbnail"
-            )
+        stateIDNumberedCurrentAvatarThumbnail = InstanceStateIdDescription(
+            "$tpIdPrefix.currentAvatarStateThumbnail", "$tpLabelPrefix: Current Avatar Thumbnail"
+        )
         listNewIDs.add(stateIDNumberedCurrentAvatarThumbnail)
-        stateIDNumberedPushToTalk =
-            InstanceStateIdDescription(
-                "$tpIdPrefix.currentPushToTalkMicInput", "$tpLabelPrefix: Push-to-Talk Mic Input"
-            )
+        stateIDNumberedPushToTalk = InstanceStateIdDescription(
+            "$tpIdPrefix.currentPushToTalkMicInput", "$tpLabelPrefix: Mic Input/Push-to-Talk"
+        )
         listNewIDs.add(stateIDNumberedPushToTalk)
 
-        // avatar state/nodeAvatars
-        nodeAvatars.also { node ->
+        nodeAvatars.also { node -> // avatar state/nodeAvatars
             generateNodeDataStateIds(tpIdPrefix, tpLabelPrefix, node)
             { listNewIDs.add(it); }
         }
-
-        // push-to-talk/mic nodePushToTalk
-        nodePushToTalk.also { node ->
+        nodePushToTalk.also { node -> // push-to-talk/mic nodePushToTalk
             generateNodeDataStateIds(tpIdPrefix, tpLabelPrefix, node)
             { listNewIDs.add(it); }
         }
@@ -331,7 +290,6 @@ class VeadoMiniConnectionData(connection: Connection, instanceNumber: Int) :
 
     /**
      * Clears [currentInstanceNumberedStateIDs] and returns the Node State IDs
-     *
      * @see refreshInstanceNumber
      * @return [Set] - State IDs Removed
      */
@@ -343,7 +301,6 @@ class VeadoMiniConnectionData(connection: Connection, instanceNumber: Int) :
 
     /**
      * Clears [currentInstanceTitleStateIDs] and returns removed IDs for processing
-     *
      * @see refreshInstanceTitle
      * @return [Set] - Old State IDs
      */
@@ -354,33 +311,23 @@ class VeadoMiniConnectionData(connection: Connection, instanceNumber: Int) :
         return currentIds
     }
 
-    private inline fun allNodes(nodeActions: (VeadoNodeData) -> Unit = {}) {
+    private inline fun forEachNode(nodeActions: (VeadoNodeData) -> Unit = {}) {
         nodeActions(nodeAvatars)
         nodeActions(nodePushToTalk)
     }
 
-    override fun getInstanceNodePropertyNumberValues(map: MutableMap<String, String>): Map<String, String> {
-        val tpIdPrefix = instanceNumber.toString()
+    override fun getInstanceNodePropertyNumberValues(map: MutableMap<String, String>): Map<String, String> =
+        getInstanceNodePropertyValues(tpIdPrefixNumber, map)
+
+    override fun getInstanceNodePropertyTitleValues(map: MutableMap<String, String>): Map<String, String> =
+        getInstanceNodePropertyValues(tpIdPrefixTitle, map)
+
+    fun getInstanceNodePropertyValues(tpIdPrefix: String, map: MutableMap<String, String>): Map<String, String> {
         map["$tpIdPrefix.title"] = instanceTitleCleaned
         map["$tpIdPrefix.currentAvatarStateName"] = currentState?.name ?: ""
         map["$tpIdPrefix.currentAvatarStateThumbnail"] = currentState?.thumbnail?.png ?: ""
         map["$tpIdPrefix.currentPushToTalkMicInput"] = getPushToTalkString()
-
-        allNodes { node ->
-            generateNodePropertyIdValue(nodePrefix = tpIdPrefix, node = node)
-            { id, value -> map[id] = value }
-        }
-        return map
-    }
-
-    override fun getInstanceNodePropertyTitleValues(map: MutableMap<String, String>): Map<String, String> {
-        val tpIdPrefix = instanceTitleSimplified
-        map["$tpIdPrefix.title"] = instanceTitleCleaned
-        map["$tpIdPrefix.currentAvatarStateName"] = currentState?.name ?: ""
-        map["$tpIdPrefix.currentAvatarStateThumbnail"] = currentState?.thumbnail?.png ?: ""
-        map["$tpIdPrefix.currentPushToTalkMicInput"] = getPushToTalkString()
-
-        allNodes { node ->
+        forEachNode { node ->
             generateNodePropertyIdValue(nodePrefix = tpIdPrefix, node = node)
             { id, value -> map[id] = value }
         }
@@ -388,7 +335,7 @@ class VeadoMiniConnectionData(connection: Connection, instanceNumber: Int) :
     }
 
     override fun getInstanceNodePropertyValues(map: MutableMap<String, String>): Map<String, String> {
-        allNodes { node ->
+        forEachNode { node ->
             generateNodePropertyIdValueMulti(node = node) { id, value -> map[id] = value }
         }
         return map
@@ -404,10 +351,7 @@ class VeadoMiniConnectionData(connection: Connection, instanceNumber: Int) :
 
     /**
      * Generated State ID for mini Windows Title
-     *
-     * Excludes base section, used for updating State
-     *
-     * e.g. myTitle.title
+     * -Excludes base section, used for updating State - e.g. myTitle.title
      */
     @Suppress("MemberVisibilityCanBePrivate")
     var stateIDNumberedInstanceTitle = InstanceStateIdDescription("", "")
@@ -415,18 +359,14 @@ class VeadoMiniConnectionData(connection: Connection, instanceNumber: Int) :
 
     /**
      * Generated State ID for mini Current Avatar Name
-     *
-     * e.g. io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.MiniInstances.state.1.currentAvatarStateName
+     * - e.g. io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.MiniInstances.state.1.currentAvatarStateName
      */
     @Suppress("MemberVisibilityCanBePrivate")
     val stateIDNumberedCurrentAvatarNameLong; get() = "${baseStateID}.${stateIDNumberedCurrentAvatarName.stateId}"
 
     /**
      * Generated State ID for mini Windows Title
-     *
-     * Excludes base section, used for updating State
-     *
-     * e.g. myTitle.currentAvatarStateName
+     * - Excludes base section, used for updating State - e.g. myTitle.currentAvatarStateName
      */
     @Suppress("MemberVisibilityCanBePrivate")
     var stateIDNumberedCurrentAvatarName = InstanceStateIdDescription("", "")
@@ -434,18 +374,14 @@ class VeadoMiniConnectionData(connection: Connection, instanceNumber: Int) :
 
     /**
      * Generated State ID for mini Current Avatar Name
-     *
-     * e.g. io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.MiniInstances.state.1.currentAvatarStateThumbnail
+     * - e.g. io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.MiniInstances.state.1.currentAvatarStateThumbnail
      */
     @Suppress("MemberVisibilityCanBePrivate")
     val stateIDNumberedCurrentAvatarThumbnailLong; get() = "${baseStateID}.${stateIDNumberedCurrentAvatarThumbnail.stateId}"
 
     /**
      * Generated State ID for veadotube mini's Push To Talk
-     *
-     * Excludes base section, used for updating State
-     *
-     * e.g. myTitle.pushToTalk
+     * - Excludes base section, used for updating State - e.g. myTitle.pushToTalk
      */
     @Suppress("MemberVisibilityCanBePrivate")
     var stateIDNumberedPushToTalk: InstanceStateIdDescription = InstanceStateIdDescription("", "")
@@ -453,10 +389,7 @@ class VeadoMiniConnectionData(connection: Connection, instanceNumber: Int) :
 
     /**
      * Generated State ID for mini Avatar Thumbnail
-     *
-     * Excludes base section, used for updating State
-     *
-     * e.g. myTitle.currentAvatarStateThumbnail
+     * - Excludes base section, used for updating State - e.g. myTitle.currentAvatarStateThumbnail
      */
     @Suppress("MemberVisibilityCanBePrivate")
     var stateIDNumberedCurrentAvatarThumbnail = InstanceStateIdDescription("", "")
@@ -464,17 +397,14 @@ class VeadoMiniConnectionData(connection: Connection, instanceNumber: Int) :
 
     /**
      * Replaces all states
-     *
-     * If the list's don't match, items are checked and updated
+     * - If the list's don't match, items are checked and updated
      */
     @Suppress("MemberVisibilityCanBePrivate")
     fun updateStates(payload: BleatkanStateList) = nodeAvatars.updateStates(payload)
 
     /**
      * Update Current State
-     *
      * @param stateID ID from Peek/Listen Result Message
-     *
      * @return Whether state was updated - false means the state is already the one provided
      */
     @Suppress("MemberVisibilityCanBePrivate")
@@ -485,10 +415,8 @@ class VeadoMiniConnectionData(connection: Connection, instanceNumber: Int) :
     fun clearedStateThumbnail(veadoState: VeadoState) = nodeAvatars.clearedStateThumbnail(veadoState)
 
     /** Updates a State Thumbnail, creating the state if it doesn't exist
-     *
      * @param payload Payload with State Thumbnail Data to update
      * @param updateToMRU forces the State Thumbnail to be made the *Most Recently Used* on in the Soft and Hard Thumbnail Maps
-     *
      * @return Pair: First = Boolean, if thumbnail was Updated; Second = VeadoState Updated, Third = VeadoThumbnail?, thumbnail object if updated
      */
     @Suppress("MemberVisibilityCanBePrivate")
@@ -516,7 +444,6 @@ class VeadoMiniConnectionData(connection: Connection, instanceNumber: Int) :
 
     /**
      * Generates the ID and Label for a connection's Push To Talk node and passes to action lambdas
-     *
      * @param instanceTPStateIdNumber ID and Label for TP Node by Number `<InstanceTitle>.nodes.<type>.<nodeId>.<stateId>`
      * @param instanceTPStateIdTitle ID and Label for TP Node by Title `<InstanceNumber>.nodes.<type>.<nodeId>.<stateId>`
      */
@@ -527,7 +454,6 @@ class VeadoMiniConnectionData(connection: Connection, instanceNumber: Int) :
 
     /**
      * Generates the ID and Label for a connection's Push To Talk node Property and passes to action lambdas
-     *
      * @param propertyId ID of Property - e.g. id, name
      * @param instanceTPStateIdNumber ID and Label for TP Node by Number `<InstanceTitle>.nodes.<type>.<nodeId>.<stateId>`
      * @param instanceTPStateIdTitle ID and Label for TP Node by Title `<InstanceNumber>.nodes.<type>.<nodeId>.<stateId>`
@@ -544,7 +470,6 @@ class VeadoMiniConnectionData(connection: Connection, instanceNumber: Int) :
 
     /**
      * Generates the ID and Label for a connection's Avatars node and passes to action lambdas
-     *
      * @param instanceTPStateIdNumber ID and Label for TP Node by Number `<InstanceTitle>.nodes.<type>.<nodeId>.<stateId>`
      * @param instanceTPStateIdTitle ID and Label for TP Node by Title `<InstanceNumber>.nodes.<type>.<nodeId>.<stateId>`
      */
@@ -555,7 +480,6 @@ class VeadoMiniConnectionData(connection: Connection, instanceNumber: Int) :
 
     /**
      * Generates the ID and Label for a connection's Avatars node value and passes to action lambdas
-     *
      * @param propertyId ID of Value - e.g. id, name
      * @param instanceTPStateIdNumber ID and Label for TP Node by Number `<InstanceTitle>.nodes.<type>.<nodeId>.<stateId>`
      * @param instanceTPStateIdTitle ID and Label for TP Node by Title `<InstanceNumber>.nodes.<type>.<nodeId>.<stateId>`
@@ -568,7 +492,6 @@ class VeadoMiniConnectionData(connection: Connection, instanceNumber: Int) :
 
     /**
      * Generates the ID and Label for a connection's Push To Talk [VeadoBooleanNodeData.tpStateNodeIdValue] and passes to action lambdas
-     *
      * @param instanceTPStateIdNumber ID and Label for TP Node by Number `<InstanceTitle>.nodes.<type>.<nodeId>.<stateId>`
      * @param instanceTPStateIdTitle ID and Label for TP Node by Title `<InstanceNumber>.nodes.<type>.<nodeId>.<stateId>`
      */
@@ -581,7 +504,6 @@ class VeadoMiniConnectionData(connection: Connection, instanceNumber: Int) :
 
     /**
      * Generates the ID and Label for a connection's Push To Talk [VeadoNodeData.tpStateNodeIdVeadoId] and passes to action lambdas
-     *
      * @param instanceTPStateIdNumber ID and Label for TP Node by Number `<InstanceTitle>.nodes.<type>.<nodeId>.<stateId>`
      * @param instanceTPStateIdTitle ID and Label for TP Node by Title `<InstanceNumber>.nodes.<type>.<nodeId>.<stateId>`
      */
@@ -594,7 +516,6 @@ class VeadoMiniConnectionData(connection: Connection, instanceNumber: Int) :
 
     /**
      * Generates the ID and Label for a connection's Push To Talk [VeadoNodeData.tpStateNodeIdName] and passes to action lambdas
-     *
      * @param instanceTPStateIdNumber ID and Label for TP Node by Number `<InstanceTitle>.nodes.<type>.<nodeId>.<stateId>`
      * @param instanceTPStateIdTitle ID and Label for TP Node by Title `<InstanceNumber>.nodes.<type>.<nodeId>.<stateId>`
      */
