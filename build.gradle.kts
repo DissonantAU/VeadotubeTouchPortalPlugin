@@ -140,9 +140,19 @@ buildConfig {
 
     // URL to the JSON file that lists versions of the Plugin
     buildConfigField(
-        "String",
-        "PLUGIN_RELEASES_UPDATE_CHECK_URI",
-        "\"https://dissonantau.github.io/veadoTouchPortalPlugin/releases.json\""
+        "String", "PLUGIN_RELEASES_UPDATE_CHECK_URI",
+        "\"https://raw.githubusercontent.com/DissonantAU/VeadotubeTouchPortalPlugin/refs/heads/updateCheck/releases.json\""
+    )
+    // Alternate URL to the JSON file that lists versions of the Plugin
+    buildConfigField(
+        "String", "PLUGIN_RELEASES_UPDATE_CHECK_URI_ALTERNATE",
+        "\"https://raw.githubusercontent.com/DissonantAU/dissonantau.github.io/refs/heads/releases/veadoTouchPortalPlugin/releases.json\""
+    )
+
+    // URL Help/How to Guide
+    buildConfigField(
+        "String", "PLUGIN_HELP_HOW_TO_GUIDE_URI",
+        "\"https://dissonantau.github.io/veadoTouchPortalPlugin/\""
     )
 }
 
