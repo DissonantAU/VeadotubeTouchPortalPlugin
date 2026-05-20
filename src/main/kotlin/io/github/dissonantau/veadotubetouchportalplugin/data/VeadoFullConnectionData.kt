@@ -537,47 +537,6 @@ class VeadoFullConnectionData(connection: Connection, instanceNumber: Int) :
         )
     }
 
-    //    /**
-//     * Get Value of Boolean Node
-//     *
-//     * @return [VeadoBooleanNodeData] - null if it doesn't exist
-//     */
-//    fun getNodeCurrentBooleanValue(nodeId: String): Pair<String, VeadoBooleanNodeData>? {
-//        val typeNodes = nodesBooleanMap
-//        val node = typeNodes[nodeId] ?: return null
-//
-//        return Pair("${node.tpStateNodeIdValue}", node)
-//    }
-
-//    /**
-//     * Get Touch Portal State ID of Boolean Node
-//     *
-//     * @return [VeadoBooleanNodeData] - null if it doesn't exist
-//     */
-//    fun getNodeTouchPortalStateId(nodeId: String): String? {
-//        val typeNodes = nodesBooleanMap
-//        val node = typeNodes[nodeId]
-//
-//
-//
-//        it.stateId = "$stateIdNodesId${it.stateId}"
-//        it.stateDescription = "Node ${node.name} ${it.stateDescription}"
-//
-//        node.stateIDNodeValue
-//
-//
-//        // state.<InstanceTitle>.nodes.<type>.<nodeId>
-//        val stateIdNodesId = "$stateIDNodesType${node.id}."
-//        // Get List of IDs, append to stateIdTitledNodesId and add to new ID list
-//        node.getNodeDataStateIds().forEach {
-//            it.stateId = "$stateIdNodesId${it.stateId}"
-//            it.stateDescription = "Node ${node.name} ${it.stateDescription}"
-//            listNewIDs.add(it)
-//            listOldIDs.remove(it)
-//        }
-//
-//    }
-
     /**
      * Update Value of Number Node
      *
