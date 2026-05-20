@@ -523,7 +523,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
     /** Change veado Full Instance # State Node (ID) by State ID */
     @Action(
         categoryId = "FullInstanceNum", name = "Instance #: Change State Node by ID",
-        format = "veadotube #{\$instanceNumber\$} State Node ID {\$nodeId\$} - {\$choices\$} {\$stateId\$}",
+        format = "veadotube #{\$instanceNumber\$} State Node ID {\$nodeId\$} - {\$choices\$} ID {\$stateId\$}",
         prefix = "veadotube", id = "changeVeadoNumNodeIDStateID"
     )
     private fun actionFullNumChangeNodeIDStateID(
@@ -533,7 +533,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
             defaultValue = STATE_CHOICE_SET
         ) choices: Array<String>, @Data stateId: String
     ) {
-        LOGGER.debug { "actionFullChangeStateNodeIDStateID: veado Full #$instanceNumber; ${choices[0]} Node ID '$nodeId' to State ID '$stateId'" }
+        LOGGER.debug { "actionFullNumChangeNodeIDStateID: veado Full #$instanceNumber; ${choices[0]} Node ID '$nodeId' to State ID '$stateId'" }
         connectionAction(
             { veadoInstanceMaps.getConnectionByNumber(InstanceID.TYPE_FULL, instanceNumber) },
             { fullChangeStateById(it, choices[0], nodeId, stateId) },
@@ -544,7 +544,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
     /** veado Full Instance Title State Node (ID) by State ID */
     @Action(
         categoryId = "FullInstanceTitle", name = "Instance Title: Change State Node by ID",
-        format = "veadotube {\$instanceTitle\$} State Node ID {\$nodeId\$} - {\$choices\$} {\$stateId\$}",
+        format = "veadotube {\$instanceTitle\$} State Node ID {\$nodeId\$} - {\$choices\$} ID {\$stateId\$}",
         prefix = "veadotube", id = "changeVeadoTitleNodeIDStateID"
     )
     private fun actionFullTitleChangeStateNodeIDStateID(
@@ -558,11 +558,11 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         connectionAction(
             { veadoInstanceMaps.getConnectionByTitle(InstanceID.TYPE_FULL, instanceTitle) },
             { fullChangeStateById(it, choices[0], nodeId, stateId) },
-            { LOGGER.warn { "Can't find Connection for veadotube '$instanceTitle; can't ${choices[0]} Node ID '$nodeId' to State ID '$stateId'" } }
+            { LOGGER.warn { "Can't find Connection for veadotube '$instanceTitle'; can't ${choices[0]} Node ID '$nodeId' to State ID '$stateId'" } }
         )
     }
 
-    /** Change Full Instance Boolean Node*/
+    /** Change Full Instance Boolean Node */
     @Action(
         categoryId = "FullInstanceNum", name = "Instance #: Change Boolean Node by ID",
         format = "veadotube #{\$instanceNumber\$} Boolean Node {\$nodeId\$} - {\$choices\$}",
@@ -575,7 +575,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
             defaultValue = BOOL_CHOICE_TOGGLE
         ) choices: Array<String>
     ) {
-        LOGGER.debug { "actionFullChangeBooleanNode: Set Instance #$instanceNumber to '${choices[0]}'" }
+        LOGGER.debug { "actionFullNumChangeBooleanNodeId: Set Instance #$instanceNumber to '${choices[0]}'" }
         connectionAction(
             { veadoInstanceMaps.getConnectionByNumber(InstanceID.TYPE_FULL, instanceNumber) },
             { fullChangeBooleanNode(it, nodeId, choices[0]) },
@@ -583,10 +583,31 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         )
     }
 
+    /** Change Full Instance Boolean Node */
+    @Action(
+        categoryId = "FullInstanceTitle", name = "Instance Title: Change Boolean Node by ID",
+        format = "veadotube {\$instanceTitle\$} Boolean Node {\$nodeId\$} - {\$choices\$}",
+        prefix = "veadotube", id = "changeVeadoTitleBooleanNodeId"
+    )
+    private fun actionFullTitleChangeBooleanNodeId(
+        @Data(defaultValue = "veadotube") instanceTitle: String, @Data nodeId: String,
+        @Data(
+            valueChoices = [BOOL_CHOICE_TOGGLE, BOOL_CHOICE_TRUE, BOOL_CHOICE_FALSE],
+            defaultValue = BOOL_CHOICE_TOGGLE
+        ) choices: Array<String>
+    ) {
+        LOGGER.debug { "actionFullTitleChangeBooleanNodeId: Set Instance '$instanceTitle' to '${choices[0]}'" }
+        connectionAction(
+            { veadoInstanceMaps.getConnectionByTitle(InstanceID.TYPE_FULL, instanceTitle) },
+            { fullChangeBooleanNode(it, nodeId, choices[0]) },
+            { LOGGER.warn { "Can't find Connection for veadotube '$instanceTitle'; can't ${choices[0]} Node ID '$nodeId'" } }
+        )
+    }
+
     /** Change veadotube Full Instance Number Node Value */
     @Action(
         categoryId = "FullInstanceNum", name = "Instance #: Change Number Node by ID",
-        format = "veadotube #{\$instanceNumber\$} Number Node {\$nodeId\$} - {\$choices\$} {\$amount\$}",
+        format = "veadotube #{\$instanceNumber\$} Number Node {\$nodeId\$} - {\$choices\$} ID {\$amount\$}",
         prefix = "veadotube", id = "changeVeadoNumNumberNodeId"
     )
     private fun actionFullNumChangeNumberNodeId(
@@ -596,7 +617,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
             defaultValue = NUM_CHOICE_SET
         ) choices: Array<String>, @Data amount: Double
     ) {
-        LOGGER.debug { "actionFullChangeBooleanNode: Set Instance #$instanceNumber to '${choices[0]}'" }
+        LOGGER.debug { "actionFullNumChangeNumberNodeId: Set Instance #$instanceNumber to '${choices[0]}'" }
         connectionAction(
             { veadoInstanceMaps.getConnectionByNumber(InstanceID.TYPE_FULL, instanceNumber) },
             { fullSetNumberNode(it, nodeId, choices[0], numberVal = amount) },
@@ -604,20 +625,58 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         )
     }
 
-    /** Set veadotube Full Instance Number Node Value */
+    /** Change veadotube Full Instance Number Node Value */
+    @Action(
+        categoryId = "FullInstanceTitle", name = "Instance Title: Change Number Node by ID",
+        format = "veadotube {\$instanceTitle\$} Number Node {\$nodeId\$} - {\$choices\$} ID {\$amount\$}",
+        prefix = "veadotube", id = "changeVeadoTitleNumberNodeId"
+    )
+    private fun actionFullTitleChangeNumberNodeId(
+        @Data(defaultValue = "veadotube") instanceTitle: String, @Data nodeId: String,
+        @Data(
+            valueChoices = [NUM_CHOICE_SET, NUM_CHOICE_ADD, NUM_CHOICE_SUB],
+            defaultValue = NUM_CHOICE_SET
+        ) choices: Array<String>, @Data amount: Double
+    ) {
+        LOGGER.debug { "actionFullTitleChangeNumberNodeId: Set Instance '$instanceTitle' to '${choices[0]}'" }
+        connectionAction(
+            { veadoInstanceMaps.getConnectionByTitle(InstanceID.TYPE_FULL, instanceTitle) },
+            { fullSetNumberNode(it, nodeId, choices[0], numberVal = amount) },
+            { LOGGER.warn { "Can't find Connection for veadotube '$instanceTitle'; can't ${choices[0]} Node ID '$nodeId'" } }
+        )
+    }
+
+    /** Clear veadotube Full Instance Number Node Value */
     @Action(
         categoryId = "FullInstanceNum", name = "Instance #: Clear Number Node by ID",
         format = "veadotube #{\$instanceNumber\$} Number Node {\$nodeId\$} - Clear",
         prefix = "veadotube", id = "clearVeadoNumNumberNodeId"
     )
-    private fun actionFullClearNumberNodeId(
+    private fun actionFullNumClearNumberNodeId(
         @Data(minValue = 1.0, defaultValue = "1") instanceNumber: Int, @Data nodeId: String
     ) {
-        LOGGER.debug { "actionFullChangeBooleanNode: Clear Instance #$instanceNumber" }
+        LOGGER.debug { "actionFullNumClearNumberNodeId: Clear Instance #$instanceNumber" }
         connectionAction(
             { veadoInstanceMaps.getConnectionByNumber(InstanceID.TYPE_FULL, instanceNumber) },
             { fullClearNumberNode(it, nodeId) },
             { LOGGER.warn { "Can't find Connection for veadotube #$instanceNumber; can't Clear Node ID '$nodeId'" } }
+        )
+    }
+
+    /** Clear veadotube Full Instance Number Node Value */
+    @Action(
+        categoryId = "FullInstanceTitle", name = "Instance Title: Clear Number Node by ID",
+        format = "veadotube {\$instanceTitle\$} Number Node {\$nodeId\$} - Clear",
+        prefix = "veadotube", id = "clearVeadoTitleNumberNodeId"
+    )
+    private fun actionFullTitleClearNumberNodeId(
+        @Data(defaultValue = "veadotube") instanceTitle: String, @Data nodeId: String
+    ) {
+        LOGGER.debug { "actionFullTitleClearNumberNodeId: Clear Instance '$instanceTitle'" }
+        connectionAction(
+            { veadoInstanceMaps.getConnectionByTitle(InstanceID.TYPE_FULL, instanceTitle) },
+            { fullClearNumberNode(it, nodeId) },
+            { LOGGER.warn { "Can't find Connection for veadotube '$instanceTitle'; can't Clear Node ID '$nodeId'" } }
         )
     }
 
@@ -627,10 +686,11 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         format = "veadotube #{\$instanceNumber\$} Send Request - Channel:{\$channel\$}\n JSON:{\$json\$}",
         prefix = "veadotube", id = "actionVeadoNumSendCustomJsonRequest"
     )
-    private fun actionFullSendCustomJsonRequestId(
+    private fun actionFullNumSendCustomJsonRequestId(
         @Data(minValue = 1.0, defaultValue = "1") instanceNumber: Int,
         @Data(defaultValue = "nodes") channel: String, @Data(defaultValue = "{}") json: String
     ) {
+        LOGGER.debug { "actionFullNumSendCustomJsonRequestId: Send Instance #$instanceNumber - '$channel:$json''" }
         connectionAction(
             { veadoInstanceMaps.getConnectionByNumber(InstanceID.TYPE_FULL, instanceNumber) },
             { sharedSendCustomJsonRequest(it, channel, json) { "actionFullSendCustomJsonRequest" } },
@@ -638,6 +698,25 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         )
     }
 
+    /** Send Custom JSON Request */
+    @Action(
+        categoryId = "FullInstanceTitle", name = "Instance Title: Send Custom JSON Request",
+        format = "veadotube {\$instanceTitle\$} Send Request - Channel:{\$channel\$}\n JSON:{\$json\$}",
+        prefix = "veadotube", id = "actionVeadoTitleSendCustomJsonRequest"
+    )
+    private fun actionFullTitleSendCustomJsonRequestId(
+        @Data(defaultValue = "veadotube") instanceTitle: String,
+        @Data(defaultValue = "nodes") channel: String, @Data(defaultValue = "{}") json: String
+    ) {
+        LOGGER.debug { "actionFullTitleSendCustomJsonRequestId: Send Instance '$instanceTitle' - '$channel:$json''" }
+        connectionAction(
+            { veadoInstanceMaps.getConnectionByTitle(InstanceID.TYPE_FULL, instanceTitle) },
+            { sharedSendCustomJsonRequest(it, channel, json) { "actionFullSendCustomJsonRequest" } },
+            { LOGGER.warn { "Can't find Connection for veadotube '$instanceTitle'; can't send Custom JSON Request: '$channel:$json'" } }
+        )
+    }
+
+    /* End veadotube Full Actions */
 
     /* Action Related Functions*/
     private inline fun connectionAction(
