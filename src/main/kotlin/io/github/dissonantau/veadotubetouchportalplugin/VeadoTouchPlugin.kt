@@ -4205,7 +4205,10 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
 
     /** Check for newer Plugin Versions */
     private fun runUpdateCheck() {
-        updateChecker = PluginUpdateChecker(veadotubePlugin, BuildConfig.PLUGIN_RELEASES_UPDATE_CHECK_URI)
+        updateChecker = PluginUpdateChecker(
+            veadotubePlugin, BuildConfig.PLUGIN_RELEASES_UPDATE_CHECK_URI,
+            BuildConfig.PLUGIN_RELEASES_UPDATE_CHECK_URI_ALTERNATE
+        )
     }
 
     /** Update Data */
@@ -4225,7 +4228,6 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
         if (updateData.updateAvailable) {
             // TODO Send notification
             // Check flagged as Manual (eg Breaking update) > updateManualRequired = true
-
             val updateMainBranchReleaseData = updateData.mainBranchReleaseData
 
             if (BuildConfig.BUILD_IS_RELEASE) {
@@ -4233,8 +4235,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
                     // Build is Main Release, and Main has update
                     notifyReleaseUpdateMain(updateMainBranchReleaseData)
                 } else
-                    LOGGER.warn { "Update Check: An Update is available but release information is missing. Please check ${BuildConfig.PLUGIN_RELEASES_UPDATE_CHECK_URI} for updates. Your Version: ${BuildConfig.VERSION_NAME_FULL}" }
-
+                    LOGGER.warn { "Update Check: An Update is available but release information is missing. Please check ${BuildConfig.PLUGIN_RELEASES_DOWNLOAD_PAGE} for updates. Your Version: ${BuildConfig.VERSION_NAME_FULL}" }
 
             } else {
                 val updateBranchReleaseDataDev = updateData.devBranchReleaseData
@@ -4249,7 +4250,7 @@ class VeadoTouchPlugin(parallelizeActions: Boolean) :
                         notifyReleaseUpdateBoth(updateMainBranchReleaseData, updateBranchReleaseDataDev)
                     }
                     else ->  // Neither Exist - Shouldn't reach this
-                        LOGGER.warn { "Update Check: An Update is available but release information is missing. Please check ${BuildConfig.PLUGIN_RELEASES_UPDATE_CHECK_URI} for updates. Your Version: ${BuildConfig.VERSION_NAME_FULL}" }
+                        LOGGER.warn { "Update Check: An Update is available but release information is missing. Please check ${BuildConfig.PLUGIN_RELEASES_DOWNLOAD_PAGE} for updates. Your Version: ${BuildConfig.VERSION_NAME_FULL}" }
                 }
             }
 
@@ -4621,28 +4622,29 @@ object VeadoTouchPluginHelper {
     internal inline fun logDebugPluginDetails() {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug { "Plugin ${BuildConfig.NAME_SHORT} - Started and Connected to Touch Portal" }
-            LOGGER.debug { "Plugin Java VM Version:        ${System.getProperty("java.version")}" }
-            LOGGER.debug { "Plugin Java Version Target:    ${BuildConfig.TARGET_JRE_SPEC}" }
-            LOGGER.debug { "Plugin JDK Build Version:      ${BuildConfig.BUILD_JDK_SPEC}" }
-            LOGGER.debug { "Plugin uses Touch Portal JRE:  ${BuildConfig.USES_TP_BUNDLED_JRE}" }
-            LOGGER.debug { "Plugin Version Full Name:      ${BuildConfig.VERSION_NAME_FULL}" }
+            LOGGER.debug { "Plugin Java VM Version:         ${System.getProperty("java.version")}" }
+            LOGGER.debug { "Plugin Java Version Target:     ${BuildConfig.TARGET_JRE_SPEC}" }
+            LOGGER.debug { "Plugin JDK Build Version:       ${BuildConfig.BUILD_JDK_SPEC}" }
+            LOGGER.debug { "Plugin uses Touch Portal JRE:   ${BuildConfig.USES_TP_BUNDLED_JRE}" }
+            LOGGER.debug { "Plugin Version Full Name:       ${BuildConfig.VERSION_NAME_FULL}" }
 
             LOGGER.debug {
                 buildString {
-                    append("Plugin Version Code / Base:    ")
+                    append("Plugin Version Code / Base:     ")
                     append(BuildConfig.VERSION_CODE.toString().padStart(4, '0'))
                     append(" / ")
                     append(BuildConfig.VERSION_NAME_BASE)
                 }
             }
-            LOGGER.debug { "Plugin is Build Release:       ${BuildConfig.BUILD_IS_RELEASE}" }
+            LOGGER.debug { "Plugin is Build Release:        ${BuildConfig.BUILD_IS_RELEASE}" }
 
             if (!BuildConfig.BUILD_IS_RELEASE)
-                LOGGER.debug { "Plugin Pre-release Version:    ${BuildConfig.BUILD_PRE_RELEASE_VERSION}" }
+                LOGGER.debug { "Plugin Pre-release Version:     ${BuildConfig.BUILD_PRE_RELEASE_VERSION}" }
 
-            LOGGER.debug { "Plugin Build Resources Bundle: ${BuildConfig.BUILD_RESOURCES_BUNDLE}" }
-            LOGGER.debug { "Plugin Download Page URI:      ${BuildConfig.PLUGIN_RELEASES_DOWNLOAD_PAGE}" }
-            LOGGER.debug { "Plugin Update/Releases URI:    ${BuildConfig.PLUGIN_RELEASES_UPDATE_CHECK_URI}" }
+            LOGGER.debug { "Plugin Build Resources Bundle:  ${BuildConfig.BUILD_RESOURCES_BUNDLE}" }
+            LOGGER.debug { "Plugin Download Page URI:       ${BuildConfig.PLUGIN_RELEASES_DOWNLOAD_PAGE}" }
+            LOGGER.debug { "Plugin Update/Releases URI:     ${BuildConfig.PLUGIN_RELEASES_UPDATE_CHECK_URI}" }
+            LOGGER.debug { "Plugin Update/Releases Alt URI: ${BuildConfig.PLUGIN_RELEASES_UPDATE_CHECK_URI_ALTERNATE}" }
         }
     }
 

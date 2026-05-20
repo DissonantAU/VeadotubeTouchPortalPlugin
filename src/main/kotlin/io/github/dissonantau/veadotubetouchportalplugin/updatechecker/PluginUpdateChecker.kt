@@ -14,7 +14,10 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import net.swiftzer.semver.SemVer
 
-class PluginUpdateChecker(private val listener: UpdateCheckResultListener, private val updateCheckReleasesUri: String) {
+class PluginUpdateChecker(
+    private val listener: UpdateCheckResultListener,
+    private val updateCheckReleasesUri: String, private val updateCheckReleasesUriAlt: String
+) {
 
     companion object {
         /* Start of functions for Update Checks */
@@ -322,12 +325,22 @@ class PluginUpdateChecker(private val listener: UpdateCheckResultListener, priva
             // Get Releases JSON
             val response: HttpResponse = httpClient.get(updateCheckReleasesUri)
 
-            if (response.status != HttpStatusCode.OK) {
+            val responseJSONText = if (response.status == HttpStatusCode.OK) {
+                response.bodyAsText() // Response OK
+            } else { // Error, try Alt Source
                 // TODO Test if HTTP GET Error is thrown or if this is enough
                 LOGGER.warn { "Error Checking for updates: ${response.status.description}" }
-            } else {
-                val responseJSONText = response.bodyAsText()
 
+                val responseAlt: HttpResponse = httpClient.get(updateCheckReleasesUriAlt)
+                if (responseAlt.status == HttpStatusCode.OK) {
+                    responseAlt.bodyAsText() // Response OK for Alt Source
+                } else {
+                    LOGGER.warn { "Error Checking for updates (Alt source): ${response.status.description}" }
+                    null // Error, try Alt Source
+                }
+            }
+
+            if (responseJSONText != null) {
                 // Decode and Convert JSON to Object
                 LOGGER.trace { "runUpdateCheck: Attempting to decode JSON String to object:\n$responseJSONText" }
 
@@ -348,7 +361,7 @@ class PluginUpdateChecker(private val listener: UpdateCheckResultListener, priva
                         LOGGER.debug { "runUpdateCheck: Unable to decode JSON String to UpdateCheckResult: ${thrown.message}\n$responseJSONText" }
 
                         try {
-                            //Try to convert to generic JSON Element - this isn't passed, but will let us know if it's valid JSON
+                            // Try to convert to generic JSON Element - this isn't passed, but will let us know if it's valid JSON
                             val jsonMessage = Json.parseToJsonElement(responseJSONText)
                             warningString.append("; Successfully decoded to Generic JSON Element")
                             LOGGER.warn { "Warning - Failed to Deserialize JSON to Object: $jsonMessage" }
