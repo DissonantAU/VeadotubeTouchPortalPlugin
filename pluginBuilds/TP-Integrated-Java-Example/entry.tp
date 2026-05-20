@@ -1,0 +1,133 @@
+{
+    "sdk": 6,
+    "version": 600,
+    "name": "Veadotube Plugin",
+    "id": "io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin",
+    "configuration": {
+        "colorDark": "#5c1c1c",
+        "colorLight": "#822727"
+    },
+    "plugin_start_cmd": "%TP_JAVA_FILE% -Dapple.awt.UIElement=true -jar ./VeadoTouchPlugin.jar start",
+    "settings": [
+        {
+            "name": "# of Connected Instances",
+            "type": "text",
+            "default": "0",
+            "readOnly": true
+        },
+        {
+            "name": "Primary Instance Address",
+            "type": "text",
+            "default": "Plugin Starting",
+            "readOnly": true
+        },
+        {
+            "name": "Primary Instance Name",
+            "type": "text",
+            "default": "Plugin Starting",
+            "readOnly": true
+        },
+        {
+            "name": "Primary Instance Name Override (Leave Blank to Disable)",
+            "type": "text",
+            "default": "",
+            "readOnly": false
+        },
+        {
+            "name": "Auto Request Current State Thumbnail (Enabled/Disabled)",
+            "type": "text",
+            "default": "disabled",
+            "readOnly": false
+        }
+    ],
+    "categories": [
+        {
+            "id": "io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.PrimaryInstance",
+            "name": "Veadotube - Primary Instance",
+            "imagepath": "%TP_PLUGIN_FOLDER%VeadoTouchPlugin/images/icon-24.png",
+            "actions": [
+                {
+                    "id": "io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.PrimaryInstance.action.setAvatarStateFromList",
+                    "name": "Set Avatar State",
+                    "prefix": "Veadotube Mini",
+                    "type": "communicate",
+                    "format": "Set Avatar state to {$io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.PrimaryInstance.action.setAvatarStateFromList.data.choices$}",
+                    "tryInline": true,
+                    "hasHoldFunctionality": false,
+                    "data": [
+                        {
+                            "type": "choice",
+                            "label": "choices",
+                            "default": "",
+                            "valueChoices": [
+                                ""
+                            ],
+                            "id": "io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.PrimaryInstance.action.setAvatarStateFromList.data.choices"
+                        }
+                    ]
+                },
+                {
+                    "id": "io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.PrimaryInstance.action.setAvatarStateByID",
+                    "name": "Set Avatar State by ID (Text)",
+                    "prefix": "Veadotube Mini",
+                    "type": "communicate",
+                    "format": "Set Avatar to State with ID {$io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.PrimaryInstance.action.setAvatarStateByID.data.text$}",
+                    "tryInline": true,
+                    "hasHoldFunctionality": false,
+                    "data": [
+                        {
+                            "type": "text",
+                            "label": "text",
+                            "default": "",
+                            "id": "io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.PrimaryInstance.action.setAvatarStateByID.data.text"
+                        }
+                    ]
+                },
+                {
+                    "id": "io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.PrimaryInstance.action.refreshStateListAll",
+                    "name": "Refresh Avatar State List",
+                    "prefix": "Veadotube Mini",
+                    "type": "communicate",
+                    "hasHoldFunctionality": false
+                },
+                {
+                    "id": "io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.PrimaryInstance.action.getAvatarStateAll",
+                    "name": "Refresh Current Avatar State",
+                    "prefix": "Veadotube Mini",
+                    "type": "communicate",
+                    "hasHoldFunctionality": false
+                }
+            ],
+            "connectors": [
+            ],
+            "states": [
+                {
+                    "id": "io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.PrimaryInstance.state.currentAvatarState",
+                    "type": "text",
+                    "desc": "Current Avatar State - Name & ID",
+                    "default": "Not Connected"
+                },
+                {
+                    "id": "io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.PrimaryInstance.state.currentAvatarStateId",
+                    "type": "text",
+                    "desc": "Current Avatar State - ID",
+                    "default": "Not Connected"
+                },
+                {
+                    "id": "io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.PrimaryInstance.state.currentAvatarStateName",
+                    "type": "text",
+                    "desc": "Current Avatar State - Name",
+                    "default": "Not Connected"
+                },
+                {
+                    "id": "io.github.dissonantau.veadotubetouchportalplugin.VeadoTouchPlugin.PrimaryInstance.state.currentAvatarStateThumbnail",
+                    "type": "text",
+                    "desc": "Current Avatar State - Thumbnail",
+                    "default": ""
+                }
+            ],
+            "events": [
+            ]
+        }
+    ]
+}

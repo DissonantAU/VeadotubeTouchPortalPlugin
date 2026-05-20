@@ -18,7 +18,7 @@ val enableLibrarySubstitution = true
 
 if (enableLibrarySubstitution) {
     val useBleatkanLocal = true
-    val useTouchPortalSdkLocal = false
+    val useTouchPortalSdkLocal = true
 
     /* Get BleatKan Library from Local project - Should be in folder next to this Project */
     val inclBuildBleatkanDir = file("../bleatkan")
@@ -32,12 +32,11 @@ if (enableLibrarySubstitution) {
         }
     }
 
-
     /*
     * Optional: Get TouchPortal SDK from Local project - Should be in folder next to this Project
     * Useful if TP SDK has Libraries that need Updating, etc.
     */
-    val inclBuildTouchPortalSdkDir = file("../TouchPortalPluginSDK-8.3.0")
+    val inclBuildTouchPortalSdkDir = file("../TouchPortalPluginSDK")
 
     if (useTouchPortalSdkLocal && isDirectory(inclBuildTouchPortalSdkDir)) {
         includeBuild(inclBuildTouchPortalSdkDir) {
@@ -50,7 +49,29 @@ if (enableLibrarySubstitution) {
             }
         }
     }
+
+    pluginManagement {
+        /*
+        * Optional: Get TouchPortal plugin packager from Local project - Should be in folder next to this Project
+        * Useful if TP plugin packager has Libraries that need Updating, etc.
+        * Note - you may need to run publicToMavenLocal under Packager
+        */
+        if (useTouchPortalSdkLocal && isDirectory(inclBuildTouchPortalSdkDir)) {
+            includeBuild(inclBuildTouchPortalSdkDir) {
+                dependencySubstitution {
+                    substitute(module("com.christophecvb.touchportal:plugin-packager"))
+                        .using(project(":Packager"))
+                }
+            }
+        }
+
+    }
+
 }
 
-fun isDirectory(buildFile:File) = try { buildFile.exists() && buildFile.isDirectory } catch (_: Exception) { false }
 
+fun isDirectory(buildFile: File) = try {
+    buildFile.exists() && buildFile.isDirectory
+} catch (_: Exception) {
+    false
+}
