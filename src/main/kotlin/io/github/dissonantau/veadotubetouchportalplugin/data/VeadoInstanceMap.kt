@@ -148,7 +148,7 @@ class VeadoInstanceMap {
     fun getConnectionByTitle(instanceType: String, title: String): Connection? = lock.read {
         collConnectionData.keys.forEach { connection ->
             if (connection.isConnected && connection.instance.id.type == instanceType &&
-                connection.instance.title.contains(title)
+                connection.instance.title.contains(title,true)
             ) return connection
         }
         return null
@@ -383,7 +383,7 @@ class VeadoInstanceMap {
      *
      * Work on held objects with should be synchronized with the [Connection] to prevent issues.
      */
-    private val collConnectionData = HashMap<Connection, VeadoConnectionData>(5)
+    private val collConnectionData = LinkedHashMap<Connection, VeadoConnectionData>(5)
 
     /**
      * Veadotube Instance Collection
