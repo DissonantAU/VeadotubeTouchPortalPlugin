@@ -1,0 +1,38 @@
+{
+  "releasesUrl": "https://github.com/DissonantAU/VeadotubeTouchPortalPlugin/releases",
+  "releasesLatestUrl": "https://github.com/DissonantAU/VeadotubeTouchPortalPlugin/releases/latest",
+  "mainBranch": {
+    "latestRelease": "0.0.1",
+    "recommendedRelease": "0.0.1",
+    "releases": [
+      {
+        "ver": "0.1.0",
+        "url": "https://github.com/DissonantAU/VeadotubeTouchPortalPlugin/releases/tag/v0.6",
+        "recommendedNextVer": "0.2.0"
+      }
+    ]
+  },
+  "devBranch": {
+    "latestRelease": "0.7.1-beta",
+    "recommendedRelease": "0.7.1-beta",
+    "releases": [
+      {
+        "ver": "0.7.0-beta",
+        "url": "https://github.com/DissonantAU/VeadotubeTouchPortalPlugin/releases/tag/0.7.0-beta",
+        "urlDlExternal":"https://github.com/DissonantAU/VeadotubeTouchPortalPlugin/releases/download/0.7.0-beta/VeadoTouchPlugin_0.7.0-beta.20241207+debug.tpp"
+      },
+      {
+        "ver": "0.7.1-beta",
+        "url": "https://github.com/DissonantAU/VeadotubeTouchPortalPlugin/releases/tag/0.7.1-beta",
+        "urlDlExternal": "https://github.com/DissonantAU/VeadotubeTouchPortalPlugin/releases/download/0.7.1-beta/VeadoTouchPlugin_0.7.1-beta.20241210+debug.tpp",
+        "urlDlBundled": "https://github.com/DissonantAU/VeadotubeTouchPortalPlugin/releases/download/0.7.1-beta/VeadoTouchPlugin_0.7.1-beta.20241210+internalJava-debug.tpp"
+      },
+      {
+        "ver": "0.6.0-beta",
+        "url": "https://github.com/DissonantAU/VeadotubeTouchPortalPlugin/releases/tag/v0.6",
+        "recommendedNextVer": "0.7.1-beta",
+        "recommendedNextVerManual": false
+      }
+    ]
+  }
+}

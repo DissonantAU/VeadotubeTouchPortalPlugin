@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "mainBranch",
+    "releasesUrl"
+  ],
+  "properties": {
+    "releasesUrl": {
+      "type": "string",
+      "$ref": "#/definitions/downloadUrl"
+    },
+    "releasesLatestUrl": {
+      "type": "string",
+      "$ref": "#/definitions/downloadUrl"
+    },
+    "mainBranch": {
+      "type": "object",
+      "$ref": "#/definitions/branchData"
+    },
+    "devBranch": {
+      "type": "object",
+      "$ref": "#/definitions/branchData"
+    }
+  },
+  "definitions": {
+    "branchData": {
+      "type": "object",
+      "required": [
+        "latestRelease",
+        "releases"
+      ],
+      "properties": {
+        "latestRelease": {
+          "type": "string",
+          "$ref": "#/definitions/semVer"
+        },
+        "recommendedRelease": {
+          "type": "string",
+          "$ref": "#/definitions/semVer"
+        },
+        "releases": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "ver",
+              "url"
+            ],
+            "properties": {
+              "ver": {
+                "type": "string",
+                "$ref": "#/definitions/semVer"
+              },
+              "url": {
+                "type": "string",
+                "$ref": "#/definitions/downloadUrl"
+              },
+              "urlDlExternal": {
+                "type": "string",
+                "$ref": "#/definitions/downloadUrl"
+              },
+              "urlDlEmbedded": {
+                "type": "string",
+                "$ref": "#/definitions/downloadUrl"
+              },
+              "recommendedNextVer": {
+                "type": "string",
+                "$ref": "#/definitions/semVer"
+              },
+              "recommendedNextVerManual": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      }
+    },
+    "semVer": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
+    },
+    "downloadUrl": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https?://"
+    }
+  }
+}
