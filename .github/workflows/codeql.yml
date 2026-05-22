@@ -63,6 +63,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         repository: DissonantAU/bleatkan
+        ref: ${{ github.ref_name }} # Pulls same branch name (dev for dev, etc)
         path: ./bleatkan
 
 
