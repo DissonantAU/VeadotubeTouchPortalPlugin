@@ -22,26 +22,26 @@ jobs:
 
     steps:
       - name: VeadotubeTouchPortalPlugin - Check out from repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           path: ./VeadotubeTouchPortalPlugin
 
       - name: bleatkan - Check out from repo (Dependency)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: DissonantAU/bleatkan
           ref: dev
           path: ./bleatkan
 
       - name: TouchPortalPluginSDK - Check out from repo (Dependency)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: DissonantAU/TouchPortalPluginSDK
           ref: 8.3.1-RC
           path: ./TouchPortalPluginSDK
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '17'
           distribution: 'temurin'
@@ -49,7 +49,7 @@ jobs:
       # Configure Gradle for optimal use in GitHub Actions, including caching of downloaded dependencies.
       # See: https://github.com/gradle/actions/blob/main/setup-gradle/README.md
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
 
       # Touch Portal Plugin SDK
       - name: TouchPortalPluginSDK - Change wrapper permissions
@@ -77,19 +77,19 @@ jobs:
 
     steps:
       - name: VeadotubeTouchPortalPlugin - Check out from repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           path: ./VeadotubeTouchPortalPlugin
 
       - name: TouchPortalPluginSDK - Check out from repo (Dependency)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: DissonantAU/TouchPortalPluginSDK
           ref: 8.3.1-RC
           path: ./TouchPortalPluginSDK
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '17'
           distribution: 'temurin'
@@ -97,7 +97,7 @@ jobs:
       # Configure Gradle for optimal use in GitHub Actions, including caching of downloaded dependencies.
       # See: https://github.com/gradle/actions/blob/main/setup-gradle/README.md
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
 
       # Touch Portal Plugin SDK
       - name: TouchPortalPluginSDK - Change wrapper permissions
@@ -115,6 +115,6 @@ jobs:
       # Generates and submits a dependency graph, enabling Dependabot Alerts for all project dependencies.
       # See: https://github.com/gradle/actions/blob/main/dependency-submission/README.md
       - name: VeadotubeTouchPortalPlugin - Generate and submit dependency graph
-        uses: gradle/actions/dependency-submission@v4
+        uses: gradle/actions/dependency-submission@v5
         with:
           build-root-directory: ./VeadotubeTouchPortalPlugin/
