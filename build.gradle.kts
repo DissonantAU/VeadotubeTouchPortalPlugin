@@ -250,6 +250,15 @@ java {
 }
 
 
+kapt {
+    arguments {
+        compilerAnnotationArguments.get().forEach { newArg ->
+            println("Kapt - Add argument: '$newArg'")
+            arg(newArg)
+        }
+    }
+}
+
 tasks {
     withType<Jar> {
         isPreserveFileTimestamps = false
@@ -295,7 +304,8 @@ tasks {
         duplicatesStrategy = DuplicatesStrategy.WARN
 
         mustRunAfter(
-            named("calculatePluginVersion")
+            named("calculatePluginVersion"),
+            named("buildEnableTPInternalJRELaunch")
         )
 
         doFirst {
@@ -339,7 +349,7 @@ tasks {
     /* Compiler Options */
     withType<KotlinCompile>().forEach { thisTask ->
         thisTask.doFirst {
-            // Get Annotation Arguments from Provider, add -A to start
+            // Get Annotation Arguments from Provider
             compilerAnnotationArguments.get().forEach { newArg ->
                 println("Task ${thisTask.name}: add argument: '$newArg'")
                 kapt.arguments { arg(newArg) }
@@ -379,7 +389,7 @@ tasks {
         doFirst {
             // If tpUseInternalJreProvider is true, add needed argument for annotation processor
             if (tpUseInternalJreProvider.get()) {
-                compilerAnnotationArguments.add("tp.entry.startcmd.jre.all.internal")
+                compilerAnnotationArguments.add("tp.entry.startcmd.jre.all.bundled")
             }
         }
     }
