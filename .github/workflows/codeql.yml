@@ -70,7 +70,7 @@ jobs:
       uses: actions/checkout@v5
       with:
         repository: DissonantAU/TouchPortalPluginSDK
-        ref: 8.3.1-RC
+        ref: 8.3.1-RC2
         path: ./TouchPortalPluginSDK
 
     - name: Set up JDK 17
