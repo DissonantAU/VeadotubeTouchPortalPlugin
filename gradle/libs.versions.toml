@@ -3,8 +3,8 @@
 bleatkan = "0.8.+"
 touchportalSDK = "8.3.+"
 
-# 2.1.0 > 2.1.10
-kotlin = "2.1.10"
+# 2.1.10 > 2.1.21
+kotlin = "2.1.21"
 # 1.10.1 > 1.10.2
 coroutines = "1.10.2"
 
